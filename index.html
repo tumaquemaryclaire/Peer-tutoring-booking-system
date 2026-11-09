@@ -1,0 +1,349 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PeerTutor | Peer Tutoring Booking System</title>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- NAVIGATION BAR -->
+    <header class="navbar">
+        <div class="logo">
+            <span class="logo-icon">📚</span>
+            <span>Peer<span class="logo-highlight">Tutor</span></span>
+        </div>
+
+        <nav class="nav-links">
+            <a href="#home" class="active">Home</a>
+            <a href="#tutoring">Tutoring</a>
+            <a href="#tutors">Find Tutors</a>
+            <a href="#about">About Us</a>
+        </nav>
+
+        <div class="nav-buttons">
+            <a href="login.html" class="login-btn">Login</a>
+            <a href="register.html" class="signup-btn">Get Started</a>
+        </div>
+    </header>
+
+
+    <!-- HERO SECTION -->
+    <section class="hero" id="home">
+
+        <div class="hero-content">
+            <span class="welcome-tag">WELCOME TO PEERTUTOR</span>
+
+            <h1>
+                Learn Together.<br>
+                <span>Grow Together.</span>
+            </h1>
+
+            <p>
+                Connect with fellow students, find knowledgeable peer tutors,
+                and improve your skills through personalized tutoring sessions.
+            </p>
+
+            <div class="hero-buttons">
+                <a href="#tutors" class="primary-btn">Find a Tutor →</a>
+                <a href="#about" class="secondary-btn">Learn More</a>
+            </div>
+
+            <div class="hero-stats">
+                <div>
+                    <h3>Peer</h3>
+                    <p>Learning Community</p>
+                </div>
+                <div>
+                    <h3>Easy</h3>
+                    <p>Booking Process</p>
+                </div>
+                <div>
+                    <h3>Flexible</h3>
+                    <p>Learning Options</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="hero-visual">
+            <div class="hero-illustration">
+                <div class="book-icon">📖</div>
+                <div class="student-icons">👩‍🎓　👨‍🎓</div>
+                <h2>Study Smarter!</h2>
+                <p>Find your learning partner today.</p>
+                <div class="floating-label">⭐ Learn from fellow students</div>
+            </div>
+        </div>
+
+    </section>
+
+
+    <!-- TUTORING OPTIONS -->
+    <section class="section tutoring-section" id="tutoring">
+
+        <div class="section-heading">
+            <span class="section-tag">LEARNING OPTIONS</span>
+            <h2>Choose How You Want to Learn</h2>
+            <p>
+                Select the tutoring method that is most convenient for you.
+            </p>
+        </div>
+
+        <div class="tutoring-cards">
+
+            <!-- FACE TO FACE -->
+            <div class="mode-card">
+                <div class="mode-icon face-icon">🤝</div>
+
+                <h3>Face-to-Face Tutoring</h3>
+
+                <p>
+                    Meet your peer tutor personally at an agreed location
+                    such as the school library or study area.
+                </p>
+
+                <ul>
+                    <li>✓ Personal learning experience</li>
+                    <li>✓ Direct communication</li>
+                    <li>✓ Flexible meeting location</li>
+                </ul>
+
+                <a href="login.html?mode=Face-to-Face" class="mode-btn">
+                    Book Face-to-Face →
+                </a>
+            </div>
+
+
+            <!-- ONLINE -->
+            <div class="mode-card">
+                <div class="mode-icon online-icon">💻</div>
+
+                <h3>Online Tutoring</h3>
+
+                <p>
+                    Learn from the comfort of your home through online
+                    meetings with your selected peer tutor.
+                </p>
+
+                <ul>
+                    <li>✓ Convenient online sessions</li>
+                    <li>✓ Flexible learning schedule</li>
+                    <li>✓ Online meeting access</li>
+                </ul>
+
+                <a href="login.html?mode=Online" class="mode-btn">
+                    Book Online →
+                </a>
+            </div>
+
+        </div>
+    </section>
+
+
+    <!-- FEATURED TUTORS -->
+    <section class="section tutors-section" id="tutors">
+
+        <div class="section-heading">
+            <span class="section-tag">OUR PEER TUTORS</span>
+            <h2>Find Your Perfect Tutor</h2>
+            <p>
+                Explore students who can help you understand different subjects.
+            </p>
+        </div>
+
+        <!-- SEARCH BAR -->
+        <form class="search-form" id="searchForm">
+            <input
+                type="search"
+                id="searchInput"
+                placeholder="Search tutor name or subject..."
+                aria-label="Search tutors"
+            >
+            <button type="submit">Search</button>
+        </form>
+
+        <p class="search-message" id="searchMessage" aria-live="polite"></p>
+
+        <div class="tutor-grid" id="tutorGrid">
+
+            <!-- TUTOR 1 -->
+            <div class="tutor-card" data-search="alex santos javascript programming web development">
+                <div class="tutor-avatar avatar-one">AS</div>
+                <span class="available-label">Peer Tutor</span>
+
+                <h3>Alex Santos</h3>
+                <p class="tutor-subject">JavaScript Programming</p>
+
+                <p class="tutor-description">
+                    Helps beginners learn JavaScript basics and programming concepts.
+                </p>
+
+                <div class="tutor-rating">⭐ 4.9 <span>Student Rating</span></div>
+
+                <a href="login.html" class="view-profile-btn">View Tutor</a>
+            </div>
+
+
+            <!-- TUTOR 2 -->
+            <div class="tutor-card" data-search="jamie cruz database management mysql sql">
+                <div class="tutor-avatar avatar-two">JC</div>
+                <span class="available-label">Peer Tutor</span>
+
+                <h3>Jamie Cruz</h3>
+                <p class="tutor-subject">Database Management</p>
+
+                <p class="tutor-description">
+                    Can help students understand SQL, MySQL, and database concepts.
+                </p>
+
+                <div class="tutor-rating">⭐ 4.8 <span>Student Rating</span></div>
+
+                <a href="login.html" class="view-profile-btn">View Tutor</a>
+            </div>
+
+
+            <!-- TUTOR 3 -->
+            <div class="tutor-card" data-search="taylor reyes html css web development">
+                <div class="tutor-avatar avatar-three">TR</div>
+                <span class="available-label">Peer Tutor</span>
+
+                <h3>Taylor Reyes</h3>
+                <p class="tutor-subject">Web Development</p>
+
+                <p class="tutor-description">
+                    Teaches HTML, CSS, website design, and basic web development.
+                </p>
+
+                <div class="tutor-rating">⭐ 5.0 <span>Student Rating</span></div>
+
+                <a href="login.html" class="view-profile-btn">View Tutor</a>
+            </div>
+
+        </div>
+
+        <p class="demo-note">
+            Note: These are sample tutor profiles for the initial website design.
+        </p>
+
+    </section>
+
+
+    <!-- HOW IT WORKS -->
+    <section class="section how-section">
+
+        <div class="section-heading">
+            <span class="section-tag">SIMPLE PROCESS</span>
+            <h2>How PeerTutor Works</h2>
+            <p>Booking a tutoring session is simple and easy.</p>
+        </div>
+
+        <div class="steps-grid">
+
+            <div class="step-card">
+                <div class="step-number">01</div>
+                <div class="step-icon">👤</div>
+                <h3>Create an Account</h3>
+                <p>Register as a student and access the platform.</p>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">02</div>
+                <div class="step-icon">🔍</div>
+                <h3>Find a Tutor</h3>
+                <p>Search for tutors based on your preferred subject.</p>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">03</div>
+                <div class="step-icon">📅</div>
+                <h3>Book a Session</h3>
+                <p>Choose your preferred date, time, and tutoring mode.</p>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">04</div>
+                <div class="step-icon">🎓</div>
+                <h3>Start Learning</h3>
+                <p>Meet your tutor and improve your knowledge and skills.</p>
+            </div>
+
+        </div>
+    </section>
+
+
+    <!-- ABOUT SECTION -->
+    <section class="about-section" id="about">
+
+        <div class="about-content">
+            <span class="section-tag">ABOUT PEERTUTOR</span>
+
+            <h2>Helping Students Learn From Each Other</h2>
+
+            <p>
+                PeerTutor is a peer tutoring booking platform designed to
+                connect students who need academic assistance with fellow
+                students who can share their knowledge and skills.
+            </p>
+
+            <p>
+                The platform provides online and face-to-face tutoring options,
+                making it easier for students to find tutors and schedule
+                learning sessions.
+            </p>
+
+            <a href="register.html" class="primary-btn">Join Our Community →</a>
+        </div>
+
+        <div class="about-visual">
+            <div class="about-icon">🎓</div>
+            <h3>Better Together</h3>
+            <p>Share knowledge. Build skills. Achieve more.</p>
+        </div>
+
+    </section>
+
+
+    <!-- FOOTER -->
+    <footer class="footer">
+
+        <div class="footer-content">
+            <div>
+                <div class="logo footer-logo">
+                    📚 Peer<span> Tutor</span>
+                </div>
+
+                <p>
+                    Connecting students through learning and collaboration.
+                </p>
+            </div>
+
+            <div class="footer-links">
+                <h3>Quick Links</h3>
+                <a href="#home">Home</a>
+                <a href="#tutoring">Tutoring Options</a>
+                <a href="#tutors">Find Tutors</a>
+                <a href="#about">About Us</a>
+            </div>
+
+            <div class="footer-links">
+                <h3>Account</h3>
+                <a href="login.html">Login</a>
+                <a href="register.html">Register</a>
+            </div>
+        </div>
+
+        <div class="copyright">
+            <p>© 2026 PeerTutor. All Rights Reserved.</p>
+        </div>
+
+    </footer>
+
+
+    <!-- JAVASCRIPT -->
+    <script src="js/home.js"></script>
+
+</body>
+</html>

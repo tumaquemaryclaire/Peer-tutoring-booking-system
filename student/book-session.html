@@ -1,0 +1,347 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book a Session | PeerTutor</title>
+
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+
+<body class="dashboard-page">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <a href="../index.html" class="dashboard-logo">
+            📚 Peer<span>Tutor</span>
+        </a>
+
+        <p class="sidebar-label">MAIN MENU</p>
+
+        <nav class="sidebar-nav">
+
+            <a href="dashboard.html" class="sidebar-link">
+                <span>▦</span> Dashboard
+            </a>
+
+            <a href="find-tutors.html" class="sidebar-link active">
+                <span>🔍</span> Find Tutors
+            </a>
+
+            <a href="my-bookings.html" class="sidebar-link">
+                <span>📅</span> My Bookings
+            </a>
+
+            <a href="feedback.html" class="sidebar-link">
+                <span>⭐</span> Feedback
+            </a>
+
+        </nav>
+
+        <div class="sidebar-bottom">
+
+            <a href="../index.html" class="sidebar-link">
+                <span>🏠</span> Homepage
+            </a>
+
+            <button id="logoutBtn" class="sidebar-logout">
+                <span>↪</span> Logout
+            </button>
+
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+    <main class="dashboard-main">
+
+        <!-- TOP BAR -->
+        <header class="dashboard-topbar">
+
+            <div>
+                <p class="dashboard-date" id="currentDate"></p>
+                <h2>Book a Tutoring Session</h2>
+            </div>
+
+            <div class="user-information">
+
+                <div class="user-avatar" id="userInitials">ST</div>
+
+                <div>
+                    <strong id="studentName">Student</strong>
+                    <p>Student Account</p>
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- PAGE INTRODUCTION -->
+        <section class="booking-banner">
+
+            <div>
+                <span class="welcome-small">SCHEDULE YOUR LEARNING SESSION</span>
+
+                <h1>Ready to Learn Something New?</h1>
+
+                <p>
+                    Complete the booking form below to request a tutoring
+                    session with your selected peer tutor.
+                </p>
+            </div>
+
+            <div class="booking-banner-icon">📅</div>
+
+        </section>
+
+
+        <!-- BOOKING CONTENT -->
+        <section class="booking-page-layout">
+
+            <!-- SELECTED TUTOR -->
+            <div class="selected-tutor-card">
+
+                <span class="booking-label">SELECTED PEER TUTOR</span>
+
+                <div class="selected-tutor-information">
+
+                    <div id="bookingTutorAvatar" class="booking-tutor-avatar">
+                        --
+                    </div>
+
+                    <div>
+                        <h3 id="bookingTutorName">Tutor Name</h3>
+
+                        <p id="bookingTutorSubject">
+                            Tutor Subject
+                        </p>
+
+                        <span class="selected-rating">
+                            ⭐ <span id="bookingTutorRating">0.0</span>
+                        </span>
+                    </div>
+
+                </div>
+
+                <div class="selected-tutor-note">
+                    <span>✓</span>
+                    You have selected this tutor for your session.
+                </div>
+
+                <a href="find-tutors.html" class="change-tutor-link">
+                    Choose a Different Tutor
+                </a>
+
+            </div>
+
+
+            <!-- BOOKING FORM -->
+            <div class="booking-form-card">
+
+                <div class="booking-form-heading">
+                    <h2>Session Details</h2>
+
+                    <p>
+                        Please provide the necessary information
+                        for your tutoring session.
+                    </p>
+                </div>
+
+
+                <form id="bookingForm">
+
+                    <!-- SUBJECT -->
+                    <div class="booking-form-group">
+
+                        <label for="bookingSubject">Tutoring Subject</label>
+
+                        <input
+                            type="text"
+                            id="bookingSubject"
+                            readonly
+                        >
+
+                    </div>
+
+
+                    <!-- DATE -->
+                    <div class="booking-form-group">
+
+                        <label for="sessionDate">Preferred Date</label>
+
+                        <input
+                            type="date"
+                            id="sessionDate"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- TIME -->
+                    <div class="booking-form-group">
+
+                        <label for="sessionTime">Preferred Start Time</label>
+
+                        <input
+                            type="time"
+                            id="sessionTime"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- TUTORING MODE -->
+                    <div class="booking-form-group">
+
+                        <label for="tutoringMode">Tutoring Mode</label>
+
+                        <select id="tutoringMode" required>
+                            <option value="">Select Tutoring Mode</option>
+                        </select>
+
+                    </div>
+
+
+                    <!-- FACE TO FACE LOCATION -->
+                    <div
+                        class="booking-form-group"
+                        id="locationGroup"
+                    >
+
+                        <label for="meetingLocation">
+                            Meeting Location
+                        </label>
+
+                        <input
+                            type="text"
+                            id="meetingLocation"
+                            placeholder="Example: School Library"
+                        >
+
+                        <small>
+                            Enter the preferred location where
+                            you and your tutor will meet.
+                        </small>
+
+                    </div>
+
+
+                    <!-- ONLINE INFORMATION -->
+                    <div
+                        class="online-meeting-notice hidden"
+                        id="onlineNotice"
+                    >
+
+                        <div class="online-notice-icon">💻</div>
+
+                        <div>
+                            <h3>Online Tutoring Session</h3>
+
+                            <p>
+                                Your tutor will provide the online
+                                meeting link after approving your booking.
+                            </p>
+                        </div>
+
+                    </div>
+
+
+                    <!-- ADDITIONAL NOTES -->
+                    <div class="booking-form-group">
+
+                        <label for="sessionNotes">
+                            Additional Notes (Optional)
+                        </label>
+
+                        <textarea
+                            id="sessionNotes"
+                            rows="4"
+                            placeholder="Tell your tutor what topic or lesson you need help with..."
+                        ></textarea>
+
+                    </div>
+
+
+                    <!-- ERROR MESSAGE -->
+                    <p
+                        id="bookingMessage"
+                        class="booking-message"
+                        aria-live="polite"
+                    ></p>
+
+
+                    <!-- FORM BUTTONS -->
+                    <div class="booking-form-buttons">
+
+                        <a href="find-tutors.html" class="booking-cancel-btn">
+                            Cancel
+                        </a>
+
+                        <button type="submit" class="booking-submit-btn">
+                            Submit Booking Request →
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </section>
+
+
+        <!-- SUCCESS MESSAGE -->
+        <section
+            id="bookingSuccess"
+            class="booking-success hidden"
+        >
+
+            <div class="success-icon">✓</div>
+
+            <h2>Booking Request Submitted!</h2>
+
+            <p>
+                Your tutoring request has been saved successfully.
+                Please wait for your tutor to approve your booking.
+            </p>
+
+            <div class="success-booking-details" id="successDetails">
+            </div>
+
+            <span class="pending-notice">
+                ⏳ Booking Status: Pending
+            </span>
+
+            <div class="success-buttons">
+
+                <a href="dashboard.html" class="booking-submit-btn">
+                    Back to Dashboard
+                </a>
+
+                <a href="find-tutors.html" class="booking-cancel-btn">
+                    Find Another Tutor
+                </a>
+
+            </div>
+
+        </section>
+
+
+        <footer class="dashboard-footer">
+            © 2026 PeerTutor. All Rights Reserved.
+        </footer>
+
+    </main>
+
+
+    <script src="../js/booking.js"></script>
+
+</body>
+</html>

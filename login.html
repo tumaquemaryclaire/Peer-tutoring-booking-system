@@ -1,0 +1,95 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | PeerTutor</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="auth-page" data-page="login">
+
+    <header class="navbar">
+        <a href="index.html" class="logo">
+            <span>📚</span>
+            <span>Peer<span class="logo-highlight">Tutor</span></span>
+        </a>
+
+        <a href="index.html" class="back-home">← Back to Home</a>
+    </header>
+
+    <main class="auth-container">
+
+        <section class="auth-card">
+
+            <div class="auth-icon">👋</div>
+
+            <span class="section-tag">WELCOME BACK</span>
+
+            <h1>Login to Your Account</h1>
+
+            <p class="auth-description">
+                Welcome back! Please enter your account details.
+            </p>
+
+            <form id="loginForm">
+
+                <div class="form-group">
+                    <label for="loginEmail">Email Address</label>
+                    <input
+                        type="email"
+                        id="loginEmail"
+                        placeholder="Enter your email"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input
+                        type="password"
+                        id="loginPassword"
+                        placeholder="Enter your password"
+                        required
+                    >
+                </div>
+
+                <p id="loginMessage" class="form-message" aria-live="polite"></p>
+
+                <button type="submit" class="auth-submit">
+                    Login
+                </button>
+
+            </form>
+
+            <p class="auth-switch">
+                Don't have an account?
+                <a href="register.html">Create an account</a>
+            </p>
+
+        </section>
+
+        <div class="auth-side">
+            <div class="auth-side-icon">🎓</div>
+
+            <h2>Learning is Better Together!</h2>
+
+            <p>
+                Connect with fellow students, discover helpful tutors,
+                and continue improving your knowledge and skills.
+            </p>
+
+            <div class="auth-side-tag">
+                📚 Your learning journey starts here.
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="auth-footer">
+        © 2026 PeerTutor. All Rights Reserved.
+    </footer>
+
+    <script src="js/auth.js"></script>
+</body>
+</html>

@@ -1,0 +1,221 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Tutors | PeerTutor</title>
+
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+
+<body class="dashboard-page">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <a href="../index.html" class="dashboard-logo">
+            📚 Peer<span>Tutor</span>
+        </a>
+
+        <p class="sidebar-label">MAIN MENU</p>
+
+        <nav class="sidebar-nav">
+
+            <a href="dashboard.html" class="sidebar-link">
+                <span>▦</span> Dashboard
+            </a>
+
+            <a href="find-tutors.html" class="sidebar-link active">
+                <span>🔍</span> Find Tutors
+            </a>
+
+            <a href="my-bookings.html" class="sidebar-link">
+                <span>📅</span> My Bookings
+            </a>
+
+            <a href="feedback.html" class="sidebar-link">
+                <span>⭐</span> Feedback
+            </a>
+
+        </nav>
+
+        <div class="sidebar-bottom">
+
+            <a href="../index.html" class="sidebar-link">
+                <span>🏠</span> Homepage
+            </a>
+
+            <button id="logoutBtn" class="sidebar-logout">
+                <span>↪</span> Logout
+            </button>
+
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+    <main class="dashboard-main">
+
+        <!-- TOP BAR -->
+        <header class="dashboard-topbar">
+
+            <div>
+                <p class="dashboard-date" id="currentDate"></p>
+                <h2>Find Peer Tutors</h2>
+            </div>
+
+            <div class="user-information">
+
+                <div class="user-avatar" id="userInitials">ST</div>
+
+                <div>
+                    <strong id="studentName">Student</strong>
+                    <p>Student Account</p>
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- PAGE INTRODUCTION -->
+        <section class="find-tutor-banner">
+
+            <div>
+                <span class="welcome-small">EXPLORE YOUR LEARNING OPTIONS</span>
+
+                <h1>Find the Right Tutor for You!</h1>
+
+                <p>
+                    Search for knowledgeable fellow students who can help
+                    you improve your skills and understand your subjects.
+                </p>
+            </div>
+
+            <div class="find-banner-icon">👩‍🏫</div>
+
+        </section>
+
+
+        <!-- SEARCH AND FILTER -->
+        <section class="tutor-filter-section">
+
+            <div class="filter-heading">
+                <h2>Available Peer Tutors</h2>
+                <p>Choose a tutor based on your learning needs.</p>
+            </div>
+
+            <div class="tutor-search-box">
+
+                <div class="search-input-wrapper">
+                    <span>🔍</span>
+
+                    <input
+                        type="search"
+                        id="tutorSearch"
+                        placeholder="Search tutor name or subject..."
+                    >
+                </div>
+
+                <div class="filter-group">
+
+                    <div>
+                        <label for="subjectFilter">Filter by Subject</label>
+
+                        <select id="subjectFilter">
+                            <option value="all">All Subjects</option>
+                            <option value="JavaScript Programming">JavaScript Programming</option>
+                            <option value="Database Management">Database Management</option>
+                            <option value="Web Development">Web Development</option>
+                            <option value="Java Programming">Java Programming</option>
+                            <option value="Python Programming">Python Programming</option>
+                            <option value="Mathematics">Mathematics</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="modeFilter">Tutoring Mode</label>
+
+                        <select id="modeFilter">
+                            <option value="all">All Modes</option>
+                            <option value="Online">Online</option>
+                            <option value="Face-to-Face">Face-to-Face</option>
+                        </select>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- RESULTS INFORMATION -->
+            <div class="tutor-results-heading">
+
+                <p id="resultsCount">Showing available tutors</p>
+
+                <button id="clearFilters" class="clear-filter-btn">
+                    Clear Filters
+                </button>
+
+            </div>
+
+
+            <!-- TUTOR CARDS -->
+            <div id="tutorList" class="find-tutor-grid">
+
+                <!-- JavaScript will display tutor cards here -->
+
+            </div>
+
+            <!-- NO RESULTS MESSAGE -->
+            <div id="noTutors" class="no-tutors hidden">
+
+                <div>🔍</div>
+
+                <h3>No Tutors Found</h3>
+
+                <p>
+                    We couldn't find a tutor matching your search.
+                    Try another name, subject, or tutoring mode.
+                </p>
+
+                <button id="resetSearch" class="dashboard-primary-btn">
+                    Show All Tutors
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- INFORMATION SECTION -->
+        <section class="find-tutor-reminder">
+
+            <div class="reminder-icon">💡</div>
+
+            <div>
+                <h3>Need Help Choosing a Tutor?</h3>
+
+                <p>
+                    Review the tutor's profile, subjects, and tutoring
+                    options before selecting someone.
+                </p>
+            </div>
+
+        </section>
+
+
+        <footer class="dashboard-footer">
+            © 2026 PeerTutor. All Rights Reserved.
+        </footer>
+
+    </main>
+
+
+    <script src="../js/find-tutors.js"></script>
+
+</body>
+</html>
