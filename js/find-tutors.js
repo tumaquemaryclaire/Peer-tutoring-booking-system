@@ -5,7 +5,10 @@
 // ===================================
 
 
+// ===================================
 // CHECK STUDENT LOGIN
+// ===================================
+
 const currentUser = JSON.parse(
     sessionStorage.getItem("pt_current_user") || "null"
 );
@@ -23,7 +26,7 @@ if (!currentUser || currentUser.role !== "student") {
 // SAMPLE TUTOR INFORMATION
 // ===================================
 
-const tutors = [
+const sampleTutors = [
 
     {
         id: 1,
@@ -101,6 +104,140 @@ const tutors = [
 
 
 // ===================================
+// SAFE LOCAL STORAGE READER
+// ===================================
+
+function getSavedArray(key) {
+
+    try {
+
+        const data = JSON.parse(
+            localStorage.getItem(key) || "[]"
+        );
+
+        return Array.isArray(data) ? data : [];
+
+    } catch (error) {
+
+        console.error("Error reading localStorage:", error);
+
+        return [];
+
+    }
+
+}
+
+
+// ===================================
+// LOAD REGISTERED TUTOR PROFILES
+// ===================================
+
+const savedTutorProfiles = getSavedArray("pt_tutor_profiles");
+
+
+const registeredTutors = savedTutorProfiles.flatMap(function(profile) {
+
+    const subjects = Array.isArray(profile.subjects)
+        ? profile.subjects
+        : [];
+
+    const modes = Array.isArray(profile.modes)
+        ? profile.modes
+        : [];
+
+
+    // CHECK PROFILE INFORMATION
+    if (
+        !profile.id ||
+        !profile.email ||
+        !profile.name ||
+        subjects.length === 0 ||
+        modes.length === 0
+    ) {
+
+        return [];
+
+    }
+
+
+    // CREATE A TUTOR CARD FOR EACH SUBJECT
+    return subjects.map(function(subject, index) {
+
+        const name = String(profile.name);
+
+        const initials = profile.initials ||
+            name.split(" ")
+                .filter(Boolean)
+                .map(part => part.charAt(0).toUpperCase())
+                .slice(0, 2)
+                .join("");
+
+
+        return {
+
+            // UNIQUE REGISTERED TUTOR ID
+            id: `registered-${profile.id}-${index}`,
+
+            // ORIGINAL TUTOR ACCOUNT INFORMATION
+            accountId: profile.id,
+
+            email: profile.email,
+
+            name: name,
+
+            subject: subject,
+
+            expertise: profile.expertise || "No expertise provided",
+
+            description: profile.bio || "No biography available.",
+
+            rating: Number(profile.rating) || 0,
+
+            initials: initials,
+
+            color: profile.color || "tutor-blue",
+
+            modes: modes
+
+        };
+
+    });
+
+});
+
+
+// ===================================
+// COMBINE REGISTERED AND SAMPLE TUTORS
+// ===================================
+
+// Registered tutors have priority.
+// Avoid showing the same tutor and subject twice.
+
+const tutors = [
+
+    ...registeredTutors,
+
+    ...sampleTutors.filter(function(sampleTutor) {
+
+        return !registeredTutors.some(function(registeredTutor) {
+
+            return (
+
+                sampleTutor.name.toLowerCase() ===
+                registeredTutor.name.toLowerCase() &&
+
+                sampleTutor.subject === registeredTutor.subject
+
+            );
+
+        });
+
+    })
+
+];
+
+
+// ===================================
 // GET HTML ELEMENTS
 // ===================================
 
@@ -116,6 +253,12 @@ const resultsCount = document.getElementById("resultsCount");
 
 const noTutors = document.getElementById("noTutors");
 
+const clearFiltersButton = document.getElementById("clearFilters");
+
+const resetSearchButton = document.getElementById("resetSearch");
+
+const logoutButton = document.getElementById("logoutBtn");
+
 
 // ===================================
 // ESCAPE HTML CONTENT
@@ -123,14 +266,16 @@ const noTutors = document.getElementById("noTutors");
 
 function escapeHTML(value) {
 
-    return String(value).replace(/[&<>"']/g, function(character) {
+    return String(value ?? "").replace(/[&<>"']/g, function(character) {
 
         return {
+
             "&": "&amp;",
             "<": "&lt;",
             ">": "&gt;",
             '"': "&quot;",
             "'": "&#39;"
+
         }[character];
 
     });
@@ -146,6 +291,8 @@ function displayTutors(tutorData) {
 
     tutorList.innerHTML = "";
 
+
+    // CHECK IF THERE ARE AVAILABLE TUTORS
     if (tutorData.length === 0) {
 
         noTutors.classList.remove("hidden");
@@ -156,111 +303,191 @@ function displayTutors(tutorData) {
 
     }
 
+
     noTutors.classList.add("hidden");
 
     resultsCount.textContent =
         `Showing ${tutorData.length} tutor(s)`;
 
 
+    // DISPLAY EACH TUTOR
     tutorData.forEach(function(tutor) {
 
-        const modeBadges = tutor.modes.map(function(mode) {
+
+        // GET TUTORING MODES
+        const tutorModes = Array.isArray(tutor.modes)
+            ? tutor.modes
+            : [];
+
+
+        // CREATE MODE BADGES
+        const modeBadges = tutorModes.map(function(mode) {
 
             const modeClass = mode === "Online"
                 ? "online-badge"
                 : "face-badge";
 
             return `
+
                 <span class="mode-badge ${modeClass}">
+
                     ${escapeHTML(mode)}
+
                 </span>
+
             `;
 
         }).join("");
 
 
+        // DISPLAY RATING
+        const rating = Number(tutor.rating) || 0;
+
+        const ratingText = rating > 0
+            ? rating.toFixed(1)
+            : "New";
+
+
+        const ratingDescription = rating > 0
+            ? "Tutor Rating"
+            : "No ratings yet";
+
+
+        // CREATE TUTOR CARD
         const tutorCard = document.createElement("article");
 
         tutorCard.className = "find-tutor-card";
+
 
         tutorCard.innerHTML = `
 
             <div class="find-card-top">
 
                 <div class="find-tutor-avatar ${escapeHTML(tutor.color)}">
+
                     ${escapeHTML(tutor.initials)}
+
                 </div>
 
-                <span class="peer-label">Peer Tutor</span>
+                <span class="peer-label">
+
+                    Peer Tutor
+
+                </span>
 
             </div>
+
 
             <h3>${escapeHTML(tutor.name)}</h3>
 
+
             <p class="find-tutor-subject">
+
                 ${escapeHTML(tutor.subject)}
+
             </p>
+
 
             <p class="tutor-expertise">
+
                 ${escapeHTML(tutor.expertise)}
+
             </p>
+
 
             <p class="find-tutor-description">
+
                 ${escapeHTML(tutor.description)}
+
             </p>
 
+
             <div class="find-tutor-rating">
-                ⭐ ${escapeHTML(tutor.rating)}
-                <span>Sample Rating</span>
+
+                ⭐ ${escapeHTML(ratingText)}
+
+                <span>${ratingDescription}</span>
+
             </div>
+
 
             <div class="tutor-modes">
+
                 ${modeBadges}
+
             </div>
 
+
             <button
+
                 class="view-profile-button"
-                data-tutor-id="${tutor.id}"
+
+                data-tutor-id="${escapeHTML(tutor.id)}"
+
             >
+
                 View Profile →
+
             </button>
 
         `;
+
 
         tutorList.appendChild(tutorCard);
 
     });
 
+}
 
-    // ADD PROFILE BUTTON EVENTS
-    document.querySelectorAll(".view-profile-button").forEach(function(button) {
 
-        button.addEventListener("click", function() {
+// ===================================
+// VIEW TUTOR PROFILE
+// ===================================
 
-            const tutorId = Number(this.dataset.tutorId);
+tutorList.addEventListener("click", function(event) {
 
-            const selectedTutor = tutors.find(function(tutor) {
+    const button = event.target.closest(".view-profile-button");
 
-                return tutor.id === tutorId;
+    if (!button) return;
 
-            });
 
-            if (selectedTutor) {
+    // GET TUTOR ID AS STRING
+    // Registered tutor IDs are not numbers.
 
-                sessionStorage.setItem(
-                    "pt_selected_tutor",
-                    JSON.stringify(selectedTutor)
-                );
+    const tutorId = button.dataset.tutorId;
 
-                window.location.href = "tutor-profile.html";
 
-            }
+    // FIND SELECTED TUTOR
+    const selectedTutor = tutors.find(function(tutor) {
 
-        });
+        return String(tutor.id) === String(tutorId);
 
     });
 
-}
+
+    if (!selectedTutor) {
+
+        alert("Tutor profile not found. Please try again.");
+
+        return;
+
+    }
+
+
+    // SAVE SELECTED TUTOR
+    sessionStorage.setItem(
+
+        "pt_selected_tutor",
+
+        JSON.stringify(selectedTutor)
+
+    );
+
+
+    // OPEN TUTOR PROFILE PAGE
+    window.location.href = "tutor-profile.html";
+
+});
 
 
 // ===================================
@@ -269,29 +496,69 @@ function displayTutors(tutorData) {
 
 function filterTutors() {
 
-    const searchValue = tutorSearch.value.trim().toLowerCase();
+    const searchValue =
+        tutorSearch.value.trim().toLowerCase();
 
-    const selectedSubject = subjectFilter.value;
+    const selectedSubject =
+        subjectFilter.value;
 
-    const selectedMode = modeFilter.value;
+    const selectedMode =
+        modeFilter.value;
 
 
     const filteredTutors = tutors.filter(function(tutor) {
 
-        const matchesSearch =
-            tutor.name.toLowerCase().includes(searchValue) ||
-            tutor.subject.toLowerCase().includes(searchValue) ||
-            tutor.expertise.toLowerCase().includes(searchValue);
 
+        // SEARCH BY NAME, SUBJECT, OR EXPERTISE
+        const matchesSearch =
+
+            String(tutor.name || "")
+                .toLowerCase()
+                .includes(searchValue)
+
+            ||
+
+            String(tutor.subject || "")
+                .toLowerCase()
+                .includes(searchValue)
+
+            ||
+
+            String(tutor.expertise || "")
+                .toLowerCase()
+                .includes(searchValue);
+
+
+        // FILTER BY SUBJECT
         const matchesSubject =
+
             selectedSubject === "all" ||
+
             tutor.subject === selectedSubject;
 
-        const matchesMode =
-            selectedMode === "all" ||
-            tutor.modes.includes(selectedMode);
 
-        return matchesSearch && matchesSubject && matchesMode;
+        // FILTER BY TUTORING MODE
+        const matchesMode =
+
+            selectedMode === "all" ||
+
+            (
+                Array.isArray(tutor.modes) &&
+
+                tutor.modes.includes(selectedMode)
+
+            );
+
+
+        return (
+
+            matchesSearch &&
+
+            matchesSubject &&
+
+            matchesMode
+
+        );
 
     });
 
@@ -313,6 +580,8 @@ function clearFilters() {
 
     modeFilter.value = "all";
 
+
+    // DISPLAY ALL TUTORS AGAIN
     filterTutors();
 
 }
@@ -322,59 +591,91 @@ function clearFilters() {
 // EVENT LISTENERS
 // ===================================
 
+
+// SEARCH WHILE TYPING
 tutorSearch.addEventListener("input", filterTutors);
 
+
+// FILTER BY SUBJECT
 subjectFilter.addEventListener("change", filterTutors);
 
+
+// FILTER BY TUTORING MODE
 modeFilter.addEventListener("change", filterTutors);
 
-document.getElementById("clearFilters")
-    .addEventListener("click", clearFilters);
 
-document.getElementById("resetSearch")
-    .addEventListener("click", clearFilters);
+// CLEAR FILTERS BUTTON
+clearFiltersButton.addEventListener("click", clearFilters);
+
+
+// RESET SEARCH BUTTON
+resetSearchButton.addEventListener("click", clearFilters);
 
 
 // ===================================
-// STUDENT INFORMATION
+// DISPLAY STUDENT INFORMATION
 // ===================================
 
 function displayStudentInfo() {
 
     if (!currentUser) return;
 
+
     const name = currentUser.name || "Student";
 
+
+    // STUDENT NAME
     document.getElementById("studentName").textContent = name;
 
+
+    // STUDENT INITIALS
     const initials = name
+
         .split(" ")
+
         .filter(Boolean)
+
         .map(part => part.charAt(0).toUpperCase())
+
         .slice(0, 2)
+
         .join("");
+
 
     document.getElementById("userInitials").textContent =
         initials || "ST";
 
+
+    // CURRENT DATE
     document.getElementById("currentDate").textContent =
+
         new Date().toLocaleDateString("en-US", {
+
             weekday: "long",
+
             month: "long",
+
             day: "numeric",
+
             year: "numeric"
+
         });
 
 }
 
 
 // ===================================
-// LOGOUT
+// LOGOUT FUNCTION
 // ===================================
 
-document.getElementById("logoutBtn").addEventListener("click", function() {
+logoutButton.addEventListener("click", function() {
 
-    if (confirm("Are you sure you want to log out?")) {
+    const confirmLogout = confirm(
+        "Are you sure you want to log out?"
+    );
+
+
+    if (confirmLogout) {
 
         sessionStorage.removeItem("pt_current_user");
 
@@ -393,10 +694,25 @@ document.getElementById("logoutBtn").addEventListener("click", function() {
 
 if (currentUser && currentUser.role === "student") {
 
+    // DISPLAY STUDENT INFORMATION
     displayStudentInfo();
 
+
+    // DISPLAY ALL AVAILABLE TUTORS
     displayTutors(tutors);
+
 
 }
 
-console.log("Find Tutors Page Loaded Successfully!");
+
+// ===================================
+// CONSOLE MESSAGE
+// ===================================
+
+console.log("PeerTutor Find Tutors Loaded Successfully!");
+
+console.log("Sample Tutors:", sampleTutors);
+
+console.log("Registered Tutors:", registeredTutors);
+
+console.log("All Available Tutors:", tutors);

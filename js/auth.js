@@ -237,25 +237,24 @@ if (loginForm) {
 
 
 // REDIRECT BASED ON USER ROLE
-setTimeout(function() {
 
+setTimeout(function () {
     if (loggedInUser.role === "student") {
-
         window.location.href = "student/dashboard.html";
 
     } else if (loggedInUser.role === "tutor") {
-
-        alert("Tutor account detected. The Tutor Dashboard is not yet available. Please use a Student account to test the Student Dashboard.");
-
-        window.location.href = "index.html";
+        window.location.href = "tutor/dashboard.html";
 
     } else {
+        sessionStorage.removeItem("pt_current_user");
 
-        alert("Invalid account role.");
-
+        showMessage(
+            "loginMessage",
+            "Admin accounts must use the separate Admin Login page."
+        );
     }
-
 }, 1200);
+
 
 
     });

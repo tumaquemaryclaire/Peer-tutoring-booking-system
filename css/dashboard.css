@@ -1693,3 +1693,2872 @@
     }
 
 }
+
+/* ===================================
+   MY BOOKINGS PAGE
+=================================== */
+
+
+/* PAGE BANNER */
+
+.my-bookings-banner {
+    background: linear-gradient(120deg, #173b67, #3479b8);
+    color: white;
+    border-radius: 15px;
+    padding: 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.my-bookings-banner h1 {
+    font-size: 28px;
+    margin: 8px 0;
+}
+
+.my-bookings-banner p {
+    color: #dceaff;
+    font-size: 13px;
+    max-width: 550px;
+}
+
+.my-bookings-banner-icon {
+    width: 110px;
+    height: 110px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.13);
+    display: grid;
+    place-items: center;
+    font-size: 60px;
+    flex-shrink: 0;
+}
+
+
+/* BOOKING STATISTICS */
+
+.my-booking-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 15px;
+    margin-bottom: 35px;
+}
+
+.my-booking-stat {
+    background: white;
+    border: 1px solid #e6edf5;
+    border-radius: 11px;
+    padding: 18px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.my-stat-icon {
+    width: 45px;
+    height: 45px;
+    display: grid;
+    place-items: center;
+    font-size: 20px;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.my-booking-stat p {
+    font-size: 11px;
+    color: #8190a2;
+}
+
+.my-booking-stat h2 {
+    color: #173b67;
+    font-size: 24px;
+}
+
+
+/* MAIN BOOKING SECTION */
+
+.my-bookings-section {
+    margin-bottom: 35px;
+}
+
+.my-bookings-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.my-bookings-heading h2 {
+    color: #173b67;
+    font-size: 20px;
+    margin-bottom: 4px;
+}
+
+.my-bookings-heading p {
+    color: #8190a2;
+    font-size: 12px;
+}
+
+.new-booking-btn {
+    display: inline-block;
+    background: #2563a6;
+    color: white;
+    padding: 11px 16px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: bold;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: 0.3s;
+}
+
+.new-booking-btn:hover {
+    background: #173b67;
+}
+
+
+/* SEARCH AND FILTER */
+
+.booking-filter-panel {
+    background: white;
+    border: 1px solid #e5ebf2;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 18px;
+}
+
+.booking-search-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid #dce4ee;
+    border-radius: 8px;
+    padding: 0 13px;
+}
+
+.booking-search-wrapper span {
+    font-size: 18px;
+}
+
+.booking-search-wrapper input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    outline: none;
+    padding: 13px 0;
+    font-size: 13px;
+}
+
+.booking-search-wrapper:focus-within {
+    border-color: #2563a6;
+    box-shadow: 0 0 0 3px rgba(37,99,166,0.08);
+}
+
+.booking-filter-group {
+    display: flex;
+    align-items: end;
+    gap: 18px;
+    margin-top: 17px;
+}
+
+.booking-filter-group > div {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    flex: 1;
+}
+
+.booking-filter-group label {
+    font-size: 12px;
+    font-weight: bold;
+    color: #475467;
+}
+
+.booking-filter-group select {
+    padding: 11px 12px;
+    border: 1px solid #dce4ee;
+    border-radius: 8px;
+    font-size: 13px;
+    background: white;
+    outline: none;
+}
+
+.booking-filter-group select:focus {
+    border-color: #2563a6;
+}
+
+.clear-booking-btn {
+    background: transparent;
+    color: #2563a6;
+    border: none;
+    padding: 11px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.clear-booking-btn:hover {
+    text-decoration: underline;
+}
+
+
+/* RESULTS COUNT */
+
+.booking-results {
+    margin-bottom: 14px;
+}
+
+.booking-results p {
+    color: #8190a2;
+    font-size: 12px;
+}
+
+
+/* BOOKING CARDS */
+
+.my-booking-list {
+    display: grid;
+    gap: 18px;
+}
+
+.my-booking-card {
+    background: white;
+    border: 1px solid #e5ebf2;
+    border-radius: 12px;
+    padding: 22px;
+    transition: 0.3s;
+}
+
+.my-booking-card:hover {
+    box-shadow: 0 7px 20px rgba(23,59,103,0.06);
+}
+
+.my-booking-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #edf0f4;
+    margin-bottom: 18px;
+}
+
+.my-booking-tutor {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+}
+
+.my-booking-avatar {
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    background: #edf5ff;
+    border-radius: 50%;
+    font-size: 23px;
+}
+
+.my-booking-tutor h3 {
+    color: #173b67;
+    font-size: 15px;
+    margin-bottom: 3px;
+}
+
+.my-booking-tutor p {
+    color: #2563a6;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+
+/* STATUS BADGES */
+
+.my-booking-status {
+    padding: 7px 12px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.my-status-pending {
+    background: #fff3df;
+    color: #a76c10;
+}
+
+.my-status-approved {
+    background: #e5f7ed;
+    color: #16804a;
+}
+
+.my-status-rejected {
+    background: #ffebeb;
+    color: #c03939;
+}
+
+.my-status-completed {
+    background: #e8f2ff;
+    color: #2563a6;
+}
+
+.my-status-cancelled {
+    background: #f0f1f3;
+    color: #667085;
+}
+
+
+/* BOOKING DETAILS */
+
+.my-booking-details {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 19px;
+}
+
+.my-booking-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.my-booking-detail span {
+    color: #8995a5;
+    font-size: 11px;
+}
+
+.my-booking-detail strong {
+    color: #344054;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+
+
+/* BOOKING NOTES */
+
+.my-booking-notes {
+    background: #f5f8fc;
+    padding: 13px;
+    border-radius: 8px;
+    margin-top: 18px;
+}
+
+.my-booking-notes strong {
+    font-size: 11px;
+    color: #173b67;
+}
+
+.my-booking-notes p {
+    color: #68778b;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+
+/* BOOKING CARD FOOTER */
+
+.my-booking-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    border-top: 1px solid #edf0f4;
+    margin-top: 18px;
+    padding-top: 16px;
+}
+
+.booking-id {
+    color: #8995a5;
+    font-size: 10px;
+}
+
+.booking-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+}
+
+.cancel-booking-btn,
+.give-feedback-btn {
+    padding: 9px 13px;
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: bold;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.cancel-booking-btn {
+    color: #c03939;
+    background: #ffebeb;
+    border: 1px solid #f4d2d2;
+}
+
+.cancel-booking-btn:hover {
+    background: #ffdddd;
+}
+
+.give-feedback-btn {
+    display: inline-block;
+    color: #2563a6;
+    background: #e8f2ff;
+}
+
+.give-feedback-btn:hover {
+    background: #dceaff;
+}
+
+
+/* EMPTY BOOKINGS */
+
+.empty-bookings {
+    background: white;
+    border: 1px dashed #cbd7e5;
+    border-radius: 12px;
+    text-align: center;
+    padding: 45px 20px;
+}
+
+.empty-booking-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+.empty-bookings h3 {
+    color: #173b67;
+    margin-bottom: 8px;
+}
+
+.empty-bookings p {
+    color: #8190a2;
+    font-size: 13px;
+    margin-bottom: 20px;
+}
+
+
+/* REMINDER */
+
+.my-booking-reminder {
+    background: #edf5ff;
+    border: 1px solid #d8e8fa;
+    padding: 22px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 17px;
+    margin-bottom: 30px;
+}
+
+.my-booking-reminder h3 {
+    color: #173b67;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.my-booking-reminder p {
+    color: #68778b;
+    font-size: 12px;
+}
+
+
+/* RESPONSIVE DESIGN */
+
+@media (max-width: 1100px) {
+
+    .my-booking-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+}
+
+@media (max-width: 650px) {
+
+    .my-bookings-banner {
+        padding: 24px;
+    }
+
+    .my-bookings-banner h1 {
+        font-size: 23px;
+    }
+
+    .my-bookings-banner-icon {
+        display: none;
+    }
+
+    .my-bookings-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .booking-filter-group {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .my-booking-details {
+        grid-template-columns: 1fr;
+    }
+
+    .my-booking-stats {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .my-booking-reminder {
+        align-items: flex-start;
+    }
+
+    .clear-booking-btn {
+        align-self: flex-start;
+    }
+
+}
+
+@media (max-width: 400px) {
+
+    .my-booking-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .my-booking-card {
+        padding: 16px;
+    }
+
+}
+
+/* ===================================
+   PEERTUTOR - FEEDBACK PAGE
+=================================== */
+
+
+/* FEEDBACK BANNER */
+
+.feedback-banner {
+    background: linear-gradient(120deg, #173b67, #3479b8);
+    color: white;
+    padding: 32px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.feedback-banner h1 {
+    font-size: 28px;
+    margin: 8px 0;
+}
+
+.feedback-banner p {
+    color: #dceaff;
+    font-size: 13px;
+    max-width: 550px;
+}
+
+.feedback-banner-icon {
+    width: 110px;
+    height: 110px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.13);
+    display: grid;
+    place-items: center;
+    font-size: 60px;
+    flex-shrink: 0;
+}
+
+
+/* FEEDBACK FORM CARD */
+
+.feedback-form-section {
+    background: white;
+    border: 1px solid #e5ebf2;
+    border-radius: 13px;
+    padding: 30px;
+    max-width: 850px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 15px rgba(23,59,103,0.03);
+}
+
+.feedback-heading {
+    margin-bottom: 25px;
+}
+
+.feedback-heading h2 {
+    color: #173b67;
+    font-size: 21px;
+    margin-bottom: 6px;
+}
+
+.feedback-heading p {
+    color: #8190a2;
+    font-size: 12px;
+}
+
+
+/* FORM FIELDS */
+
+.feedback-form-group {
+    margin-bottom: 23px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.feedback-form-group label {
+    font-size: 13px;
+    color: #344054;
+    font-weight: bold;
+}
+
+.feedback-form-group select,
+.feedback-form-group textarea {
+    width: 100%;
+    padding: 13px 14px;
+    border: 1px solid #dce4ee;
+    border-radius: 8px;
+    background: white;
+    color: #344054;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 13px;
+    outline: none;
+    transition: 0.2s;
+}
+
+.feedback-form-group select:focus,
+.feedback-form-group textarea:focus {
+    border-color: #2563a6;
+    box-shadow: 0 0 0 3px rgba(37,99,166,0.08);
+}
+
+.feedback-form-group textarea {
+    resize: vertical;
+    min-height: 120px;
+    line-height: 1.6;
+}
+
+.feedback-form-group small {
+    color: #8995a5;
+    font-size: 11px;
+}
+
+
+/* SELECTED SESSION DETAILS */
+
+.selected-session-details {
+    background: #f5f8fc;
+    border: 1px solid #e3eaf2;
+    padding: 18px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+}
+
+.selected-session-details h3 {
+    color: #173b67;
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+.feedback-session-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.feedback-session-details div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.feedback-session-details span {
+    color: #8995a5;
+    font-size: 11px;
+}
+
+.feedback-session-details strong {
+    color: #344054;
+    font-size: 12px;
+}
+
+
+/* STAR RATING */
+
+.star-rating {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.star-button {
+    background: transparent;
+    border: none;
+    color: #cbd5e1;
+    font-size: 38px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: 0.2s;
+}
+
+.star-button:hover {
+    transform: scale(1.12);
+    color: #f5b942;
+}
+
+.star-button.selected {
+    color: #f5b942;
+}
+
+.rating-label {
+    font-size: 12px;
+    color: #8995a5;
+}
+
+
+/* FEEDBACK MESSAGE */
+
+.feedback-message {
+    min-height: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 12px;
+}
+
+
+/* SUBMIT BUTTON */
+
+.feedback-submit-btn {
+    background: #2563a6;
+    color: white;
+    padding: 13px 20px;
+    border: none;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.feedback-submit-btn:hover {
+    background: #173b67;
+}
+
+
+/* NO COMPLETED SESSIONS */
+
+.no-feedback-sessions {
+    background: white;
+    border: 1px dashed #cbd7e5;
+    border-radius: 13px;
+    padding: 45px 20px;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.no-feedback-sessions > div {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+.no-feedback-sessions h3 {
+    color: #173b67;
+    font-size: 19px;
+    margin-bottom: 8px;
+}
+
+.no-feedback-sessions p {
+    color: #8190a2;
+    font-size: 13px;
+    max-width: 450px;
+    margin: 0 auto 20px;
+}
+
+.feedback-action-btn {
+    display: inline-block;
+    background: #2563a6;
+    color: white;
+    text-decoration: none;
+    padding: 11px 17px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+
+/* SUCCESS MESSAGE */
+
+.feedback-success {
+    background: #eaf8f0;
+    border: 1px solid #c8ebd7;
+    color: #16804a;
+    padding: 15px 18px;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 25px;
+}
+
+
+/* FEEDBACK HISTORY */
+
+.feedback-history-section {
+    margin-bottom: 35px;
+}
+
+.feedback-history-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.feedback-history-heading h2 {
+    color: #173b67;
+    font-size: 20px;
+    margin-bottom: 5px;
+}
+
+.feedback-history-heading p {
+    color: #8190a2;
+    font-size: 12px;
+}
+
+.feedback-count {
+    background: #e8f2ff;
+    color: #2563a6;
+    border-radius: 20px;
+    padding: 7px 12px;
+    font-size: 11px;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.feedback-history-list {
+    display: grid;
+    gap: 16px;
+}
+
+.feedback-history-card {
+    background: white;
+    border: 1px solid #e5ebf2;
+    border-radius: 12px;
+    padding: 22px;
+    transition: 0.3s;
+}
+
+.feedback-history-card:hover {
+    box-shadow: 0 6px 20px rgba(23,59,103,0.05);
+}
+
+.feedback-history-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.feedback-history-top h3 {
+    color: #173b67;
+    font-size: 15px;
+    margin-bottom: 4px;
+}
+
+.feedback-history-top p {
+    color: #2563a6;
+    font-size: 12px;
+}
+
+.feedback-history-date {
+    color: #8995a5;
+    font-size: 11px;
+}
+
+.feedback-history-stars {
+    color: #f5b942;
+    font-size: 21px;
+    margin-bottom: 15px;
+}
+
+.feedback-history-stars span {
+    color: #68778b;
+    font-size: 11px;
+    margin-left: 7px;
+}
+
+.feedback-comment-box {
+    background: #f5f8fc;
+    border-radius: 9px;
+    padding: 15px;
+    margin-bottom: 13px;
+}
+
+.feedback-comment-box strong {
+    color: #173b67;
+    font-size: 12px;
+}
+
+.feedback-comment-box p {
+    color: #68778b;
+    font-size: 12px;
+    line-height: 1.7;
+    margin-top: 6px;
+    overflow-wrap: anywhere;
+}
+
+.feedback-submitted-label {
+    color: #16804a;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+
+/* EMPTY FEEDBACK HISTORY */
+
+.empty-feedback-history {
+    background: white;
+    border: 1px dashed #cbd7e5;
+    border-radius: 12px;
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.empty-feedback-history > div {
+    font-size: 42px;
+    margin-bottom: 10px;
+}
+
+.empty-feedback-history h3 {
+    color: #173b67;
+    font-size: 17px;
+    margin-bottom: 7px;
+}
+
+.empty-feedback-history p {
+    color: #8190a2;
+    font-size: 12px;
+}
+
+
+/* FEEDBACK RESPONSIVENESS */
+
+@media (max-width: 650px) {
+
+    .feedback-banner {
+        padding: 25px;
+    }
+
+    .feedback-banner h1 {
+        font-size: 22px;
+    }
+
+    .feedback-banner-icon {
+        display: none;
+    }
+
+    .feedback-form-section {
+        padding: 20px;
+    }
+
+    .feedback-session-details {
+        grid-template-columns: 1fr;
+    }
+
+    .feedback-history-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .feedback-history-top {
+        flex-direction: column;
+    }
+
+    .star-button {
+        font-size: 32px;
+    }
+
+}
+
+/* ===================================
+   PEERTUTOR - TUTOR DASHBOARD
+=================================== */
+
+
+/* TUTOR WELCOME SECTION */
+
+.tutor-welcome {
+    background: linear-gradient(120deg, #173b67, #3479b8);
+    padding: 35px;
+    border-radius: 15px;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 25px;
+    margin-bottom: 35px;
+}
+
+.tutor-welcome h1 {
+    font-size: 29px;
+    margin: 8px 0;
+}
+
+.tutor-welcome h1 span {
+    color: #a9d4ff;
+}
+
+.tutor-welcome p:not(.welcome-small) {
+    color: #dceaff;
+    font-size: 13px;
+    max-width: 510px;
+    margin-bottom: 20px;
+}
+
+.tutor-primary-btn {
+    display: inline-block;
+    background: white;
+    color: #205b96;
+    text-decoration: none;
+    padding: 11px 18px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.tutor-primary-btn:hover {
+    background: #e5f1ff;
+}
+
+.tutor-welcome-icon {
+    width: 175px;
+    min-height: 145px;
+    background: rgba(255,255,255,0.13);
+    border-radius: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    font-size: 55px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.tutor-welcome-icon span {
+    font-size: 11px;
+    color: white;
+    margin-top: 7px;
+}
+
+
+/* TUTOR DASHBOARD REMINDER */
+
+.tutor-dashboard-reminder {
+    background: #edf5ff;
+    border: 1px solid #d8e8fa;
+    padding: 22px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 30px;
+}
+
+
+/* TUTOR DASHBOARD RESPONSIVENESS */
+
+@media (max-width: 700px) {
+
+    .tutor-welcome {
+        padding: 25px;
+    }
+
+    .tutor-welcome h1 {
+        font-size: 23px;
+    }
+
+    .tutor-welcome-icon {
+        display: none;
+    }
+
+}
+
+/* ===================================
+   TUTOR - MANAGE PROFILE
+=================================== */
+
+
+/* PROFILE BANNER */
+
+.manage-profile-banner {
+    background: linear-gradient(120deg, #173b67, #3479b8);
+    color: white;
+    padding: 32px;
+    border-radius: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.manage-profile-banner h1 {
+    font-size: 27px;
+    margin: 8px 0;
+}
+
+.manage-profile-banner p {
+    color: #dceaff;
+    font-size: 13px;
+    max-width: 550px;
+}
+
+.manage-profile-icon {
+    width: 110px;
+    height: 110px;
+    background: rgba(255,255,255,0.13);
+    border-radius: 18px;
+    display: grid;
+    place-items: center;
+    font-size: 60px;
+    flex-shrink: 0;
+}
+
+
+/* PROFILE LAYOUT */
+
+.manage-profile-layout {
+    display: grid;
+    grid-template-columns: 1.5fr 0.8fr;
+    align-items: start;
+    gap: 22px;
+    margin-bottom: 35px;
+}
+
+.manage-profile-card,
+.profile-preview-card {
+    background: white;
+    border: 1px solid #e5ebf2;
+    border-radius: 13px;
+    padding: 27px;
+}
+
+.manage-profile-heading {
+    margin-bottom: 25px;
+}
+
+.manage-profile-heading h2 {
+    color: #173b67;
+    font-size: 20px;
+    margin-bottom: 6px;
+}
+
+.manage-profile-heading p {
+    color: #8190a2;
+    font-size: 12px;
+}
+
+
+/* PROFILE FORM */
+
+.profile-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    margin-bottom: 23px;
+}
+
+.profile-form-group > label {
+    color: #344054;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.profile-form-group > input,
+.profile-form-group > textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #dce4ee;
+    border-radius: 8px;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 13px;
+    outline: none;
+    background: white;
+    color: #344054;
+}
+
+.profile-form-group > input:focus,
+.profile-form-group > textarea:focus {
+    border-color: #2563a6;
+    box-shadow: 0 0 0 3px rgba(37,99,166,0.08);
+}
+
+.profile-form-group > input[readonly] {
+    background: #f5f8fc;
+    cursor: not-allowed;
+}
+
+.profile-form-group > textarea {
+    min-height: 120px;
+    resize: vertical;
+    line-height: 1.6;
+}
+
+.profile-form-group > small,
+.profile-help-text {
+    color: #8995a5;
+    font-size: 11px;
+}
+
+
+/* SUBJECT CHECKBOXES */
+
+.profile-checkbox-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 11px;
+    margin-top: 5px;
+}
+
+.profile-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 12px;
+    background: #f7faff;
+    border: 1px solid #e5ebf2;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.profile-checkbox:hover {
+    border-color: #9fc3e9;
+    background: #edf5ff;
+}
+
+.profile-checkbox input {
+    accent-color: #2563a6;
+    width: 15px;
+    height: 15px;
+    cursor: pointer;
+}
+
+.profile-checkbox span {
+    color: #475467;
+    font-size: 11px;
+    font-weight: normal;
+}
+
+
+/* TUTORING MODE OPTIONS */
+
+.profile-mode-options {
+    display: grid;
+    gap: 12px;
+    margin-top: 5px;
+}
+
+.profile-mode-option {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    border: 1px solid #e5ebf2;
+    border-radius: 9px;
+    padding: 14px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.profile-mode-option:hover {
+    background: #f7faff;
+    border-color: #9fc3e9;
+}
+
+.profile-mode-option input {
+    width: 16px;
+    height: 16px;
+    accent-color: #2563a6;
+}
+
+.mode-option-icon {
+    font-size: 25px;
+}
+
+.profile-mode-option > span:last-child {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.profile-mode-option strong {
+    color: #173b67;
+    font-size: 12px;
+}
+
+.profile-mode-option small {
+    color: #8995a5;
+    font-size: 10px;
+}
+
+
+/* FORM BUTTONS */
+
+.profile-message {
+    min-height: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 12px;
+}
+
+.profile-form-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 11px;
+}
+
+.profile-save-btn,
+.profile-reset-btn {
+    border: none;
+    border-radius: 7px;
+    padding: 12px 17px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.profile-save-btn {
+    color: white;
+    background: #2563a6;
+}
+
+.profile-save-btn:hover {
+    background: #173b67;
+}
+
+.profile-reset-btn {
+    color: #526174;
+    background: #eef2f6;
+}
+
+.profile-reset-btn:hover {
+    background: #dfe7f0;
+}
+
+
+/* PROFILE PREVIEW */
+
+.profile-preview-card {
+    position: sticky;
+    top: 25px;
+    text-align: center;
+}
+
+.preview-label {
+    display: inline-block;
+    color: #2563a6;
+    background: #edf5ff;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.preview-avatar {
+    width: 85px;
+    height: 85px;
+    background: #dceaff;
+    color: #205da0;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 25px;
+    font-weight: bold;
+    margin: 22px auto 12px;
+}
+
+.profile-preview-card > h3 {
+    color: #173b67;
+    font-size: 19px;
+}
+
+.preview-role {
+    color: #25815f;
+    font-size: 11px;
+    margin-top: 4px;
+}
+
+.preview-divider {
+    height: 1px;
+    background: #e9eef4;
+    margin: 20px 0;
+}
+
+.preview-information {
+    text-align: left;
+    margin-bottom: 19px;
+}
+
+.preview-information h4 {
+    color: #173b67;
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+.preview-information p {
+    color: #68778b;
+    font-size: 12px;
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+}
+
+#previewSubjects,
+#previewModes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.preview-badge {
+    display: inline-block;
+    background: #edf5ff;
+    color: #2563a6;
+    padding: 6px 9px;
+    border-radius: 20px;
+    font-size: 10px;
+}
+
+.preview-placeholder {
+    color: #8995a5;
+    font-size: 11px;
+}
+
+.preview-note {
+    background: #fff7e7;
+    color: #976b21;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 10px;
+    line-height: 1.6;
+    text-align: left;
+}
+
+
+/* RESPONSIVE DESIGN */
+
+@media (max-width: 1000px) {
+
+    .manage-profile-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-preview-card {
+        position: static;
+    }
+
+}
+
+@media (max-width: 650px) {
+
+    .manage-profile-banner {
+        padding: 24px;
+    }
+
+    .manage-profile-banner h1 {
+        font-size: 22px;
+    }
+
+    .manage-profile-icon {
+        display: none;
+    }
+
+    .manage-profile-card,
+    .profile-preview-card {
+        padding: 20px;
+    }
+
+    .profile-checkbox-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-form-buttons {
+        flex-direction: column;
+    }
+
+    .profile-save-btn,
+    .profile-reset-btn {
+        width: 100%;
+    }
+
+}
+
+/* ===================================
+   PEERTUTOR - MANAGE SCHEDULE
+=================================== */
+
+
+/* SCHEDULE BANNER */
+
+.schedule-banner {
+    background: linear-gradient(120deg, #173b67, #3479b8);
+    color: white;
+    padding: 32px;
+    border-radius: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.schedule-banner h1 {
+    font-size: 28px;
+    margin: 8px 0;
+}
+
+.schedule-banner p {
+    color: #dceaff;
+    font-size: 13px;
+    max-width: 550px;
+}
+
+.schedule-banner-icon {
+    width: 110px;
+    height: 110px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.13);
+    display: grid;
+    place-items: center;
+    font-size: 60px;
+    flex-shrink: 0;
+}
+
+
+/* SCHEDULE STATISTICS */
+
+.schedule-statistics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.schedule-stat-card {
+    background: white;
+    border: 1px solid #e6edf5;
+    border-radius: 11px;
+    padding: 19px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.schedule-stat-icon {
+    width: 47px;
+    height: 47px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.schedule-stat-card p {
+    color: #8190a2;
+    font-size: 12px;
+}
+
+.schedule-stat-card h2 {
+    color: #173b67;
+    font-size: 25px;
+}
+
+
+/* PROFILE WARNING */
+
+.schedule-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    background: #fff7e7;
+    border: 1px solid #f1dfb9;
+    border-radius: 10px;
+    padding: 17px;
+    margin-bottom: 25px;
+}
+
+.schedule-warning > span {
+    font-size: 23px;
+}
+
+.schedule-warning strong {
+    color: #94651e;
+    font-size: 13px;
+}
+
+.schedule-warning p {
+    color: #876d45;
+    font-size: 12px;
+    margin: 5px 0;
+}
+
+.schedule-warning a {
+    display: inline-block;
+    color: #2563a6;
+    font-size: 12px;
+    font-weight: bold;
+    text-decoration: none;
+    margin-top: 5px;
+}
+
+
+/* FORM CARD */
+
+.schedule-form-card {
+    background: white;
+    border: 1px solid #e5ebf2;
+    border-radius: 13px;
+    padding: 28px;
+    margin-bottom: 35px;
+}
+
+.schedule-form-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.schedule-form-heading h2 {
+    color: #173b67;
+    font-size: 21px;
+    margin-bottom: 6px;
+}
+
+.schedule-form-heading p {
+    color: #8190a2;
+    font-size: 12px;
+}
+
+.schedule-heading-icon {
+    font-size: 38px;
+}
+
+
+/* FORM FIELDS */
+
+.schedule-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.schedule-form-group label {
+    color: #344054;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.schedule-form-group input,
+.schedule-form-group select {
+    width: 100%;
+    padding: 13px;
+    border: 1px solid #dce4ee;
+    border-radius: 8px;
+    background: white;
+    color: #344054;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 13px;
+    outline: none;
+}
+
+.schedule-form-group input:focus,
+.schedule-form-group select:focus {
+    border-color: #2563a6;
+    box-shadow: 0 0 0 3px rgba(37,99,166,0.08);
+}
+
+.schedule-form-group small {
+    color: #8995a5;
+    font-size: 11px;
+}
+
+
+/* TIME GRID */
+
+.schedule-time-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+}
+
+
+/* FORM BUTTONS */
+
+.schedule-message {
+    min-height: 20px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.schedule-form-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.schedule-save-btn,
+.schedule-reset-btn {
+    padding: 12px 17px;
+    border: none;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.schedule-save-btn {
+    background: #2563a6;
+    color: white;
+}
+
+.schedule-save-btn:hover {
+    background: #173b67;
+}
+
+.schedule-reset-btn {
+    background: #eef2f6;
+    color: #526174;
+}
+
+.schedule-reset-btn:hover {
+    background: #dfe7f0;
+}
+
+
+/* SCHEDULE LIST */
+
+.saved-schedules-section {
+    margin-bottom: 35px;
+}
+
+.saved-schedules-heading {
+    margin-bottom: 20px;
+}
+
+.saved-schedules-heading h2 {
+    color: #173b67;
+    font-size: 20px;
+    margin-bottom: 5px;
+}
+
+.saved-schedules-heading p {
+    color: #8190a2;
+    font-size: 12px;
+}
+
+
+/* FILTER PANEL */
+
+.schedule-filter-panel {
+    background: white;
+    border: 1px solid #e5ebf2;
+    border-radius: 10px;
+    padding: 17px;
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 16px;
+}
+
+.schedule-filter-panel > div {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 7px;
+}
+
+.schedule-filter-panel label {
+    color: #475467;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.schedule-filter-panel select {
+    padding: 11px;
+    border: 1px solid #dce4ee;
+    border-radius: 8px;
+    background: white;
+    font-size: 13px;
+    outline: none;
+}
+
+.schedule-clear-btn {
+    background: transparent;
+    color: #2563a6;
+    border: none;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 11px;
+    cursor: pointer;
+}
+
+.schedule-clear-btn:hover {
+    text-decoration: underline;
+}
+
+
+/* RESULTS */
+
+.schedule-results {
+    color: #8190a2;
+    font-size: 12px;
+    margin-bottom: 15px;
+}
+
+.schedule-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+
+/* SCHEDULE CARD */
+
+.schedule-card {
+    background: white;
+    border: 1px solid #e5ebf2;
+    border-radius: 12px;
+    padding: 22px;
+    transition: 0.3s;
+    min-width: 0;
+}
+
+.schedule-card:hover {
+    box-shadow: 0 8px 22px rgba(23,59,103,0.06);
+}
+
+.schedule-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 19px;
+    flex-wrap: wrap;
+}
+
+.schedule-mode-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.schedule-mode-icon {
+    width: 45px;
+    height: 45px;
+    border-radius: 10px;
+    background: #edf5ff;
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+}
+
+.schedule-mode-title h3 {
+    color: #173b67;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.schedule-mode-title p {
+    color: #8995a5;
+    font-size: 11px;
+}
+
+
+/* STATUS */
+
+.schedule-status {
+    display: inline-block;
+    padding: 6px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.schedule-status-available {
+    background: #e5f7ed;
+    color: #16804a;
+}
+
+.schedule-status-booked {
+    background: #fff3df;
+    color: #a76c10;
+}
+
+
+/* SCHEDULE DETAILS */
+
+.schedule-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 17px;
+    padding: 17px 0;
+    border-top: 1px solid #edf0f4;
+    border-bottom: 1px solid #edf0f4;
+}
+
+.schedule-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.schedule-detail span {
+    color: #8995a5;
+    font-size: 10px;
+}
+
+.schedule-detail strong {
+    color: #344054;
+    font-size: 11px;
+    overflow-wrap: anywhere;
+}
+
+
+/* SCHEDULE FOOTER */
+
+.schedule-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 17px;
+}
+
+.schedule-card-footer > span {
+    color: #8995a5;
+    font-size: 10px;
+}
+
+.schedule-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.schedule-edit-btn,
+.schedule-delete-btn {
+    border: none;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.schedule-edit-btn {
+    background: #e8f2ff;
+    color: #2563a6;
+}
+
+.schedule-edit-btn:hover {
+    background: #dceaff;
+}
+
+.schedule-delete-btn {
+    background: #ffebeb;
+    color: #c03939;
+}
+
+.schedule-delete-btn:hover {
+    background: #ffdddd;
+}
+
+.schedule-locked-label {
+    color: #a76c10 !important;
+    font-weight: bold;
+}
+
+
+/* EMPTY STATE */
+
+.empty-schedules {
+    text-align: center;
+    padding: 45px 20px;
+    background: white;
+    border: 1px dashed #cbd7e5;
+    border-radius: 12px;
+}
+
+.empty-schedules > div {
+    font-size: 45px;
+    margin-bottom: 12px;
+}
+
+.empty-schedules h3 {
+    color: #173b67;
+    margin-bottom: 7px;
+}
+
+.empty-schedules p {
+    color: #8190a2;
+    font-size: 12px;
+}
+
+
+/* REMINDER */
+
+.schedule-reminder {
+    background: #edf5ff;
+    border: 1px solid #d8e8fa;
+    padding: 22px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 30px;
+}
+
+.schedule-reminder h3 {
+    color: #173b67;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.schedule-reminder p {
+    color: #68778b;
+    font-size: 12px;
+}
+
+
+/* RESPONSIVENESS */
+
+@media (max-width: 1000px) {
+
+    .schedule-list {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+@media (max-width: 650px) {
+
+    .schedule-banner {
+        padding: 24px;
+    }
+
+    .schedule-banner h1 {
+        font-size: 22px;
+    }
+
+    .schedule-banner-icon {
+        display: none;
+    }
+
+    .schedule-statistics {
+        grid-template-columns: 1fr;
+    }
+
+    .schedule-form-card {
+        padding: 20px;
+    }
+
+    .schedule-time-grid {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .schedule-form-buttons {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .schedule-form-buttons button {
+        width: 100%;
+    }
+
+    .schedule-filter-panel {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .schedule-clear-btn {
+        align-self: flex-start;
+    }
+
+    .schedule-details {
+        grid-template-columns: 1fr;
+    }
+
+    .schedule-reminder {
+        align-items: flex-start;
+    }
+
+}
+
+/* ===================================
+   PEERTUTOR - BOOKING REQUESTS
+=================================== */
+
+
+/* PAGE BANNER */
+
+.requests-banner {
+    background: linear-gradient(120deg, #173b67, #3479b8);
+    color: white;
+    padding: 32px;
+    border-radius: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.requests-banner h1 {
+    font-size: 28px;
+    margin: 8px 0;
+}
+
+.requests-banner p {
+    color: #dceaff;
+    font-size: 13px;
+    max-width: 550px;
+}
+
+.requests-banner-icon {
+    width: 110px;
+    height: 110px;
+    background: rgba(255,255,255,0.13);
+    border-radius: 18px;
+    display: grid;
+    place-items: center;
+    font-size: 60px;
+    flex-shrink: 0;
+}
+
+
+/* STATISTICS */
+
+.request-statistics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 15px;
+    margin-bottom: 35px;
+}
+
+.request-stat-card {
+    background: white;
+    border: 1px solid #e6edf5;
+    border-radius: 11px;
+    padding: 18px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.request-stat-icon {
+    width: 45px;
+    height: 45px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.request-stat-card p {
+    color: #8190a2;
+    font-size: 11px;
+}
+
+.request-stat-card h2 {
+    color: #173b67;
+    font-size: 24px;
+}
+
+
+/* MAIN SECTION */
+
+.requests-section {
+    margin-bottom: 35px;
+}
+
+.requests-section-heading {
+    margin-bottom: 20px;
+}
+
+.requests-section-heading h2 {
+    color: #173b67;
+    font-size: 20px;
+    margin-bottom: 5px;
+}
+
+.requests-section-heading p {
+    color: #8190a2;
+    font-size: 12px;
+}
+
+
+/* SEARCH AND FILTER */
+
+.request-filter-panel {
+    background: white;
+    border: 1px solid #e5ebf2;
+    border-radius: 11px;
+    padding: 19px;
+    margin-bottom: 17px;
+}
+
+.request-search {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid #dce4ee;
+    border-radius: 8px;
+    padding: 0 13px;
+}
+
+.request-search span {
+    font-size: 18px;
+}
+
+.request-search input {
+    flex: 1;
+    min-width: 0;
+    padding: 13px 0;
+    border: none;
+    outline: none;
+    font-size: 13px;
+}
+
+.request-search:focus-within {
+    border-color: #2563a6;
+    box-shadow: 0 0 0 3px rgba(37,99,166,0.08);
+}
+
+.request-filter-group {
+    display: flex;
+    align-items: end;
+    gap: 15px;
+    margin-top: 17px;
+}
+
+.request-filter-group > div {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.request-filter-group label {
+    color: #475467;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.request-filter-group select {
+    width: 100%;
+    padding: 11px;
+    border: 1px solid #dce4ee;
+    border-radius: 8px;
+    background: white;
+    font-size: 13px;
+    outline: none;
+}
+
+.request-clear-btn {
+    border: none;
+    background: transparent;
+    color: #2563a6;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 11px;
+    cursor: pointer;
+}
+
+.request-clear-btn:hover {
+    text-decoration: underline;
+}
+
+
+/* RESULTS */
+
+.request-results {
+    color: #8190a2;
+    font-size: 12px;
+    margin-bottom: 14px;
+}
+
+.request-list {
+    display: grid;
+    gap: 18px;
+}
+
+
+/* REQUEST CARD */
+
+.request-card {
+    background: white;
+    border: 1px solid #e5ebf2;
+    border-radius: 12px;
+    padding: 22px;
+    transition: 0.3s;
+}
+
+.request-card:hover {
+    box-shadow: 0 7px 20px rgba(23,59,103,0.05);
+}
+
+.request-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #edf0f4;
+    margin-bottom: 18px;
+}
+
+.request-student-information {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+}
+
+.request-student-avatar {
+    width: 49px;
+    height: 49px;
+    background: #edf5ff;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+}
+
+.request-student-information h3 {
+    color: #173b67;
+    font-size: 15px;
+    margin-bottom: 4px;
+}
+
+.request-student-information p {
+    color: #8995a5;
+    font-size: 11px;
+}
+
+
+/* REQUEST STATUS */
+
+.request-status {
+    display: inline-block;
+    padding: 7px 12px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.request-pending {
+    background: #fff3df;
+    color: #a76c10;
+}
+
+.request-approved {
+    background: #e5f7ed;
+    color: #16804a;
+}
+
+.request-rejected {
+    background: #ffebeb;
+    color: #c03939;
+}
+
+.request-completed {
+    background: #e8f2ff;
+    color: #2563a6;
+}
+
+.request-cancelled {
+    background: #f0f1f3;
+    color: #667085;
+}
+
+
+/* REQUEST DETAILS */
+
+.request-details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 19px;
+}
+
+.request-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.request-detail span {
+    color: #8995a5;
+    font-size: 11px;
+}
+
+.request-detail strong {
+    color: #344054;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+
+.request-detail a {
+    color: #2563a6;
+    text-decoration: none;
+}
+
+.request-detail a:hover {
+    text-decoration: underline;
+}
+
+
+/* STUDENT NOTES */
+
+.request-student-notes {
+    background: #f5f8fc;
+    border-radius: 8px;
+    padding: 14px;
+    margin-top: 18px;
+}
+
+.request-student-notes strong {
+    color: #173b67;
+    font-size: 11px;
+}
+
+.request-student-notes p {
+    color: #68778b;
+    font-size: 12px;
+    line-height: 1.7;
+    margin-top: 5px;
+    overflow-wrap: anywhere;
+}
+
+
+/* CARD FOOTER */
+
+.request-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 13px;
+    border-top: 1px solid #edf0f4;
+    margin-top: 19px;
+    padding-top: 17px;
+}
+
+.request-booking-id {
+    color: #8995a5;
+    font-size: 10px;
+    overflow-wrap: anywhere;
+}
+
+.request-action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+}
+
+.approve-request-btn,
+.reject-request-btn,
+.complete-request-btn,
+.meeting-link-btn {
+    border: none;
+    border-radius: 7px;
+    padding: 10px 13px;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.approve-request-btn {
+    background: #e5f7ed;
+    color: #16804a;
+}
+
+.approve-request-btn:hover {
+    background: #d3f0df;
+}
+
+.reject-request-btn {
+    background: #ffebeb;
+    color: #c03939;
+}
+
+.reject-request-btn:hover {
+    background: #ffdddd;
+}
+
+.complete-request-btn {
+    background: #2563a6;
+    color: white;
+}
+
+.complete-request-btn:hover {
+    background: #173b67;
+}
+
+.meeting-link-btn {
+    background: #e8f2ff;
+    color: #2563a6;
+}
+
+.meeting-link-btn:hover {
+    background: #dceaff;
+}
+
+
+/* EMPTY STATE */
+
+.empty-requests {
+    background: white;
+    border: 1px dashed #cbd7e5;
+    border-radius: 12px;
+    text-align: center;
+    padding: 45px 20px;
+}
+
+.empty-requests > div {
+    font-size: 45px;
+    margin-bottom: 12px;
+}
+
+.empty-requests h3 {
+    color: #173b67;
+    margin-bottom: 8px;
+}
+
+.empty-requests p {
+    color: #8190a2;
+    font-size: 12px;
+    max-width: 430px;
+    margin: auto;
+}
+
+
+/* REMINDER */
+
+.request-reminder {
+    background: #edf5ff;
+    border: 1px solid #d8e8fa;
+    padding: 22px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 30px;
+}
+
+.request-reminder h3 {
+    color: #173b67;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.request-reminder p {
+    color: #68778b;
+    font-size: 12px;
+}
+
+
+/* RESPONSIVENESS */
+
+@media (max-width: 1100px) {
+
+    .request-statistics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+}
+
+@media (max-width: 650px) {
+
+    .requests-banner {
+        padding: 24px;
+    }
+
+    .requests-banner h1 {
+        font-size: 22px;
+    }
+
+    .requests-banner-icon {
+        display: none;
+    }
+
+    .request-filter-group {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .request-clear-btn {
+        align-self: flex-start;
+    }
+
+    .request-details-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .request-card-footer {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .request-action-buttons {
+        width: 100%;
+    }
+
+    .request-action-buttons button {
+        flex: 1;
+    }
+
+    .request-reminder {
+        align-items: flex-start;
+    }
+
+}
+
+/* STUDENT ONLINE MEETING LINK */
+
+.student-meeting-link {
+    color: #2563a6;
+    font-weight: bold;
+    text-decoration: none;
+    font-size: 12px;
+}
+
+.student-meeting-link:hover {
+    color: #173b67;
+    text-decoration: underline;
+}
+
+/* ===================================
+   PEERTUTOR - ADMIN DASHBOARD
+=================================== */
+
+
+/* ADMIN WELCOME BANNER */
+
+.admin-welcome {
+    background: linear-gradient(120deg, #173b67, #3479b8);
+    color: white;
+    padding: 35px;
+    border-radius: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 25px;
+    margin-bottom: 35px;
+}
+
+.admin-welcome h1 {
+    font-size: 29px;
+    margin: 8px 0;
+}
+
+.admin-welcome h1 span {
+    color: #a9d4ff;
+}
+
+.admin-welcome p:not(.welcome-small) {
+    color: #dceaff;
+    font-size: 13px;
+    max-width: 530px;
+    margin-bottom: 20px;
+}
+
+.admin-primary-btn {
+    display: inline-block;
+    background: white;
+    color: #205b96;
+    text-decoration: none;
+    padding: 11px 18px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.admin-primary-btn:hover {
+    background: #e5f1ff;
+}
+
+.admin-welcome-icon {
+    width: 175px;
+    min-height: 145px;
+    background: rgba(255,255,255,0.13);
+    border-radius: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    font-size: 55px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.admin-welcome-icon span {
+    font-size: 11px;
+    color: white;
+    margin-top: 7px;
+}
+
+
+/* ADMIN STATISTICS */
+
+.admin-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.admin-stat-card {
+    background: white;
+    border: 1px solid #e6edf5;
+    border-radius: 11px;
+    padding: 19px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    box-shadow: 0 3px 12px rgba(23,59,103,0.025);
+}
+
+.admin-stat-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.admin-stat-card p {
+    color: #8190a2;
+    font-size: 11px;
+}
+
+.admin-stat-card h2 {
+    color: #173b67;
+    font-size: 25px;
+    margin-top: 3px;
+}
+
+
+/* SYSTEM INFORMATION */
+
+.admin-information-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.admin-information-card {
+    background: white;
+    border: 1px solid #e6edf5;
+    padding: 21px;
+    border-radius: 11px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.admin-information-icon {
+    width: 49px;
+    height: 49px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    background: #edf5ff;
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+.admin-information-card p {
+    color: #8190a2;
+    font-size: 11px;
+    margin-bottom: 3px;
+}
+
+.admin-information-card h2 {
+    color: #173b67;
+    font-size: 24px;
+}
+
+.admin-information-card span {
+    display: block;
+    color: #8995a5;
+    font-size: 10px;
+    margin-top: 3px;
+}
+
+
+/* ADMIN RESPONSIVE DESIGN */
+
+@media (max-width: 1100px) {
+
+    .admin-stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .admin-information-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+}
+
+@media (max-width: 700px) {
+
+    .admin-welcome {
+        padding: 25px;
+    }
+
+    .admin-welcome h1 {
+        font-size: 23px;
+    }
+
+    .admin-welcome-icon {
+        display: none;
+    }
+
+    .admin-information-grid {
+        grid-template-columns: 1fr;
+    }
+
+}
+
+@media (max-width: 450px) {
+
+    .admin-stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+}

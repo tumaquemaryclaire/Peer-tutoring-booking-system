@@ -1,0 +1,262 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>My Bookings | PeerTutor</title>
+
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+
+<body class="dashboard-page">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <a href="../index.html" class="dashboard-logo">
+            📚 Peer<span>Tutor</span>
+        </a>
+
+        <p class="sidebar-label">MAIN MENU</p>
+
+        <nav class="sidebar-nav">
+
+            <a href="dashboard.html" class="sidebar-link">
+                <span>▦</span> Dashboard
+            </a>
+
+            <a href="find-tutors.html" class="sidebar-link">
+                <span>🔍</span> Find Tutors
+            </a>
+
+            <a href="my-bookings.html" class="sidebar-link active">
+                <span>📅</span> My Bookings
+            </a>
+
+            <a href="feedback.html" class="sidebar-link">
+                <span>⭐</span> Feedback
+            </a>
+
+        </nav>
+
+        <div class="sidebar-bottom">
+
+            <a href="../index.html" class="sidebar-link">
+                <span>🏠</span> Homepage
+            </a>
+
+            <button id="logoutBtn" class="sidebar-logout">
+                <span>↪</span> Logout
+            </button>
+
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+    <main class="dashboard-main">
+
+        <!-- TOP BAR -->
+        <header class="dashboard-topbar">
+
+            <div>
+                <p class="dashboard-date" id="currentDate"></p>
+                <h2>My Bookings</h2>
+            </div>
+
+            <div class="user-information">
+
+                <div class="user-avatar" id="userInitials">ST</div>
+
+                <div>
+                    <strong id="studentName">Student</strong>
+                    <p>Student Account</p>
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- PAGE BANNER -->
+        <section class="my-bookings-banner">
+
+            <div>
+                <span class="welcome-small">YOUR TUTORING SCHEDULE</span>
+
+                <h1>Manage Your Bookings</h1>
+
+                <p>
+                    View your tutoring requests, monitor booking status,
+                    and keep track of your learning sessions.
+                </p>
+            </div>
+
+            <div class="my-bookings-banner-icon">📅</div>
+
+        </section>
+
+
+        <!-- BOOKING STATISTICS -->
+        <section class="my-booking-stats">
+
+            <div class="my-booking-stat">
+                <span class="my-stat-icon blue-icon">📚</span>
+                <div>
+                    <p>Total Bookings</p>
+                    <h2 id="totalCount">0</h2>
+                </div>
+            </div>
+
+            <div class="my-booking-stat">
+                <span class="my-stat-icon orange-icon">⏳</span>
+                <div>
+                    <p>Pending</p>
+                    <h2 id="pendingCount">0</h2>
+                </div>
+            </div>
+
+            <div class="my-booking-stat">
+                <span class="my-stat-icon green-icon">✓</span>
+                <div>
+                    <p>Approved</p>
+                    <h2 id="approvedCount">0</h2>
+                </div>
+            </div>
+
+            <div class="my-booking-stat">
+                <span class="my-stat-icon purple-icon">🎓</span>
+                <div>
+                    <p>Completed</p>
+                    <h2 id="completedCount">0</h2>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- BOOKING LIST -->
+        <section class="my-bookings-section">
+
+            <div class="my-bookings-heading">
+
+                <div>
+                    <h2>My Tutoring Reservations</h2>
+                    <p>All your tutoring booking requests are listed here.</p>
+                </div>
+
+                <a href="find-tutors.html" class="new-booking-btn">
+                    + Book a Tutor
+                </a>
+
+            </div>
+
+
+            <!-- SEARCH AND FILTER -->
+            <div class="booking-filter-panel">
+
+                <div class="booking-search-wrapper">
+                    <span>🔍</span>
+
+                    <input
+                        type="search"
+                        id="bookingSearch"
+                        placeholder="Search tutor or subject..."
+                    >
+                </div>
+
+
+                <div class="booking-filter-group">
+
+                    <div>
+                        <label for="statusFilter">Booking Status</label>
+
+                        <select id="statusFilter">
+
+                            <option value="all">All Statuses</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Rejected">Rejected</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+
+                        </select>
+                    </div>
+
+                    <button id="clearBookingFilters" class="clear-booking-btn">
+                        Clear Filters
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- RESULTS COUNT -->
+            <div class="booking-results">
+                <p id="bookingResultsCount">Showing all bookings</p>
+            </div>
+
+
+            <!-- BOOKING CARDS -->
+            <div id="myBookingList" class="my-booking-list">
+
+                <!-- Booking cards will be displayed using JavaScript -->
+
+            </div>
+
+
+            <!-- EMPTY STATE -->
+            <div id="emptyBookings" class="empty-bookings hidden">
+
+                <div class="empty-booking-icon">📅</div>
+
+                <h3>No Bookings Found</h3>
+
+                <p id="emptyBookingMessage">
+                    You haven't booked a tutoring session yet.
+                    Find a tutor to get started!
+                </p>
+
+                <a href="find-tutors.html" class="new-booking-btn">
+                    Find a Tutor →
+                </a>
+
+            </div>
+
+        </section>
+
+
+        <!-- BOOKING REMINDER -->
+        <section class="my-booking-reminder">
+
+            <div class="reminder-icon">💡</div>
+
+            <div>
+                <h3>Remember to Check Your Booking Status!</h3>
+
+                <p>
+                    Your tutoring request must be approved by the tutor
+                    before your session is confirmed.
+                </p>
+            </div>
+
+        </section>
+
+
+        <!-- FOOTER -->
+        <footer class="dashboard-footer">
+            © 2026 PeerTutor. All Rights Reserved.
+        </footer>
+
+    </main>
+
+
+    <script src="../js/my-bookings.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,424 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login | Peer Tutoring Booking System</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Segoe UI", Arial, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #eef2f7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+            color: #1e293b;
+        }
+
+        .page-container {
+            width: 100%;
+            max-width: 1120px;
+            min-height: 650px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            background: #ffffff;
+            border-radius: 22px;
+            overflow: hidden;
+            box-shadow: 0 25px 70px rgba(15, 23, 42, 0.13);
+        }
+
+        /* LEFT BRAND PANEL */
+
+        .brand-panel {
+            position: relative;
+            overflow: hidden;
+            padding: 60px 55px;
+            background: linear-gradient(145deg, #0b172a, #132c49 65%, #16445a);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .brand-panel::before {
+            content: "";
+            position: absolute;
+            width: 380px;
+            height: 380px;
+            right: -150px;
+            top: -100px;
+            border-radius: 50%;
+            background: rgba(45, 212, 191, 0.10);
+        }
+
+        .brand-panel::after {
+            content: "";
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            left: -130px;
+            bottom: -120px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .brand-content,
+        .brand-footer {
+            position: relative;
+            z-index: 1;
+        }
+
+        .brand-logo {
+            width: 58px;
+            height: 58px;
+            border-radius: 15px;
+            background: #14b8a6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 21px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: #062b31;
+            margin-bottom: 28px;
+        }
+
+        .brand-label {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 2.5px;
+            color: #5eead4;
+            margin-bottom: 20px;
+        }
+
+        .brand-panel h1 {
+            font-size: 39px;
+            line-height: 1.22;
+            margin-bottom: 22px;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+
+        .brand-description {
+            color: #cbd5e1;
+            font-size: 15px;
+            line-height: 1.8;
+            max-width: 390px;
+        }
+
+        .brand-footer {
+            color: #9fb0c4;
+            font-size: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.13);
+            padding-top: 20px;
+        }
+
+        /* RIGHT LOGIN PANEL */
+
+        .login-panel {
+            padding: 60px 65px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .access-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            width: fit-content;
+            padding: 9px 13px;
+            border-radius: 30px;
+            background: #e9f8f5;
+            color: #0f766e;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            margin-bottom: 27px;
+        }
+
+        .access-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #0d9488;
+        }
+
+        .login-panel h2 {
+            font-size: 31px;
+            color: #12243a;
+            margin-bottom: 10px;
+        }
+
+        .login-subtitle {
+            color: #718096;
+            font-size: 14px;
+            line-height: 1.7;
+            margin-bottom: 35px;
+        }
+
+        .form-group {
+            margin-bottom: 22px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 9px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            height: 52px;
+            border: 1px solid #dce3ec;
+            border-radius: 9px;
+            padding: 0 15px;
+            outline: none;
+            font-size: 14px;
+            color: #1e293b;
+            background: #fbfcfe;
+            transition: 0.2s;
+        }
+
+        .input-wrapper input:focus {
+            border-color: #0d9488;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.10);
+        }
+
+        .login-button {
+            width: 100%;
+            height: 53px;
+            margin-top: 8px;
+            border: none;
+            border-radius: 9px;
+            background: #123653;
+            color: white;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .login-button:hover {
+            background: #0d9488;
+            transform: translateY(-1px);
+        }
+
+        .login-button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #adminLoginMessage {
+            min-height: 22px;
+            margin-top: 17px;
+            font-size: 13px;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        .security-note {
+            display: flex;
+            align-items: flex-start;
+            gap: 11px;
+            padding: 15px;
+            margin-top: 30px;
+            border: 1px solid #e5eaf0;
+            border-radius: 10px;
+            background: #f8fafc;
+        }
+
+        .security-symbol {
+            font-size: 17px;
+        }
+
+        .security-note p {
+            color: #718096;
+            font-size: 11px;
+            line-height: 1.7;
+        }
+
+        .copyright {
+            text-align: center;
+            margin-top: 30px;
+            color: #9aa6b5;
+            font-size: 11px;
+        }
+
+        /* RESPONSIVE DESIGN */
+
+        @media (max-width: 800px) {
+            body {
+                padding: 18px;
+            }
+
+            .page-container {
+                grid-template-columns: 1fr;
+                max-width: 480px;
+                min-height: auto;
+            }
+
+            .brand-panel {
+                padding: 32px;
+                min-height: 250px;
+            }
+
+            .brand-panel h1 {
+                font-size: 28px;
+            }
+
+            .brand-description {
+                font-size: 13px;
+            }
+
+            .brand-footer {
+                margin-top: 30px;
+            }
+
+            .login-panel {
+                padding: 40px 32px;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .brand-panel,
+            .login-panel {
+                padding: 28px 23px;
+            }
+
+            .login-panel h2 {
+                font-size: 26px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <main class="page-container">
+
+        <section class="brand-panel">
+
+            <div class="brand-content">
+
+                <div class="brand-logo">PT</div>
+
+                <p class="brand-label">
+                    PEER TUTORING BOOKING SYSTEM
+                </p>
+
+                <h1>
+                    Manage Learning.<br>
+                    Empower Success.
+                </h1>
+
+                <p class="brand-description">
+                    Manage users, monitor tutoring activities, and oversee
+                    the entire peer tutoring booking system through one
+                    centralized administration portal.
+                </p>
+
+            </div>
+
+            <div class="brand-footer">
+                Administration Portal | Authorized Personnel Only
+            </div>
+
+        </section>
+
+
+        <section class="login-panel">
+
+            <div class="access-badge">
+                <span class="access-dot"></span>
+                SECURE ADMIN ACCESS
+            </div>
+
+            <h2>Welcome Back</h2>
+
+            <p class="login-subtitle">
+                Sign in using your administrator account to access
+                the management dashboard.
+            </p>
+
+
+            <form id="adminLoginForm">
+
+                <div class="form-group">
+                    <label for="adminEmail">Administrator Email</label>
+
+                    <div class="input-wrapper">
+                        <input
+                            type="email"
+                            id="adminEmail"
+                            placeholder="Enter your admin email"
+                            autocomplete="username"
+                            required
+                        >
+                    </div>
+                </div>
+
+
+                <div class="form-group">
+                    <label for="adminPassword">Password</label>
+
+                    <div class="input-wrapper">
+                        <input
+                            type="password"
+                            id="adminPassword"
+                            placeholder="Enter your password"
+                            autocomplete="current-password"
+                            required
+                        >
+                    </div>
+                </div>
+
+
+                <button type="submit" class="login-button" id="adminLoginButton">
+                    Sign In to Admin Portal
+                </button>
+
+                <p id="adminLoginMessage" role="alert" aria-live="polite"></p>
+
+            </form>
+
+
+            <div class="security-note">
+                <span class="security-symbol">🔒</span>
+
+                <p>
+                    This portal is intended for authorized administrators only.
+                    Please keep your login credentials confidential.
+                </p>
+            </div>
+
+            <p class="copyright">
+                © 2026 Peer Tutoring Booking System. All rights reserved.
+            </p>
+
+        </section>
+
+    </main>
+
+    <script src="login.js"></script>
+
+</body>
+</html>

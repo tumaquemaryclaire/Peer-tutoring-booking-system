@@ -1,0 +1,291 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Feedback | PeerTutor</title>
+
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+
+<body class="dashboard-page">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <a href="../index.html" class="dashboard-logo">
+            📚 Peer<span>Tutor</span>
+        </a>
+
+        <p class="sidebar-label">MAIN MENU</p>
+
+        <nav class="sidebar-nav">
+
+            <a href="dashboard.html" class="sidebar-link">
+                <span>▦</span> Dashboard
+            </a>
+
+            <a href="find-tutors.html" class="sidebar-link">
+                <span>🔍</span> Find Tutors
+            </a>
+
+            <a href="my-bookings.html" class="sidebar-link">
+                <span>📅</span> My Bookings
+            </a>
+
+            <a href="feedback.html" class="sidebar-link active">
+                <span>⭐</span> Feedback
+            </a>
+
+        </nav>
+
+        <div class="sidebar-bottom">
+
+            <a href="../index.html" class="sidebar-link">
+                <span>🏠</span> Homepage
+            </a>
+
+            <button id="logoutBtn" class="sidebar-logout">
+                <span>↪</span> Logout
+            </button>
+
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+    <main class="dashboard-main">
+
+        <!-- TOP BAR -->
+        <header class="dashboard-topbar">
+
+            <div>
+                <p class="dashboard-date" id="currentDate"></p>
+                <h2>Feedback and Ratings</h2>
+            </div>
+
+            <div class="user-information">
+
+                <div class="user-avatar" id="userInitials">ST</div>
+
+                <div>
+                    <strong id="studentName">Student</strong>
+                    <p>Student Account</p>
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- PAGE BANNER -->
+        <section class="feedback-banner">
+
+            <div>
+                <span class="welcome-small">SHARE YOUR EXPERIENCE</span>
+
+                <h1>Your Feedback Matters!</h1>
+
+                <p>
+                    Rate your completed tutoring sessions and share your
+                    experience to help other students choose their tutors.
+                </p>
+            </div>
+
+            <div class="feedback-banner-icon">⭐</div>
+
+        </section>
+
+
+        <!-- FEEDBACK FORM -->
+        <section class="feedback-form-section" id="feedbackFormSection">
+
+            <div class="feedback-heading">
+                <h2>Submit Your Feedback</h2>
+
+                <p>
+                    Select a completed tutoring session and tell us
+                    about your learning experience.
+                </p>
+            </div>
+
+
+            <form id="feedbackForm">
+
+                <!-- SELECT COMPLETED BOOKING -->
+                <div class="feedback-form-group">
+
+                    <label for="completedBooking">
+                        Select Completed Tutoring Session
+                    </label>
+
+                    <select id="completedBooking" required>
+                        <option value="">Choose a completed session</option>
+                    </select>
+
+                    <small>
+                        Only completed tutoring sessions can receive feedback.
+                    </small>
+
+                </div>
+
+
+                <!-- SELECTED SESSION INFORMATION -->
+                <div
+                    id="selectedSessionDetails"
+                    class="selected-session-details hidden"
+                >
+                </div>
+
+
+                <!-- STAR RATING -->
+                <div class="feedback-form-group">
+
+                    <label>Rate Your Tutoring Experience</label>
+
+                    <div class="star-rating" id="starRating">
+
+                        <button type="button" class="star-button" data-rating="1" aria-label="1 star" aria-pressed="false">★</button>
+
+                        <button type="button" class="star-button" data-rating="2" aria-label="2 stars" aria-pressed="false">★</button>
+
+                        <button type="button" class="star-button" data-rating="3" aria-label="3 stars" aria-pressed="false">★</button>
+
+                        <button type="button" class="star-button" data-rating="4" aria-label="4 stars" aria-pressed="false">★</button>
+
+                        <button type="button" class="star-button" data-rating="5" aria-label="5 stars" aria-pressed="false">★</button>
+
+                    </div>
+
+                    <p id="ratingLabel" class="rating-label">
+                        Please select a rating.
+                    </p>
+
+                </div>
+
+
+                <!-- COMMENTS -->
+                <div class="feedback-form-group">
+
+                    <label for="feedbackComment">
+                        Comments and Suggestions
+                    </label>
+
+                    <textarea
+                        id="feedbackComment"
+                        rows="5"
+                        minlength="5"
+                        maxlength="500"
+                        placeholder="Share your experience with the tutor..."
+                        required
+                    ></textarea>
+
+                    <small>
+                        Maximum of 500 characters.
+                    </small>
+
+                </div>
+
+
+                <!-- FEEDBACK MESSAGE -->
+                <p
+                    id="feedbackMessage"
+                    class="feedback-message"
+                    aria-live="polite"
+                ></p>
+
+
+                <!-- SUBMIT BUTTON -->
+                <button type="submit" class="feedback-submit-btn">
+                    Submit Feedback →
+                </button>
+
+            </form>
+
+        </section>
+
+
+        <!-- NO COMPLETED SESSIONS -->
+        <section id="noCompletedSessions" class="no-feedback-sessions hidden">
+
+            <div>📚</div>
+
+            <h3>No Completed Sessions Yet</h3>
+
+            <p>
+                You can submit feedback after your tutor marks your
+                tutoring session as completed.
+            </p>
+
+            <a href="my-bookings.html" class="feedback-action-btn">
+                View My Bookings
+            </a>
+
+        </section>
+
+
+        <!-- SUCCESS MESSAGE -->
+        <div
+            id="feedbackSuccess"
+            class="feedback-success hidden"
+            role="status"
+        >
+            ✓ Your feedback has been submitted successfully!
+        </div>
+
+
+        <!-- FEEDBACK HISTORY -->
+        <section class="feedback-history-section">
+
+            <div class="feedback-history-heading">
+
+                <div>
+                    <h2>My Submitted Feedback</h2>
+
+                    <p>
+                        View the ratings and comments you have submitted.
+                    </p>
+                </div>
+
+                <span id="feedbackCount" class="feedback-count">
+                    0 Feedback
+                </span>
+
+            </div>
+
+
+            <div id="feedbackHistory" class="feedback-history-list">
+            </div>
+
+
+            <div id="emptyFeedbackHistory" class="empty-feedback-history">
+
+                <div>💬</div>
+
+                <h3>No Feedback Yet</h3>
+
+                <p>
+                    Your submitted ratings and comments will appear here.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- FOOTER -->
+        <footer class="dashboard-footer">
+            © 2026 PeerTutor. All Rights Reserved.
+        </footer>
+
+    </main>
+
+
+    <script src="../js/feedback.js"></script>
+
+</body>
+</html>
