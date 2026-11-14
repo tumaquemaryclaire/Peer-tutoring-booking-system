@@ -1,0 +1,298 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Subjects | Peer Tutoring Booking System</title>
+    <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+
+    <aside class="admin-sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-logo">PT</div>
+            <div>
+                <h2>PeerTutor</h2>
+                <span>ADMINISTRATION</span>
+            </div>
+        </div>
+
+        <div class="sidebar-label">MAIN MENU</div>
+
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-link">
+                <span class="nav-icon">▦</span>
+                Dashboard
+            </a>
+
+            <a href="manage-users.html" class="nav-link">
+                <span class="nav-icon">♙</span>
+                Manage Users
+            </a>
+
+            <a href="manage-subjects.html" class="nav-link active">
+                <span class="nav-icon">▤</span>
+                Manage Subjects
+            </a>
+
+            <a href="manage-bookings.html" class="nav-link">
+                <span class="nav-icon">▣</span>
+                Manage Bookings
+            </a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="sidebar-admin">
+                <div class="small-avatar">A</div>
+                <div>
+                    <strong id="sidebarAdminName">Administrator</strong>
+                    <span>System Admin</span>
+                </div>
+            </div>
+
+            <button type="button" class="logout-button" id="logoutButton">
+                ↪ Log Out
+            </button>
+        </div>
+    </aside>
+
+
+    <main class="admin-main">
+
+        <header class="page-header">
+            <div>
+                <p class="breadcrumb">ADMINISTRATION / SUBJECT MANAGEMENT</p>
+                <h1>Manage Subjects</h1>
+                <p class="page-description">
+                    Add, update, and organize the subjects available for tutoring.
+                </p>
+            </div>
+
+            <div class="header-account">
+                <div class="header-avatar">A</div>
+                <div>
+                    <strong id="headerAdminName">Administrator</strong>
+                    <span id="headerAdminEmail">Admin Account</span>
+                </div>
+            </div>
+        </header>
+
+
+        <section class="subject-summary">
+
+            <div class="summary-card">
+                <div class="summary-icon blue">▤</div>
+                <div>
+                    <p>Total Subjects</p>
+                    <h2 id="totalSubjects">0</h2>
+                    <span>Available subjects</span>
+                </div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-icon teal">♧</div>
+                <div>
+                    <p>Subjects With Tutors</p>
+                    <h2 id="subjectsWithTutors">0</h2>
+                    <span>Subjects currently offered</span>
+                </div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-icon purple">♙</div>
+                <div>
+                    <p>Registered Tutors</p>
+                    <h2 id="registeredTutors">0</h2>
+                    <span>Available tutor accounts</span>
+                </div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-icon orange">▣</div>
+                <div>
+                    <p>Total Bookings</p>
+                    <h2 id="totalSubjectBookings">0</h2>
+                    <span>Recorded tutoring bookings</span>
+                </div>
+            </div>
+
+        </section>
+
+
+        <section class="add-subject-section">
+
+            <div class="subject-section-title">
+                <div>
+                    <h2>Add New Subject</h2>
+                    <p>Add a subject to the system's subject catalog.</p>
+                </div>
+            </div>
+
+            <form id="addSubjectForm" class="add-subject-form">
+
+                <div class="subject-input-group">
+                    <label for="newSubjectName">Subject Name</label>
+                    <input
+                        type="text"
+                        id="newSubjectName"
+                        placeholder="Example: Web Development"
+                        maxlength="60"
+                        required
+                    >
+                </div>
+
+                <div class="subject-input-group">
+                    <label for="newSubjectDescription">Description (Optional)</label>
+                    <input
+                        type="text"
+                        id="newSubjectDescription"
+                        placeholder="Brief description of the subject"
+                        maxlength="150"
+                    >
+                </div>
+
+                <button type="submit" class="add-subject-button">
+                    + Add Subject
+                </button>
+
+            </form>
+
+            <p id="subjectMessage" class="subject-message" role="status" aria-live="polite"></p>
+
+        </section>
+
+
+        <section class="subjects-section">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Subject Catalog</h2>
+                    <p>All subjects registered in the tutoring system.</p>
+                </div>
+
+                <span class="account-count" id="subjectCount">0 subjects</span>
+            </div>
+
+
+            <div class="subject-toolbar">
+                <div class="search-box">
+                    <span>⌕</span>
+                    <input
+                        type="search"
+                        id="searchSubjects"
+                        placeholder="Search subjects..."
+                    >
+                </div>
+            </div>
+
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>SUBJECT NAME</th>
+                            <th>DESCRIPTION</th>
+                            <th>TUTORS OFFERING</th>
+                            <th>BOOKINGS</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="subjectsTableBody">
+                        <tr>
+                            <td colspan="5" class="empty-row">
+                                Loading subjects...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p class="table-note">
+                Editing or deleting a subject updates tutor profile subject lists.
+                Existing booking and feedback history will be preserved.
+            </p>
+
+        </section>
+
+
+        <footer class="admin-footer">
+            © 2026 Peer Tutoring Booking System. All rights reserved.
+        </footer>
+
+    </main>
+
+
+    <!-- EDIT SUBJECT MODAL -->
+
+    <div class="subject-modal" id="editSubjectModal" aria-hidden="true">
+
+        <div class="subject-modal-content">
+
+            <div class="modal-heading">
+                <div>
+                    <h2>Edit Subject</h2>
+                    <p>Update the subject information.</p>
+                </div>
+
+                <button
+                    type="button"
+                    class="modal-close"
+                    id="closeEditModal"
+                    aria-label="Close"
+                >
+                    ×
+                </button>
+            </div>
+
+            <form id="editSubjectForm">
+
+                <input type="hidden" id="editSubjectId">
+
+                <div class="subject-input-group">
+                    <label for="editSubjectName">Subject Name</label>
+                    <input
+                        type="text"
+                        id="editSubjectName"
+                        maxlength="60"
+                        required
+                    >
+                </div>
+
+                <div class="subject-input-group">
+                    <label for="editSubjectDescription">Description</label>
+                    <input
+                        type="text"
+                        id="editSubjectDescription"
+                        maxlength="150"
+                        placeholder="Enter subject description"
+                    >
+                </div>
+
+                <div class="modal-actions">
+                    <button
+                        type="button"
+                        class="modal-cancel"
+                        id="cancelEditSubject"
+                    >
+                        Cancel
+                    </button>
+
+                    <button type="submit" class="modal-save">
+                        Save Changes
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <script src="admin-guard.js"></script>
+    <script src="../js/manage-subjects.js"></script>
+
+</body>
+</html>

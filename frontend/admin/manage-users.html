@@ -1,0 +1,211 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Users | Peer Tutoring Booking System</title>
+    <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+
+    <aside class="admin-sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-logo">PT</div>
+            <div>
+                <h2>PeerTutor</h2>
+                <span>ADMINISTRATION</span>
+            </div>
+        </div>
+
+        <div class="sidebar-label">MAIN MENU</div>
+
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-link">
+                <span class="nav-icon">▦</span>
+                Dashboard
+            </a>
+
+            <a href="manage-users.html" class="nav-link active">
+                <span class="nav-icon">♙</span>
+                Manage Users
+            </a>
+
+            <a href="manage-subjects.html" class="nav-link">
+                <span class="nav-icon">▤</span>
+                Manage Subjects
+            </a>
+
+            <a href="manage-bookings.html" class="nav-link">
+                <span class="nav-icon">▣</span>
+                Manage Bookings
+            </a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="sidebar-admin">
+                <div class="small-avatar">A</div>
+                <div>
+                    <strong id="sidebarAdminName">Administrator</strong>
+                    <span>System Admin</span>
+                </div>
+            </div>
+
+            <button type="button" class="logout-button" id="logoutButton">
+                ↪ Log Out
+            </button>
+        </div>
+    </aside>
+
+
+    <main class="admin-main">
+
+        <header class="page-header">
+            <div>
+                <p class="breadcrumb">ADMINISTRATION / USER MANAGEMENT</p>
+                <h1>Manage Users</h1>
+                <p class="page-description">
+                    View, search, and manage registered students and tutors.
+                </p>
+            </div>
+
+            <div class="header-account">
+                <div class="header-avatar">A</div>
+                <div>
+                    <strong id="headerAdminName">Administrator</strong>
+                    <span id="headerAdminEmail">Admin Account</span>
+                </div>
+            </div>
+        </header>
+
+
+        <section class="user-summary">
+
+            <div class="summary-card">
+                <div class="summary-icon blue">♙</div>
+                <div>
+                    <p>Total Users</p>
+                    <h2 id="totalUsers">0</h2>
+                    <span>Students and tutors</span>
+                </div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-icon purple">▣</div>
+                <div>
+                    <p>Students</p>
+                    <h2 id="totalStudents">0</h2>
+                    <span>Registered students</span>
+                </div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-icon teal">♧</div>
+                <div>
+                    <p>Tutors</p>
+                    <h2 id="totalTutors">0</h2>
+                    <span>Registered tutors</span>
+                </div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-icon orange">!</div>
+                <div>
+                    <p>Inactive Users</p>
+                    <h2 id="inactiveUsers">0</h2>
+                    <span>Deactivated accounts</span>
+                </div>
+            </div>
+
+        </section>
+
+
+        <section class="users-section">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Registered Accounts</h2>
+                    <p>Manage the accounts registered in the system.</p>
+                </div>
+
+                <span class="account-count" id="accountCount">
+                    0 accounts
+                </span>
+            </div>
+
+
+            <div class="filter-container">
+
+                <div class="search-box">
+                    <span>⌕</span>
+                    <input
+                        type="search"
+                        id="searchUsers"
+                        placeholder="Search name, email, or contact number..."
+                    >
+                </div>
+
+                <select id="roleFilter" aria-label="Filter by role">
+                    <option value="all">All Roles</option>
+                    <option value="student">Students</option>
+                    <option value="tutor">Tutors</option>
+                </select>
+
+                <select id="statusFilter" aria-label="Filter by status">
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+
+                <button type="button" class="reset-button" id="resetFilters">
+                    Reset
+                </button>
+
+            </div>
+
+
+            <div id="statusMessage" class="status-message" role="status" aria-live="polite"></div>
+
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>USER</th>
+                            <th>EMAIL ADDRESS</th>
+                            <th>CONTACT NUMBER</th>
+                            <th>ROLE</th>
+                            <th>STATUS</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="usersTableBody">
+                        <tr>
+                            <td colspan="6" class="empty-row">
+                                Loading user accounts...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p class="table-note">
+                Deleting an account also removes its tutor profile and available schedules,
+                but keeps existing booking and feedback history.
+            </p>
+
+        </section>
+
+        <footer class="admin-footer">
+            © 2026 Peer Tutoring Booking System. All rights reserved.
+        </footer>
+
+    </main>
+
+
+    <script src="admin-guard.js"></script>
+    <script src="../js/manage-users.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,538 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Requests | PeerTutor</title>
+
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+
+    <style>
+        /* NOTIFICATION BELL */
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            position: relative;
+        }
+
+        .notification-wrapper {
+            position: relative;
+        }
+
+        .notification-bell {
+            width: 43px;
+            height: 43px;
+            border: none;
+            border-radius: 50%;
+            background: #f1f3f5;
+            cursor: pointer;
+            font-size: 21px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .notification-bell:hover {
+            background: #e4e7eb;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            min-width: 19px;
+            height: 19px;
+            padding: 0 4px;
+            border-radius: 20px;
+            background: #e53935;
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid white;
+        }
+
+        .notification-badge.hidden {
+            display: none;
+        }
+
+        /* NOTIFICATION DROPDOWN */
+        .notification-dropdown {
+            display: none;
+            position: absolute;
+            top: 55px;
+            right: -90px;
+            width: 360px;
+            max-width: calc(100vw - 30px);
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 28px rgba(0,0,0,.18);
+            z-index: 5000;
+            overflow: hidden;
+        }
+
+        .notification-dropdown.show {
+            display: block;
+        }
+
+        .notification-dropdown-header {
+            padding: 16px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .notification-dropdown-header h3 {
+            margin: 0;
+            font-size: 17px;
+        }
+
+        .notification-items {
+            max-height: 420px;
+            overflow-y: auto;
+        }
+
+        .notification-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .notification-item:hover {
+            background: #fafafa;
+        }
+
+        .notification-item-title {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 7px;
+        }
+
+        .notification-item-title strong {
+            font-size: 14px;
+        }
+
+        .notification-new-label {
+            color: #1877f2;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .notification-item p {
+            margin: 5px 0;
+            color: #555;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .notification-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .notification-actions button {
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .notification-approve {
+            background: #16834a;
+            color: white;
+        }
+
+        .notification-cancel {
+            background: #c93636;
+            color: white;
+        }
+
+        .notification-empty {
+            padding: 28px 15px;
+            text-align: center;
+            color: #777;
+            font-size: 13px;
+        }
+
+        /* CANCEL REASON MODAL */
+        .cancel-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.55);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .cancel-modal.show {
+            display: flex;
+        }
+
+        .cancel-modal-content {
+            background: white;
+            width: 100%;
+            max-width: 440px;
+            padding: 25px;
+            border-radius: 13px;
+        }
+
+        .cancel-modal-content h2 {
+            margin-top: 0;
+        }
+
+        .cancel-modal-content p {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .cancel-modal-content textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            resize: vertical;
+            box-sizing: border-box;
+            margin: 10px 0 15px;
+            font: inherit;
+        }
+
+        .cancel-modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .cancel-modal-actions button {
+            border: none;
+            border-radius: 7px;
+            padding: 10px 14px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .cancel-close-btn {
+            background: #e5e7eb;
+            color: #333;
+        }
+
+        .cancel-submit-btn {
+            background: #c93636;
+            color: white;
+        }
+
+        .request-cancel-reason {
+            background: #fff4f4;
+            border-left: 4px solid #c93636;
+            padding: 12px;
+            margin-top: 12px;
+            border-radius: 6px;
+        }
+
+        @media (max-width: 600px) {
+            .topbar-right {
+                gap: 10px;
+            }
+
+            .notification-dropdown {
+                right: -65px;
+                width: 320px;
+            }
+        }
+    </style>
+</head>
+
+<body class="dashboard-page">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <a href="../index.html" class="dashboard-logo">
+            📚 Peer<span>Tutor</span>
+        </a>
+
+        <p class="sidebar-label">TUTOR MENU</p>
+
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="sidebar-link">
+                <span>▦</span> Dashboard
+            </a>
+
+            <a href="profile.html" class="sidebar-link">
+                <span>👤</span> My Profile
+            </a>
+
+            <a href="manage-schedule.html" class="sidebar-link">
+                <span>📅</span> Manage Schedule
+            </a>
+
+            <a href="booking-requests.html" class="sidebar-link active">
+                <span>📋</span> Booking Requests
+            </a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <a href="../index.html" class="sidebar-link">
+                <span>🏠</span> Homepage
+            </a>
+
+            <button id="logoutBtn" class="sidebar-logout">
+                <span>↪</span> Logout
+            </button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="dashboard-main">
+
+        <!-- TOP BAR -->
+        <header class="dashboard-topbar">
+            <div>
+                <p class="dashboard-date" id="currentDate"></p>
+                <h2>Booking Requests</h2>
+            </div>
+
+            <div class="topbar-right">
+
+                <!-- NOTIFICATION BELL -->
+                <div class="notification-wrapper">
+
+                    <button
+                        type="button"
+                        class="notification-bell"
+                        id="notificationBell"
+                        aria-label="Open notifications"
+                        aria-expanded="false"
+                    >
+                        🔔
+                        <span
+                            class="notification-badge hidden"
+                            id="notificationBadge"
+                        >0</span>
+                    </button>
+
+                    <!-- DROPDOWN -->
+                    <div
+                        class="notification-dropdown"
+                        id="notificationDropdown"
+                    >
+                        <div class="notification-dropdown-header">
+                            <h3>Notifications</h3>
+                            <span id="notificationHeaderCount">0 new</span>
+                        </div>
+
+                        <div
+                            class="notification-items"
+                            id="notificationItems"
+                        >
+                            <div class="notification-empty">
+                                No new booking notifications.
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- TUTOR PROFILE -->
+                <div class="user-information">
+                    <div class="user-avatar" id="userInitials">TU</div>
+
+                    <div>
+                        <strong id="tutorName">Tutor</strong>
+                        <p>Peer Tutor</p>
+                    </div>
+                </div>
+
+            </div>
+        </header>
+
+        <!-- PAGE BANNER -->
+        <section class="requests-banner">
+            <div>
+                <span class="welcome-small">TUTOR BOOKING MANAGEMENT</span>
+
+                <h1>Manage Student Requests!</h1>
+
+                <p>
+                    Review student tutoring requests, approve bookings,
+                    or cancel requests with a reason.
+                </p>
+            </div>
+
+            <div class="requests-banner-icon">📋</div>
+        </section>
+
+        <!-- STATISTICS -->
+        <section class="request-statistics">
+
+            <div class="request-stat-card">
+                <div class="request-stat-icon blue-icon">📚</div>
+                <div>
+                    <p>Total Requests</p>
+                    <h2 id="totalRequests">0</h2>
+                </div>
+            </div>
+
+            <div class="request-stat-card">
+                <div class="request-stat-icon orange-icon">⏳</div>
+                <div>
+                    <p>Pending</p>
+                    <h2 id="pendingRequests">0</h2>
+                </div>
+            </div>
+
+            <div class="request-stat-card">
+                <div class="request-stat-icon green-icon">✓</div>
+                <div>
+                    <p>Approved</p>
+                    <h2 id="approvedRequests">0</h2>
+                </div>
+            </div>
+
+            <div class="request-stat-card">
+                <div class="request-stat-icon purple-icon">🎓</div>
+                <div>
+                    <p>Completed</p>
+                    <h2 id="completedRequests">0</h2>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- BOOKING REQUESTS LIST -->
+        <section class="requests-section">
+
+            <div class="requests-section-heading">
+                <div>
+                    <h2>All Student Booking Requests</h2>
+                    <p>
+                        View and manage the tutoring sessions requested by students.
+                    </p>
+                </div>
+            </div>
+
+            <!-- SEARCH AND FILTER -->
+            <div class="request-filter-panel">
+
+                <div class="request-search">
+                    <span>🔍</span>
+                    <input
+                        type="search"
+                        id="requestSearch"
+                        placeholder="Search student name or subject..."
+                    >
+                </div>
+
+                <div class="request-filter-group">
+                    <div>
+                        <label for="requestStatusFilter">Booking Status</label>
+
+                        <select id="requestStatusFilter">
+                            <option value="all">All Statuses</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Rejected">Rejected</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                    </div>
+
+                    <button id="clearRequestFilters" class="request-clear-btn">
+                        Clear Filters
+                    </button>
+                </div>
+
+            </div>
+
+            <p id="requestResults" class="request-results">
+                Showing all requests.
+            </p>
+
+            <div id="requestList" class="request-list"></div>
+
+            <div id="emptyRequests" class="empty-requests hidden">
+                <div>📋</div>
+                <h3>No Booking Requests Found</h3>
+                <p>
+                    Student booking requests will appear here
+                    when someone books a tutoring session with you.
+                </p>
+            </div>
+
+        </section>
+
+        <!-- INFORMATION BOX -->
+        <section class="request-reminder">
+            <div class="reminder-icon">💡</div>
+
+            <div>
+                <h3>Manage Your Tutoring Requests Carefully!</h3>
+                <p>
+                    Review the student's preferred date, time, and tutoring
+                    mode before approving a booking.
+                </p>
+            </div>
+        </section>
+
+        <footer class="dashboard-footer">
+            © 2026 PeerTutor. All Rights Reserved.
+        </footer>
+
+    </main>
+
+    <!-- CANCEL REASON MODAL -->
+    <div class="cancel-modal" id="cancelModal">
+        <div class="cancel-modal-content">
+
+            <h2>Cancel Booking Request</h2>
+
+            <p>
+                Please provide a reason for cancelling this booking.
+                The student will be able to see your explanation.
+            </p>
+
+            <textarea
+                id="cancelReason"
+                maxlength="500"
+                placeholder="Enter your reason for cancelling..."
+            ></textarea>
+
+            <div class="cancel-modal-actions">
+                <button
+                    type="button"
+                    class="cancel-close-btn"
+                    id="closeCancelModal"
+                >
+                    Go Back
+                </button>
+
+                <button
+                    type="button"
+                    class="cancel-submit-btn"
+                    id="submitCancel"
+                >
+                    Confirm Cancellation
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="../js/tutor.js"></script>
+    <script src="../js/booking-requests.js"></script>
+
+</body>
+</html>

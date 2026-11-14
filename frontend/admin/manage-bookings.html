@@ -1,0 +1,229 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Bookings | PeerTutor</title>
+    <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+
+    <aside class="admin-sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-logo">PT</div>
+            <div>
+                <h2>PeerTutor</h2>
+                <span>ADMINISTRATION</span>
+            </div>
+        </div>
+
+        <div class="sidebar-label">MAIN MENU</div>
+
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-link">
+                <span class="nav-icon">▦</span> Dashboard
+            </a>
+            <a href="manage-users.html" class="nav-link">
+                <span class="nav-icon">♙</span> Manage Users
+            </a>
+            <a href="manage-subjects.html" class="nav-link">
+                <span class="nav-icon">▤</span> Manage Subjects
+            </a>
+            <a href="manage-bookings.html" class="nav-link active">
+                <span class="nav-icon">▣</span> Manage Bookings
+            </a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="sidebar-admin">
+                <div class="small-avatar">A</div>
+                <div>
+                    <strong id="sidebarAdminName">Administrator</strong>
+                    <span>System Admin</span>
+                </div>
+            </div>
+
+            <button type="button" class="logout-button" id="logoutButton">
+                ↪ Log Out
+            </button>
+        </div>
+    </aside>
+
+
+    <main class="admin-main">
+
+        <header class="page-header">
+            <div>
+                <p class="breadcrumb">ADMINISTRATION / BOOKING MANAGEMENT</p>
+                <h1>Manage Bookings</h1>
+                <p class="page-description">
+                    Monitor and manage all tutoring session bookings.
+                </p>
+            </div>
+
+            <div class="header-account">
+                <div class="header-avatar">A</div>
+                <div>
+                    <strong id="headerAdminName">Administrator</strong>
+                    <span id="headerAdminEmail">Admin Account</span>
+                </div>
+            </div>
+        </header>
+
+
+        <!-- BOOKING SUMMARY -->
+
+        <section class="booking-summary">
+
+            <div class="summary-card">
+                <div class="summary-icon blue">▣</div>
+                <div>
+                    <p>Total Bookings</p>
+                    <h2 id="totalBookings">0</h2>
+                    <span>All recorded bookings</span>
+                </div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-icon orange">◷</div>
+                <div>
+                    <p>Pending</p>
+                    <h2 id="pendingBookings">0</h2>
+                    <span>Waiting for tutor response</span>
+                </div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-icon teal">✓</div>
+                <div>
+                    <p>Approved</p>
+                    <h2 id="approvedBookings">0</h2>
+                    <span>Confirmed sessions</span>
+                </div>
+            </div>
+
+            <div class="summary-card">
+                <div class="summary-icon purple">★</div>
+                <div>
+                    <p>Completed</p>
+                    <h2 id="completedBookings">0</h2>
+                    <span>Finished sessions</span>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- BOOKINGS TABLE -->
+
+        <section class="bookings-section">
+
+            <div class="section-heading">
+                <div>
+                    <h2>All Bookings</h2>
+                    <p>View and manage student tutoring requests.</p>
+                </div>
+
+                <span class="account-count" id="bookingCount">0 bookings</span>
+            </div>
+
+
+            <div class="booking-toolbar">
+
+                <div class="search-box">
+                    <span>⌕</span>
+                    <input
+                        type="search"
+                        id="searchBookings"
+                        placeholder="Search student, tutor, or subject..."
+                    >
+                </div>
+
+                <select id="statusFilter" class="booking-filter">
+                    <option value="all">All Statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+
+            </div>
+
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>STUDENT</th>
+                            <th>TUTOR</th>
+                            <th>SUBJECT</th>
+                            <th>SESSION DATE</th>
+                            <th>TIME</th>
+                            <th>STATUS</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="bookingsTableBody">
+                        <tr>
+                            <td colspan="7" class="empty-row">
+                                Loading bookings...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p class="table-note">
+                Booking status changes made by the administrator will also be
+                reflected on the related Student and Tutor pages.
+            </p>
+
+        </section>
+
+
+        <footer class="admin-footer">
+            © 2026 Peer Tutoring Booking System. All rights reserved.
+        </footer>
+
+    </main>
+
+
+    <!-- BOOKING DETAILS MODAL -->
+
+    <div class="booking-modal" id="bookingDetailsModal" aria-hidden="true">
+        <div class="booking-modal-content">
+
+            <div class="modal-heading">
+                <div>
+                    <h2>Booking Details</h2>
+                    <p>Complete information about this tutoring request.</p>
+                </div>
+
+                <button
+                    type="button"
+                    class="modal-close"
+                    id="closeBookingModal"
+                    aria-label="Close"
+                >×</button>
+            </div>
+
+            <div id="bookingDetailsContent" class="booking-details-content"></div>
+
+            <div class="booking-modal-footer">
+                <button type="button" class="modal-cancel" id="closeBookingDetails">
+                    Close
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+
+    <script src="admin-guard.js"></script>
+    <script src="../js/manage-bookings.js"></script>
+
+</body>
+</html>
