@@ -1,0 +1,278 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Booking Requests | PeerTutor</title>
+
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+
+<body class="dashboard-page">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <a href="../index.html" class="dashboard-logo">
+            📚 Peer<span>Tutor</span>
+        </a>
+
+        <p class="sidebar-label">TUTOR MENU</p>
+
+        <nav class="sidebar-nav">
+
+            <a href="dashboard.html" class="sidebar-link">
+                <span>▦</span> Dashboard
+            </a>
+
+            <a href="profile.html" class="sidebar-link">
+                <span>👤</span> My Profile
+            </a>
+
+            <a href="manage-schedule.html" class="sidebar-link">
+                <span>📅</span> Manage Schedule
+            </a>
+
+            <a href="booking-requests.html" class="sidebar-link active">
+                <span>📋</span> Booking Requests
+            </a>
+
+        </nav>
+
+        <div class="sidebar-bottom">
+
+            <a href="../index.html" class="sidebar-link">
+                <span>🏠</span> Homepage
+            </a>
+
+            <button id="logoutBtn" class="sidebar-logout">
+                <span>↪</span> Logout
+            </button>
+
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+    <main class="dashboard-main">
+
+        <!-- TOP BAR -->
+        <header class="dashboard-topbar">
+
+            <div>
+                <p class="dashboard-date" id="currentDate"></p>
+                <h2>Booking Requests</h2>
+            </div>
+
+            <div class="user-information">
+
+                <div class="user-avatar" id="userInitials">TU</div>
+
+                <div>
+                    <strong id="tutorName">Tutor</strong>
+                    <p>Tutor Account</p>
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- PAGE BANNER -->
+        <section class="requests-banner">
+
+            <div>
+                <span class="welcome-small">TUTOR BOOKING MANAGEMENT</span>
+
+                <h1>Manage Student Requests!</h1>
+
+                <p>
+                    Review student tutoring requests, approve or reject
+                    reservations, and manage your tutoring sessions.
+                </p>
+            </div>
+
+            <div class="requests-banner-icon">📋</div>
+
+        </section>
+
+
+        <!-- STATISTICS -->
+        <section class="request-statistics">
+
+            <div class="request-stat-card">
+
+                <div class="request-stat-icon blue-icon">📚</div>
+
+                <div>
+                    <p>Total Requests</p>
+                    <h2 id="totalRequests">0</h2>
+                </div>
+
+            </div>
+
+
+            <div class="request-stat-card">
+
+                <div class="request-stat-icon orange-icon">⏳</div>
+
+                <div>
+                    <p>Pending</p>
+                    <h2 id="pendingRequests">0</h2>
+                </div>
+
+            </div>
+
+
+            <div class="request-stat-card">
+
+                <div class="request-stat-icon green-icon">✓</div>
+
+                <div>
+                    <p>Approved</p>
+                    <h2 id="approvedRequests">0</h2>
+                </div>
+
+            </div>
+
+
+            <div class="request-stat-card">
+
+                <div class="request-stat-icon purple-icon">🎓</div>
+
+                <div>
+                    <p>Completed</p>
+                    <h2 id="completedRequests">0</h2>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- BOOKING REQUESTS LIST -->
+        <section class="requests-section">
+
+            <div class="requests-section-heading">
+
+                <div>
+                    <h2>Student Booking Requests</h2>
+
+                    <p>
+                        Review and manage the tutoring sessions requested by students.
+                    </p>
+                </div>
+
+            </div>
+
+
+            <!-- SEARCH AND FILTER -->
+            <div class="request-filter-panel">
+
+                <div class="request-search">
+
+                    <span>🔍</span>
+
+                    <input
+                        type="search"
+                        id="requestSearch"
+                        placeholder="Search student name or subject..."
+                    >
+
+                </div>
+
+
+                <div class="request-filter-group">
+
+                    <div>
+                        <label for="requestStatusFilter">
+                            Booking Status
+                        </label>
+
+                        <select id="requestStatusFilter">
+
+                            <option value="all">All Statuses</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Rejected">Rejected</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+
+                        </select>
+                    </div>
+
+
+                    <button id="clearRequestFilters" class="request-clear-btn">
+                        Clear Filters
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- RESULT COUNT -->
+            <p id="requestResults" class="request-results">
+                Showing all requests.
+            </p>
+
+
+            <!-- REQUEST CARDS -->
+            <div id="requestList" class="request-list">
+
+                <!-- JavaScript will display requests here -->
+
+            </div>
+
+
+            <!-- EMPTY STATE -->
+            <div id="emptyRequests" class="empty-requests hidden">
+
+                <div>📋</div>
+
+                <h3>No Booking Requests Found</h3>
+
+                <p>
+                    Student booking requests will appear here
+                    when someone books a tutoring session with you.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- INFORMATION BOX -->
+        <section class="request-reminder">
+
+            <div class="reminder-icon">💡</div>
+
+            <div>
+                <h3>Manage Your Tutoring Requests Carefully!</h3>
+
+                <p>
+                    Review the student's preferred date, time, and tutoring
+                    mode before approving a booking.
+                </p>
+            </div>
+
+        </section>
+
+
+        <!-- FOOTER -->
+        <footer class="dashboard-footer">
+            © 2026 PeerTutor. All Rights Reserved.
+        </footer>
+
+    </main>
+
+
+    <script src="../js/tutor.js"></script>
+    <script src="../js/booking-requests.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,405 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Schedule | PeerTutor</title>
+
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+
+<body class="dashboard-page">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <a href="../index.html" class="dashboard-logo">
+            📚 Peer<span>Tutor</span>
+        </a>
+
+        <p class="sidebar-label">TUTOR MENU</p>
+
+        <nav class="sidebar-nav">
+
+            <a href="dashboard.html" class="sidebar-link">
+                <span>▦</span> Dashboard
+            </a>
+
+            <a href="profile.html" class="sidebar-link">
+                <span>👤</span> My Profile
+            </a>
+
+            <a href="manage-schedule.html" class="sidebar-link active">
+                <span>📅</span> Manage Schedule
+            </a>
+
+            <a href="booking-requests.html" class="sidebar-link">
+                <span>📋</span> Booking Requests
+            </a>
+
+        </nav>
+
+        <div class="sidebar-bottom">
+
+            <a href="../index.html" class="sidebar-link">
+                <span>🏠</span> Homepage
+            </a>
+
+            <button id="logoutBtn" class="sidebar-logout">
+                <span>↪</span> Logout
+            </button>
+
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+    <main class="dashboard-main">
+
+        <!-- TOP BAR -->
+        <header class="dashboard-topbar">
+
+            <div>
+                <p class="dashboard-date" id="currentDate"></p>
+                <h2>Manage Schedule</h2>
+            </div>
+
+            <div class="user-information">
+
+                <div class="user-avatar" id="userInitials">TU</div>
+
+                <div>
+                    <strong id="tutorName">Tutor</strong>
+                    <p>Tutor Account</p>
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- PAGE BANNER -->
+        <section class="schedule-banner">
+
+            <div>
+                <span class="welcome-small">TUTOR SCHEDULE MANAGEMENT</span>
+
+                <h1>Manage Your Availability!</h1>
+
+                <p>
+                    Set your available dates, times, and tutoring modes
+                    so students can book a session with you.
+                </p>
+            </div>
+
+            <div class="schedule-banner-icon">📅</div>
+
+        </section>
+
+
+        <!-- SCHEDULE STATISTICS -->
+        <section class="schedule-statistics">
+
+            <div class="schedule-stat-card">
+                <div class="schedule-stat-icon blue-icon">📅</div>
+                <div>
+                    <p>Total Schedules</p>
+                    <h2 id="totalSchedules">0</h2>
+                </div>
+            </div>
+
+            <div class="schedule-stat-card">
+                <div class="schedule-stat-icon green-icon">✓</div>
+                <div>
+                    <p>Available</p>
+                    <h2 id="availableSchedules">0</h2>
+                </div>
+            </div>
+
+            <div class="schedule-stat-card">
+                <div class="schedule-stat-icon orange-icon">🔒</div>
+                <div>
+                    <p>Booked</p>
+                    <h2 id="bookedSchedules">0</h2>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- PROFILE WARNING -->
+        <div id="profileWarning" class="schedule-warning hidden">
+
+            <span>⚠️</span>
+
+            <div>
+                <strong>Complete your tutor profile first.</strong>
+
+                <p>
+                    Save your profile and select your tutoring modes
+                    so students can discover your tutoring services.
+                </p>
+
+                <a href="profile.html">Complete My Profile →</a>
+            </div>
+
+        </div>
+
+
+        <!-- ADD SCHEDULE FORM -->
+        <section class="schedule-form-card">
+
+            <div class="schedule-form-heading">
+
+                <div>
+                    <span class="section-tag">SCHEDULE SETTINGS</span>
+
+                    <h2 id="scheduleFormTitle">Add Available Schedule</h2>
+
+                    <p>
+                        Enter the date, time, and tutoring mode you can offer.
+                    </p>
+                </div>
+
+                <div class="schedule-heading-icon">🗓️</div>
+
+            </div>
+
+
+            <form id="scheduleForm">
+
+                <input
+                    type="hidden"
+                    id="scheduleId"
+                >
+
+
+                <!-- DATE -->
+                <div class="schedule-form-group">
+
+                    <label for="availableDate">Available Date</label>
+
+                    <input
+                        type="date"
+                        id="availableDate"
+                        required
+                    >
+
+                </div>
+
+
+                <!-- TIME FIELDS -->
+                <div class="schedule-time-grid">
+
+                    <div class="schedule-form-group">
+
+                        <label for="startTime">Starting Time</label>
+
+                        <input
+                            type="time"
+                            id="startTime"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="schedule-form-group">
+
+                        <label for="endTime">Ending Time</label>
+
+                        <input
+                            type="time"
+                            id="endTime"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <!-- TUTORING MODE -->
+                <div class="schedule-form-group">
+
+                    <label for="scheduleMode">Tutoring Mode</label>
+
+                    <select id="scheduleMode" required>
+
+                        <option value="">Select Tutoring Mode</option>
+
+                    </select>
+
+                    <small id="availableModeNote">
+                        Modes are based on your saved tutor profile.
+                    </small>
+
+                </div>
+
+
+                <!-- FACE TO FACE LOCATION -->
+                <div
+                    class="schedule-form-group hidden"
+                    id="scheduleLocationGroup"
+                >
+
+                    <label for="scheduleLocation">
+                        Meeting Location
+                    </label>
+
+                    <input
+                        type="text"
+                        id="scheduleLocation"
+                        placeholder="Example: School Library"
+                    >
+
+                    <small>
+                        Enter the location where you can meet your students.
+                    </small>
+
+                </div>
+
+
+                <!-- MESSAGE -->
+                <p
+                    id="scheduleMessage"
+                    class="schedule-message"
+                    aria-live="polite"
+                ></p>
+
+
+                <!-- BUTTONS -->
+                <div class="schedule-form-buttons">
+
+                    <button
+                        type="button"
+                        id="cancelEditBtn"
+                        class="schedule-reset-btn hidden"
+                    >
+                        Cancel Edit
+                    </button>
+
+                    <button
+                        type="reset"
+                        id="resetScheduleBtn"
+                        class="schedule-reset-btn"
+                    >
+                        Clear Form
+                    </button>
+
+                    <button
+                        type="submit"
+                        id="saveScheduleBtn"
+                        class="schedule-save-btn"
+                    >
+                        + Add Schedule
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+
+        <!-- SAVED SCHEDULES -->
+        <section class="saved-schedules-section">
+
+            <div class="saved-schedules-heading">
+
+                <div>
+                    <h2>My Available Schedules</h2>
+
+                    <p>
+                        View and manage your tutoring availability.
+                    </p>
+                </div>
+
+            </div>
+
+
+            <!-- FILTER -->
+            <div class="schedule-filter-panel">
+
+                <div>
+                    <label for="scheduleFilter">Filter by Tutoring Mode</label>
+
+                    <select id="scheduleFilter">
+
+                        <option value="all">All Modes</option>
+                        <option value="Online">Online</option>
+                        <option value="Face-to-Face">Face-to-Face</option>
+
+                    </select>
+                </div>
+
+                <button id="clearScheduleFilter" class="schedule-clear-btn">
+                    Clear Filter
+                </button>
+
+            </div>
+
+
+            <!-- RESULTS -->
+            <p id="scheduleResults" class="schedule-results">
+                Showing all schedules.
+            </p>
+
+
+            <!-- SCHEDULE LIST -->
+            <div id="scheduleList" class="schedule-list">
+
+                <!-- Schedules appear here through JavaScript -->
+
+            </div>
+
+
+            <!-- EMPTY STATE -->
+            <div id="emptySchedules" class="empty-schedules hidden">
+
+                <div>🗓️</div>
+
+                <h3>No Schedules Available</h3>
+
+                <p>
+                    You have not added any tutoring schedules yet.
+                    Add your first available schedule above.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- REMINDER -->
+        <section class="schedule-reminder">
+
+            <div class="reminder-icon">💡</div>
+
+            <div>
+                <h3>Keep Your Schedule Updated!</h3>
+
+                <p>
+                    Make sure your available dates and times are accurate
+                    so students can book your tutoring sessions.
+                </p>
+            </div>
+
+        </section>
+
+
+        <!-- FOOTER -->
+        <footer class="dashboard-footer">
+            © 2026 PeerTutor. All Rights Reserved.
+        </footer>
+
+    </main>
+
+
+    <script src="../js/schedule.js"></script>
+
+</body>
+</html>

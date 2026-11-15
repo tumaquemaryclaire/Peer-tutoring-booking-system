@@ -1,0 +1,213 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tutor Profile | PeerTutor</title>
+
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+
+<body class="dashboard-page">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <a href="../index.html" class="dashboard-logo">
+            📚 Peer<span>Tutor</span>
+        </a>
+
+        <p class="sidebar-label">MAIN MENU</p>
+
+        <nav class="sidebar-nav">
+
+            <a href="dashboard.html" class="sidebar-link">
+                <span>▦</span> Dashboard
+            </a>
+
+            <a href="find-tutors.html" class="sidebar-link active">
+                <span>🔍</span> Find Tutors
+            </a>
+
+            <a href="my-bookings.html" class="sidebar-link">
+                <span>📅</span> My Bookings
+            </a>
+
+            <a href="feedback.html" class="sidebar-link">
+                <span>⭐</span> Feedback
+            </a>
+
+        </nav>
+
+        <div class="sidebar-bottom">
+
+            <a href="../index.html" class="sidebar-link">
+                <span>🏠</span> Homepage
+            </a>
+
+            <button id="logoutBtn" class="sidebar-logout">
+                <span>↪</span> Logout
+            </button>
+
+        </div>
+
+    </aside>
+
+
+    <!-- PROFILE CONTENT -->
+    <main class="dashboard-main">
+
+        <header class="dashboard-topbar">
+
+            <div>
+                <p class="dashboard-date" id="currentDate"></p>
+                <h2>Tutor Profile</h2>
+            </div>
+
+            <div class="user-information">
+                <div class="user-avatar" id="userInitials">ST</div>
+
+                <div>
+                    <strong id="studentName">Student</strong>
+                    <p>Student Account</p>
+                </div>
+            </div>
+
+        </header>
+
+
+        <a href="find-tutors.html" class="profile-back-link">
+            ← Back to Find Tutors
+        </a>
+
+
+        <!-- TUTOR PROFILE -->
+        <section class="tutor-profile-card">
+
+            <div class="profile-header">
+
+                <div id="profileAvatar" class="profile-avatar">
+                    --
+                </div>
+
+                <div class="profile-heading">
+
+                    <span class="profile-label">PEER TUTOR</span>
+
+                    <h1 id="profileName">Tutor Name</h1>
+
+                    <p id="profileSubject">Tutor Subject</p>
+
+                    <div class="profile-rating">
+                        ⭐ <span id="profileRating">0.0</span>
+                        <small>Sample Rating</small>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="profile-divider"></div>
+
+
+            <div class="profile-information">
+
+                <div>
+                    <h3>About the Tutor</h3>
+
+                    <p id="profileDescription">
+                        Tutor description will appear here.
+                    </p>
+                </div>
+
+                <div>
+                    <h3>Areas of Expertise</h3>
+
+                    <p id="profileExpertise">
+                        Tutor expertise will appear here.
+                    </p>
+                </div>
+
+            </div>
+
+
+            <!-- TUTORING MODES -->
+            <div class="profile-mode-section">
+
+                <h3>Available Tutoring Modes</h3>
+
+                <p>Choose your preferred method of learning.</p>
+
+                <div id="profileModes" class="profile-modes">
+                    <!-- JavaScript displays tutoring modes here -->
+                </div>
+
+            </div>
+
+
+            <!-- SAMPLE SCHEDULE -->
+            <div class="profile-schedule">
+
+                <h3>Sample Available Schedule</h3>
+
+                <p>
+                    The following schedule is for demonstration only.
+                    Actual availability will be managed by the tutor.
+                </p>
+
+                <div class="sample-schedule-grid">
+
+                    <div class="sample-schedule-item">
+                        <strong>Monday</strong>
+                        <span>9:00 AM - 11:00 AM</span>
+                    </div>
+
+                    <div class="sample-schedule-item">
+                        <strong>Wednesday</strong>
+                        <span>1:00 PM - 3:00 PM</span>
+                    </div>
+
+                    <div class="sample-schedule-item">
+                        <strong>Friday</strong>
+                        <span>10:00 AM - 12:00 PM</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- BOOKING BUTTON -->
+            <div class="profile-booking-action">
+
+                <div>
+                    <h3>Ready to Start Learning?</h3>
+
+                    <p>
+                        Continue to book a tutoring session with this tutor.
+                    </p>
+                </div>
+
+                <button id="bookSessionBtn" class="profile-book-btn">
+                    Book a Session →
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <footer class="dashboard-footer">
+            © 2026 PeerTutor. All Rights Reserved.
+        </footer>
+
+    </main>
+
+
+    <script src="../js/tutor-profile.js"></script>
+
+</body>
+</html>

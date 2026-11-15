@@ -1,0 +1,331 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Tutor Dashboard | PeerTutor</title>
+
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+
+<body class="dashboard-page">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <a href="../index.html" class="dashboard-logo">
+            📚 Peer<span>Tutor</span>
+        </a>
+
+        <p class="sidebar-label">TUTOR MENU</p>
+
+        <nav class="sidebar-nav">
+
+            <a href="dashboard.html" class="sidebar-link active">
+                <span>▦</span> Dashboard
+            </a>
+
+            <a href="profile.html" class="sidebar-link">
+                <span>👤</span> My Profile
+            </a>
+
+            <a href="manage-schedule.html" class="sidebar-link">
+                <span>📅</span> Manage Schedule
+            </a>
+
+            <a href="booking-requests.html" class="sidebar-link">
+                <span>📋</span> Booking Requests
+            </a>
+
+        </nav>
+
+        <div class="sidebar-bottom">
+
+            <a href="../index.html" class="sidebar-link">
+                <span>🏠</span> Homepage
+            </a>
+
+            <button id="logoutBtn" class="sidebar-logout">
+                <span>↪</span> Logout
+            </button>
+
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+    <main class="dashboard-main">
+
+        <!-- TOP BAR -->
+        <header class="dashboard-topbar">
+
+            <div>
+                <p class="dashboard-date" id="currentDate"></p>
+                <h2>Tutor Dashboard</h2>
+            </div>
+
+            <div class="user-information">
+
+                <div class="user-avatar" id="userInitials">TU</div>
+
+                <div>
+                    <strong id="tutorName">Tutor</strong>
+                    <p>Tutor Account</p>
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- WELCOME SECTION -->
+        <section class="tutor-welcome">
+
+            <div>
+
+                <span class="welcome-small">TUTOR PORTAL</span>
+
+                <h1>Welcome, <span id="welcomeName">Tutor</span>! 👋</h1>
+
+                <p>
+                    Manage your tutoring activities, check student requests,
+                    and help other students improve their skills.
+                </p>
+
+                <a href="booking-requests.html" class="tutor-primary-btn">
+                    View Booking Requests →
+                </a>
+
+            </div>
+
+            <div class="tutor-welcome-icon">
+                👩‍🏫
+                <span>Share Your Knowledge!</span>
+            </div>
+
+        </section>
+
+
+        <!-- STATISTICS -->
+        <section class="dashboard-section">
+
+            <div class="dashboard-section-heading">
+
+                <div>
+                    <h2>My Tutoring Overview</h2>
+
+                    <p>
+                        Summary of your tutoring activities.
+                    </p>
+                </div>
+
+            </div>
+
+
+            <div class="stats-grid">
+
+                <div class="stat-card">
+
+                    <div class="stat-icon blue-icon">📋</div>
+
+                    <div>
+                        <p>Total Requests</p>
+                        <h2 id="tutorTotalBookings">0</h2>
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-icon orange-icon">⏳</div>
+
+                    <div>
+                        <p>Pending Requests</p>
+                        <h2 id="tutorPendingBookings">0</h2>
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-icon green-icon">✓</div>
+
+                    <div>
+                        <p>Approved Bookings</p>
+                        <h2 id="tutorApprovedBookings">0</h2>
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-icon purple-icon">🎓</div>
+
+                    <div>
+                        <p>Completed Sessions</p>
+                        <h2 id="tutorCompletedBookings">0</h2>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- QUICK ACTIONS -->
+        <section class="dashboard-section">
+
+            <div class="dashboard-section-heading">
+
+                <div>
+                    <h2>Quick Actions</h2>
+
+                    <p>
+                        Manage your tutoring activities easily.
+                    </p>
+                </div>
+
+            </div>
+
+
+            <div class="quick-action-grid">
+
+                <a href="profile.html" class="quick-action-card">
+
+                    <div class="quick-icon">👤</div>
+
+                    <h3>Manage Profile</h3>
+
+                    <p>
+                        Update your personal information and expertise.
+                    </p>
+
+                    <span>Edit Profile →</span>
+
+                </a>
+
+
+                <a href="manage-schedule.html" class="quick-action-card">
+
+                    <div class="quick-icon">📅</div>
+
+                    <h3>Manage Schedule</h3>
+
+                    <p>
+                        Add and manage your available tutoring schedules.
+                    </p>
+
+                    <span>Manage Schedule →</span>
+
+                </a>
+
+
+                <a href="booking-requests.html" class="quick-action-card">
+
+                    <div class="quick-icon">📋</div>
+
+                    <h3>Booking Requests</h3>
+
+                    <p>
+                        Review student requests and manage reservations.
+                    </p>
+
+                    <span>View Requests →</span>
+
+                </a>
+
+            </div>
+
+        </section>
+
+
+        <!-- RECENT REQUESTS -->
+        <section class="dashboard-section">
+
+            <div class="dashboard-section-heading">
+
+                <div>
+                    <h2>Recent Booking Requests</h2>
+
+                    <p>
+                        Latest tutoring requests from students.
+                    </p>
+                </div>
+
+                <a href="booking-requests.html" class="view-all-btn">
+                    View All →
+                </a>
+
+            </div>
+
+
+            <div class="booking-table-wrapper">
+
+                <table class="booking-table">
+
+                    <thead>
+
+                        <tr>
+                            <th>Student</th>
+                            <th>Subject</th>
+                            <th>Date</th>
+                            <th>Mode</th>
+                            <th>Status</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="tutorRecentBookings">
+
+                        <tr>
+                            <td colspan="5" class="empty-booking">
+                                No booking requests yet.
+                            </td>
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+
+        <!-- REMINDER -->
+        <section class="dashboard-reminder">
+
+            <div class="reminder-icon">💡</div>
+
+            <div>
+                <h3>Make Learning Meaningful!</h3>
+
+                <p>
+                    Share your knowledge, guide fellow students,
+                    and help them achieve their academic goals.
+                </p>
+            </div>
+
+        </section>
+
+
+        <!-- FOOTER -->
+        <footer class="dashboard-footer">
+            © 2026 PeerTutor. All Rights Reserved.
+        </footer>
+
+    </main>
+
+
+    <script src="../js/tutor.js"></script>
+
+</body>
+</html>
