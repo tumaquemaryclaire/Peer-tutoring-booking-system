@@ -687,3 +687,117 @@
     padding: 20px;
   }
 }
+
+/* =====================================
+   TUTOR PROFILE EDIT FORM
+===================================== */
+
+.tutor-profile-form {
+  width: 100%;
+  margin-top: 22px;
+}
+
+.profile-edit-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  margin-top: 25px;
+}
+
+.profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  width: 100%;
+}
+
+.profile-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #26364b;
+}
+
+.profile-field input,
+.profile-field select,
+.profile-field textarea {
+  width: 100%;
+  padding: 13px 15px;
+  border: 1px solid #dfe5ee;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #26364b;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  outline: none;
+  transition: 0.2s ease;
+}
+
+.profile-field input {
+  height: 46px;
+}
+
+.profile-field select {
+  height: 46px;
+  cursor: pointer;
+}
+
+.profile-field textarea {
+  min-height: 130px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.profile-field input::placeholder,
+.profile-field textarea::placeholder {
+  color: #a3adbb;
+}
+
+.profile-field input:focus,
+.profile-field select:focus,
+.profile-field textarea:focus {
+  border-color: #4776e6;
+  box-shadow: 0 0 0 3px rgba(71, 118, 230, 0.10);
+}
+
+.profile-field small {
+  color: #8994a5;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* SAVE BUTTON */
+
+.save-profile-button {
+  margin-top: 25px;
+  padding: 13px 25px;
+  border: none;
+  border-radius: 9px;
+  background: #4776e6;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.save-profile-button:hover {
+  background: #3563d0;
+  box-shadow: 0 4px 12px rgba(71, 118, 230, 0.18);
+}
+
+.save-profile-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* PROFILE FORM RESPONSIVE */
+
+@media (max-width: 560px) {
+  .profile-edit-fields {
+    gap: 18px;
+  }
+
+  .save-profile-button {
+    width: 100%;
+  }
+}

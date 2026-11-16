@@ -1,7 +1,14 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import {
+  collection,
+  onSnapshot,
+  query,
+  where,
+  addDoc,
+  serverTimestamp
+} from "firebase/firestore";
 
 import { logoutUser } from "../services/auth";
 import { db } from "../services/firebase";
@@ -14,6 +21,19 @@ function StudentDashboard() {
   const [currentUser, setCurrentUser] = useState(null);
   const [tutors, setTutors] = useState([]);
   const [loadingTutors, setLoadingTutors] = useState(true);
+
+  // BOOKING FORM STATES
+  const [selectedTutor, setSelectedTutor] = useState(null);
+
+  const [bookingForm, setBookingForm] = useState({
+    subject: "",
+    teachingMode: "",
+    preferredDate: "",
+    preferredTime: "",
+    message: ""
+  });
+
+  const [submittingBooking, setSubmittingBooking] = useState(false);
 
   // CHECK STUDENT LOGIN
   useEffect(() => {
@@ -75,18 +95,126 @@ function StudentDashboard() {
     alert(`${page} page will be available soon.`);
   }
 
+  // OPEN BOOKING FORM
+  function openBookingForm(tutor) {
+    setSelectedTutor(tutor);
+
+    setBookingForm({
+      subject: tutor.subjects?.[0] || "",
+      teachingMode: "",
+      preferredDate: "",
+      preferredTime: "",
+      message: ""
+    });
+  }
+
+  // CLOSE BOOKING FORM
+  function closeBookingForm() {
+    if (submittingBooking) return;
+    setSelectedTutor(null);
+  }
+
+  // HANDLE BOOKING FORM INPUTS
+  function handleBookingChange(e) {
+    const { name, value } = e.target;
+
+    setBookingForm((previousForm) => ({
+      ...previousForm,
+      [name]: value
+    }));
+  }
+
+  // SUBMIT BOOKING REQUEST
+  async function handleBookingSubmit(e) {
+    e.preventDefault();
+
+    if (!currentUser?.uid || !selectedTutor) {
+      alert("Unable to identify your account or selected tutor.");
+      return;
+    }
+
+    if (
+      !bookingForm.subject.trim() ||
+      !bookingForm.teachingMode ||
+      !bookingForm.preferredDate ||
+      !bookingForm.preferredTime
+    ) {
+      alert("Please complete all required fields.");
+      return;
+    }
+
+    setSubmittingBooking(true);
+
+    try {
+      const tutorName =
+        selectedTutor.fullName ||
+        [
+          selectedTutor.firstName || "",
+          selectedTutor.middleName || "",
+          selectedTutor.lastName || ""
+        ].filter(Boolean).join(" ") +
+        (selectedTutor.suffix ? `, ${selectedTutor.suffix}` : "");
+
+      const studentName =
+        currentUser.fullName ||
+        currentUser.name ||
+        [
+          currentUser.firstName || "",
+          currentUser.middleName || "",
+          currentUser.lastName || ""
+        ].filter(Boolean).join(" ") +
+        (currentUser.suffix ? `, ${currentUser.suffix}` : "");
+
+      await addDoc(collection(db, "bookings"), {
+        studentUid: currentUser.uid,
+        studentName: studentName,
+        studentEmail: currentUser.email || "",
+
+        tutorUid: selectedTutor.id,
+        tutorName: tutorName,
+
+        subject: bookingForm.subject.trim(),
+        teachingMode: bookingForm.teachingMode,
+        preferredDate: bookingForm.preferredDate,
+        preferredTime: bookingForm.preferredTime,
+        message: bookingForm.message.trim(),
+
+        status: "Pending",
+        createdAt: serverTimestamp()
+      });
+
+      alert("Booking request submitted successfully!");
+
+      setSelectedTutor(null);
+
+      setBookingForm({
+        subject: "",
+        teachingMode: "",
+        preferredDate: "",
+        preferredTime: "",
+        message: ""
+      });
+
+    } catch (error) {
+      console.error("Booking submission error:", error);
+      alert("Unable to submit your booking request. Please try again.");
+    } finally {
+      setSubmittingBooking(false);
+    }
+  }
+
   if (!currentUser) {
     return null;
   }
 
   // COMPLETE STUDENT NAME
   const firstName = currentUser.firstName || "Student";
-
   const middleName = currentUser.middleName || "";
   const lastName = currentUser.lastName || "";
   const suffix = currentUser.suffix || "";
 
-  const fullName = currentUser.fullName ||
+  const fullName =
+    currentUser.fullName ||
     currentUser.name ||
     [
       firstName,
@@ -392,11 +520,9 @@ function StudentDashboard() {
 
                     <div className="tutor-rating">
                       <button
-                        onClick={() =>
-                          showComingSoon("Tutor Profile")
-                        }
+                        onClick={() => openBookingForm(tutor)}
                       >
-                        View Profile
+                        Book Tutor
                       </button>
                     </div>
                   </div>
@@ -413,6 +539,187 @@ function StudentDashboard() {
 
         </section>
       </main>
+
+      {/* BOOKING FORM MODAL */}
+      {selectedTutor && (
+        <div
+          className="booking-modal-overlay"
+          onClick={closeBookingForm}
+        >
+          <div
+            className="booking-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+
+            <div className="booking-modal-header">
+              <div>
+                <span>PEERTUTOR BOOKING</span>
+                <h2>Book a Tutoring Session</h2>
+                <p>Fill in the details to send your booking request.</p>
+              </div>
+
+              <button
+                type="button"
+                className="close-booking-button"
+                onClick={closeBookingForm}
+                disabled={submittingBooking}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* SELECTED TUTOR */}
+            <div className="booking-selected-tutor">
+              <div className="booking-tutor-avatar">
+                {(selectedTutor.firstName || "T")
+                  .charAt(0)
+                  .toUpperCase()}
+              </div>
+
+              <div>
+                <span>SELECTED TUTOR</span>
+                <h3>
+                  {selectedTutor.fullName ||
+                    [
+                      selectedTutor.firstName || "",
+                      selectedTutor.middleName || "",
+                      selectedTutor.lastName || ""
+                    ].filter(Boolean).join(" ") +
+                    (selectedTutor.suffix
+                      ? `, ${selectedTutor.suffix}`
+                      : "")}
+                </h3>
+                <p>
+                  {selectedTutor.subjects?.length
+                    ? selectedTutor.subjects.join(", ")
+                    : "No subjects listed"}
+                </p>
+              </div>
+            </div>
+
+            {/* BOOKING FORM */}
+            <form
+              className="booking-form"
+              onSubmit={handleBookingSubmit}
+            >
+
+              <div className="booking-form-field">
+                <label htmlFor="bookingSubject">
+                  Subject *
+                </label>
+
+                <input
+                  id="bookingSubject"
+                  type="text"
+                  name="subject"
+                  placeholder="Enter the subject you need help with"
+                  value={bookingForm.subject}
+                  onChange={handleBookingChange}
+                  required
+                />
+              </div>
+
+              <div className="booking-form-field">
+                <label htmlFor="bookingMode">
+                  Preferred Teaching Mode *
+                </label>
+
+                <select
+                  id="bookingMode"
+                  name="teachingMode"
+                  value={bookingForm.teachingMode}
+                  onChange={handleBookingChange}
+                  required
+                >
+                  <option value="">Select teaching mode</option>
+                  <option value="Online">Online</option>
+                  <option value="Face-to-Face">Face-to-Face</option>
+                </select>
+              </div>
+
+              <div className="booking-form-row">
+
+                <div className="booking-form-field">
+                  <label htmlFor="bookingDate">
+                    Preferred Date *
+                  </label>
+
+                  <input
+                    id="bookingDate"
+                    type="date"
+                    name="preferredDate"
+                    min={new Date().toLocaleDateString("en-CA")}
+                    value={bookingForm.preferredDate}
+                    onChange={handleBookingChange}
+                    required
+                  />
+                </div>
+
+                <div className="booking-form-field">
+                  <label htmlFor="bookingTime">
+                    Preferred Time *
+                  </label>
+
+                  <input
+                    id="bookingTime"
+                    type="time"
+                    name="preferredTime"
+                    value={bookingForm.preferredTime}
+                    onChange={handleBookingChange}
+                    required
+                  />
+                </div>
+
+              </div>
+
+              <div className="booking-form-field">
+                <label htmlFor="bookingMessage">
+                  Additional Message
+                </label>
+
+                <textarea
+                  id="bookingMessage"
+                  name="message"
+                  placeholder="Tell the tutor what topic or lesson you need help with..."
+                  value={bookingForm.message}
+                  onChange={handleBookingChange}
+                  rows="4"
+                />
+              </div>
+
+              <div className="booking-form-note">
+                <strong>Note:</strong> Your booking request will be sent
+                to the tutor with a Pending status. The tutor must accept
+                your request before the session is confirmed.
+              </div>
+
+              <div className="booking-form-actions">
+                <button
+                  type="button"
+                  className="cancel-booking-button"
+                  onClick={closeBookingForm}
+                  disabled={submittingBooking}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  className="submit-booking-button"
+                  disabled={submittingBooking}
+                >
+                  {submittingBooking
+                    ? "Submitting..."
+                    : "Submit Request"}
+                </button>
+              </div>
+
+            </form>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
