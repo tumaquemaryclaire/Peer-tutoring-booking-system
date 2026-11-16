@@ -18,6 +18,65 @@ import {
 import { auth, db } from "../services/firebase";
 import "./TutorDashboard.css";
 
+// CONVERT SESSION DATE AND TIME
+function getSessionDateTime(session) {
+  if (!session.preferredDate) return null;
+
+  const dateParts = session.preferredDate.split("-");
+
+  if (dateParts.length !== 3) return null;
+
+  const year = Number(dateParts[0]);
+  const month = Number(dateParts[1]);
+  const day = Number(dateParts[2]);
+
+  const date = new Date(year, month - 1, day);
+
+  if (Number.isNaN(date.getTime())) return null;
+
+  const time = (session.preferredTime || "12:00 AM").trim();
+
+  // Supports both 24-hour and 12-hour time formats
+  let hours;
+  let minutes;
+
+  if (/^\d{2}:\d{2}$/.test(time)) {
+    [hours, minutes] = time.split(":").map(Number);
+  } else {
+    const match = time.match(
+      /^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i
+    );
+
+    if (!match) return null;
+
+    hours = Number(match[1]);
+    minutes = Number(match[2]);
+
+    const period = match[3]?.toUpperCase();
+
+    if (period === "PM" && hours !== 12) {
+      hours += 12;
+    }
+
+    if (period === "AM" && hours === 12) {
+      hours = 0;
+    }
+  }
+
+  if (
+    hours < 0 ||
+    hours > 23 ||
+    minutes < 0 ||
+    minutes > 59
+  ) {
+    return null;
+  }
+
+  date.setHours(hours, minutes, 0, 0);
+
+  return date;
+}
+
 function TutorDashboard() {
   const navigate = useNavigate();
 
@@ -38,6 +97,10 @@ function TutorDashboard() {
   const [bookingRequests, setBookingRequests] = useState([]);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [updatingBooking, setUpdatingBooking] = useState("");
+
+  // NOTIFICATION STATES
+  const [notifications, setNotifications] = useState([]);
+  const [notificationLoading, setNotificationLoading] = useState(false);
 
   const tutorName =
     currentUser?.fullName ||
@@ -135,6 +198,46 @@ function TutorDashboard() {
     return () => unsubscribe();
   }, [currentUser]);
 
+  // REAL-TIME TUTOR NOTIFICATIONS
+  useEffect(() => {
+    if (!currentUser?.uid) return;
+
+    setNotificationLoading(true);
+
+    const notificationsQuery = query(
+      collection(db, "notifications"),
+      where("recipientUid", "==", currentUser.uid)
+    );
+
+    const unsubscribe = onSnapshot(
+      notificationsQuery,
+      (snapshot) => {
+        const notificationList = snapshot.docs.map((notificationDoc) => ({
+          id: notificationDoc.id,
+          ...notificationDoc.data()
+        }));
+
+        notificationList.sort((a, b) => {
+          const dateA = a.createdAt?.toMillis?.() || 0;
+          const dateB = b.createdAt?.toMillis?.() || 0;
+          return dateB - dateA;
+        });
+
+        setNotifications(notificationList);
+        setNotificationLoading(false);
+      },
+      (error) => {
+        console.error("Error fetching tutor notifications:", error);
+        alert(
+          `Unable to load notifications.\n${error.message}`
+        );
+        setNotificationLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [currentUser]);
+
   // LOGOUT
   const handleLogout = async () => {
     try {
@@ -142,7 +245,7 @@ function TutorDashboard() {
       sessionStorage.removeItem("pt_current_user");
       navigate("/login");
     } catch (error) {
-      console.error("Logout error:", error);
+      console.error("Error logging out:", error);
       alert("Unable to log out. Please try again.");
     }
   };
@@ -231,12 +334,10 @@ function TutorDashboard() {
     setUpdatingBooking(bookingId);
 
     try {
-      // Update booking status
       await updateDoc(doc(db, "bookings", bookingId), {
         status: newStatus
       });
 
-      // Create notification for the student
       const notificationMessage =
         newStatus === "Accepted"
           ? `${tutorName} accepted your tutoring request for ${booking.subject}.`
@@ -265,6 +366,42 @@ function TutorDashboard() {
     }
   };
 
+  // MARK ONE NOTIFICATION AS READ
+  const markNotificationAsRead = async (notificationId) => {
+    try {
+      await updateDoc(
+        doc(db, "notifications", notificationId),
+        { read: true }
+      );
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      alert("Unable to update notification.");
+    }
+  };
+
+  // MARK ALL NOTIFICATIONS AS READ
+  const markAllNotificationsAsRead = async () => {
+    const unreadNotifications = notifications.filter(
+      (notification) => notification.read !== true
+    );
+
+    if (unreadNotifications.length === 0) return;
+
+    try {
+      await Promise.all(
+        unreadNotifications.map((notification) =>
+          updateDoc(
+            doc(db, "notifications", notification.id),
+            { read: true }
+          )
+        )
+      );
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+      alert("Unable to update notifications.");
+    }
+  };
+
   if (!currentUser) {
     return (
       <div className="dashboard-loading">
@@ -290,6 +427,10 @@ function TutorDashboard() {
     (booking) => booking.status === "Accepted"
   ).length;
 
+  const unreadNotificationCount = notifications.filter(
+    (notification) => notification.read !== true
+  ).length;
+
   // ACCEPTED SESSIONS
   const acceptedSessions = bookingRequests
     .filter((booking) => booking.status === "Accepted")
@@ -299,9 +440,34 @@ function TutorDashboard() {
       return dateA.localeCompare(dateB);
     });
 
+  // UPCOMING SESSION REMINDERS
+  const now = new Date();
+
+  const sevenDaysFromNow = new Date(
+    now.getTime() + 7 * 24 * 60 * 60 * 1000
+  );
+
+  const upcomingSessions = acceptedSessions
+    .filter((session) => {
+      const sessionDate = getSessionDateTime(session);
+
+      return (
+        sessionDate &&
+        sessionDate >= now &&
+        sessionDate <= sevenDaysFromNow
+      );
+    })
+    .sort((a, b) => {
+      return (
+        getSessionDateTime(a).getTime() -
+        getSessionDateTime(b).getTime()
+      );
+    });
+
   // PAGE CONTENT
   const renderContent = () => {
     switch (activePage) {
+
       // MY PROFILE
       case "My Profile":
         return (
@@ -411,16 +577,10 @@ function TutorDashboard() {
                         }
                         required
                       >
-                        <option value="">
-                          Select teaching mode
-                        </option>
+                        <option value="">Select teaching mode</option>
                         <option value="Online">Online</option>
-                        <option value="Face-to-Face">
-                          Face-to-Face
-                        </option>
-                        <option value="Both">
-                          Both Online and Face-to-Face
-                        </option>
+                        <option value="Face-to-Face">Face-to-Face</option>
+                        <option value="Both">Both Online and Face-to-Face</option>
                       </select>
                     </div>
 
@@ -527,10 +687,7 @@ function TutorDashboard() {
                           type="button"
                           disabled={updatingBooking === booking.id}
                           onClick={() =>
-                            handleBookingStatus(
-                              booking.id,
-                              "Accepted"
-                            )
+                            handleBookingStatus(booking.id, "Accepted")
                           }
                         >
                           {updatingBooking === booking.id
@@ -542,10 +699,7 @@ function TutorDashboard() {
                           type="button"
                           disabled={updatingBooking === booking.id}
                           onClick={() =>
-                            handleBookingStatus(
-                              booking.id,
-                              "Rejected"
-                            )
+                            handleBookingStatus(booking.id, "Rejected")
                           }
                         >
                           {updatingBooking === booking.id
@@ -652,14 +806,207 @@ function TutorDashboard() {
       case "Notifications":
         return (
           <section className="tutor-content-section">
-            <h2>Notifications</h2>
-            <p>Stay updated with your tutoring activities.</p>
+            <div className="dashboard-section-heading">
+              <div>
+                <h2>Notifications</h2>
+                <p>
+                  View new booking requests and your upcoming session reminders.
+                </p>
+              </div>
 
-            <div className="empty-state">
-              <span>🔔</span>
-              <h3>No notifications yet</h3>
-              <p>Important updates will appear here.</p>
+              {unreadNotificationCount > 0 && (
+                <button
+                  type="button"
+                  className="view-all-button"
+                  onClick={markAllNotificationsAsRead}
+                >
+                  Mark All as Read
+                </button>
+              )}
             </div>
+
+            {notificationLoading ? (
+              <div className="empty-state">
+                <p>Loading notifications...</p>
+              </div>
+            ) : notifications.length === 0 && upcomingSessions.length === 0 ? (
+              <div className="empty-state">
+                <span>🔔</span>
+                <h3>No Notifications Yet</h3>
+                <p>
+                  New booking requests and upcoming session reminders
+                  will appear here.
+                </p>
+              </div>
+            ) : (
+              <>
+                {notifications.length > 0 && (
+                  <>
+                    <h3 className="notification-section-title">
+                      Booking Activity
+                    </h3>
+
+                    <div className="booking-request-list">
+                      {notifications.map((notification) => (
+                        <div
+                          className={`booking-request-card ${
+                            notification.read === true
+                              ? "notification-read"
+                              : "notification-unread"
+                          }`}
+                          key={notification.id}
+                        >
+                          <div className="booking-request-header">
+                            <div>
+                              <h3>
+                                {notification.type === "Pending"
+                                  ? "📩"
+                                  : "🔔"}{" "}
+                                {notification.title || "Booking Update"}
+                              </h3>
+
+                              {notification.createdAt?.toDate && (
+                                <small>
+                                  {notification.createdAt
+                                    .toDate()
+                                    .toLocaleString()}
+                                </small>
+                              )}
+                            </div>
+
+                            {notification.read !== true && (
+                              <span className="booking-status pending">
+                                NEW
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="booking-request-details">
+                            <p>
+                              {notification.message ||
+                                "You have a new booking update."}
+                            </p>
+                          </div>
+
+                          {notification.read !== true && (
+                            <div className="booking-request-actions">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  markNotificationAsRead(notification.id)
+                                }
+                              >
+                                Mark as Read
+                              </button>
+
+                              {notification.type === "Pending" && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setActivePage("Booking Requests")
+                                  }
+                                >
+                                  View Booking
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {upcomingSessions.length > 0 && (
+                  <>
+                    <h3 className="notification-section-title">
+                      Upcoming Session Reminders
+                    </h3>
+
+                    <div className="booking-request-list">
+                      {upcomingSessions.map((session) => {
+                        const sessionDate = getSessionDateTime(session);
+                        const today = new Date();
+
+                        const tomorrow = new Date(today);
+                        tomorrow.setDate(today.getDate() + 1);
+
+                        const isToday =
+                          sessionDate.toDateString() ===
+                          today.toDateString();
+
+                        const isTomorrow =
+                          sessionDate.toDateString() ===
+                          tomorrow.toDateString();
+
+                        let reminderLabel = "Upcoming Session";
+
+                        if (isToday) {
+                          reminderLabel = "Session Today";
+                        } else if (isTomorrow) {
+                          reminderLabel = "Session Tomorrow";
+                        }
+
+                        return (
+                          <div
+                            className="booking-request-card"
+                            key={session.id}
+                          >
+                            <div className="booking-request-header">
+                              <div>
+                                <h3>🔔 {reminderLabel}</h3>
+                                <p>
+                                  Your tutoring session is approaching.
+                                </p>
+                              </div>
+
+                              <span className="booking-status accepted">
+                                Confirmed
+                              </span>
+                            </div>
+
+                            <div className="booking-request-details">
+                              <p>
+                                <strong>Student:</strong>{" "}
+                                {session.studentName || "Student"}
+                              </p>
+
+                              <p>
+                                <strong>Subject:</strong>{" "}
+                                {session.subject || "Not specified"}
+                              </p>
+
+                              <p>
+                                <strong>Teaching Mode:</strong>{" "}
+                                {session.teachingMode || "Not specified"}
+                              </p>
+
+                              <p>
+                                <strong>Session Date:</strong>{" "}
+                                {sessionDate.toLocaleDateString()}
+                              </p>
+
+                              <p>
+                                <strong>Session Time:</strong>{" "}
+                                {sessionDate.toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit"
+                                })}
+                              </p>
+                            </div>
+
+                            <small>
+                              Reminder: This session is scheduled within
+                              the next seven days.
+                            </small>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </>
+            )}
           </section>
         );
 
@@ -700,9 +1047,9 @@ function TutorDashboard() {
               </div>
 
               <div className="tutor-stat-card">
-                <span className="stat-icon">💬</span>
-                <p>Unread Messages</p>
-                <h3>0</h3>
+                <span className="stat-icon">🔔</span>
+                <p>Unread Notifications</p>
+                <h3>{unreadNotificationCount}</h3>
               </div>
 
               <div className="tutor-stat-card">
@@ -734,6 +1081,12 @@ function TutorDashboard() {
                     onClick={() => setActivePage("My Sessions")}
                   >
                     📅 View My Sessions
+                  </button>
+
+                  <button
+                    onClick={() => setActivePage("Notifications")}
+                  >
+                    🔔 View Notifications
                   </button>
                 </div>
               </div>
@@ -807,10 +1160,18 @@ function TutorDashboard() {
             >
               <span>{item.icon}</span>
               {item.name}
+
               {item.name === "Booking Requests" &&
                 pendingBookings > 0 && (
                   <span className="notification-count">
                     {pendingBookings}
+                  </span>
+                )}
+
+              {item.name === "Notifications" &&
+                unreadNotificationCount > 0 && (
+                  <span className="notification-count">
+                    {unreadNotificationCount}
                   </span>
                 )}
             </button>

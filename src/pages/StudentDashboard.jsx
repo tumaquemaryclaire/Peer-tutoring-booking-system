@@ -209,6 +209,7 @@ function StudentDashboard() {
     }));
   }
 
+  
   // SUBMIT BOOKING REQUEST
   async function handleBookingSubmit(e) {
     e.preventDefault();
@@ -250,7 +251,8 @@ function StudentDashboard() {
         ].filter(Boolean).join(" ") +
         (currentUser.suffix ? `, ${currentUser.suffix}` : "");
 
-      await addDoc(collection(db, "bookings"), {
+      // SAVE BOOKING
+      const bookingRef = await addDoc(collection(db, "bookings"), {
         studentUid: currentUser.uid,
         studentName,
         studentEmail: currentUser.email || "",
@@ -265,6 +267,18 @@ function StudentDashboard() {
         message: bookingForm.message.trim(),
 
         status: "Pending",
+        createdAt: serverTimestamp()
+      });
+
+      // CREATE NOTIFICATION FOR TUTOR
+      await addDoc(collection(db, "notifications"), {
+        recipientUid: selectedTutor.id,
+        senderUid: currentUser.uid,
+        title: "New Booking Request",
+        message: `${studentName} sent you a tutoring request for ${bookingForm.subject.trim()}.`,
+        type: "Pending",
+        bookingId: bookingRef.id,
+        read: false,
         createdAt: serverTimestamp()
       });
 
@@ -289,6 +303,7 @@ function StudentDashboard() {
       setSubmittingBooking(false);
     }
   }
+
 
   // MARK NOTIFICATION AS READ
   async function markNotificationAsRead(notificationId) {
