@@ -9,7 +9,7 @@ import {
   updateDoc
 } from "firebase/firestore";
 
-import { db } from "../services/firebase";
+import { auth, db } from "../services/firebase";
 import "./TutorDashboard.css";
 
 function TutorDashboard() {
@@ -93,44 +93,57 @@ function TutorDashboard() {
   };
 
   // SAVE TUTOR PROFILE
-  const handleSaveProfile = async (e) => {
-    e.preventDefault();
 
-    if (!currentUser?.uid) return;
+const handleSaveProfile = async (e) => {
+  e.preventDefault();
 
-    setSavingProfile(true);
+  const authenticatedUser = auth.currentUser;
 
-    try {
-      const profileRef = doc(
-        db,
-        "tutorProfiles",
-        currentUser.uid
-      );
+  console.log("SESSION UID:", currentUser?.uid);
+  console.log("FIREBASE AUTH UID:", authenticatedUser?.uid);
 
-      const subjectsArray = profileData.subjects
-        .split(",")
-        .map((subject) => subject.trim())
-        .filter(Boolean);
+  if (!authenticatedUser) {
+    alert("You are not currently authenticated. Please log in again.");
+    return;
+  }
 
-      await updateDoc(profileRef, {
-        subjects: subjectsArray,
-        bio: profileData.bio.trim(),
-        teachingMode: profileData.teachingMode
-      });
+  const tutorUid = authenticatedUser.uid;
 
-      setProfileData((previous) => ({
-        ...previous,
-        subjects: subjectsArray.join(", ")
-      }));
+  setSavingProfile(true);
 
-      alert("Tutor profile updated successfully!");
-    } catch (error) {
-      console.error("Error updating tutor profile:", error);
-      alert("Unable to update your profile. Please try again.");
-    } finally {
-      setSavingProfile(false);
-    }
-  };
+  try {
+    const profileRef = doc(db, "tutorProfiles", tutorUid);
+
+    const subjectsArray = profileData.subjects
+      .split(",")
+      .map((subject) => subject.trim())
+      .filter(Boolean);
+
+    await updateDoc(profileRef, {
+      subjects: subjectsArray,
+      bio: profileData.bio.trim(),
+      teachingMode: profileData.teachingMode
+    });
+
+    setProfileData((previous) => ({
+      ...previous,
+      subjects: subjectsArray.join(", ")
+    }));
+
+    alert("Tutor profile updated successfully!");
+
+  } catch (error) {
+    console.error("PROFILE UPDATE ERROR:", error);
+
+    alert(
+      `Unable to update profile.\nError: ${error.code}\nMessage: ${error.message}`
+    );
+
+  } finally {
+    setSavingProfile(false);
+  }
+};
+
 
   if (!currentUser) {
     return (
