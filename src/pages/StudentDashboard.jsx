@@ -21,6 +21,9 @@ function StudentDashboard() {
   const [currentUser, setCurrentUser] = useState(null);
   const [tutors, setTutors] = useState([]);
   const [loadingTutors, setLoadingTutors] = useState(true);
+  const [activePage, setActivePage] = useState("Dashboard");
+const [myBookings, setMyBookings] = useState([]);
+const [loadingBookings, setLoadingBookings] = useState(true);
 
   // BOOKING FORM STATES
   const [selectedTutor, setSelectedTutor] = useState(null);

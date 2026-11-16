@@ -6,7 +6,11 @@ import { logoutUser } from "../services/auth";
 import {
   doc,
   getDoc,
-  updateDoc
+  updateDoc,
+  collection,
+  query,
+  where,
+  getDocs
 } from "firebase/firestore";
 
 import { auth, db } from "../services/firebase";
@@ -24,6 +28,11 @@ function TutorDashboard() {
     bio: "",
     teachingMode: ""
   });
+
+  // BOOKING REQUEST STATES
+  const [bookingRequests, setBookingRequests] = useState([]);
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [updatingBooking, setUpdatingBooking] = useState("");
 
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
@@ -80,6 +89,45 @@ function TutorDashboard() {
     fetchTutorProfile();
   }, [currentUser]);
 
+  // FETCH TUTOR BOOKING REQUESTS
+useEffect(() => {
+  const fetchBookingRequests = async () => {
+    const tutorUid = auth.currentUser?.uid;
+
+    if (!tutorUid) return;
+
+    setBookingLoading(true);
+
+    try {
+      const bookingsQuery = query(
+        collection(db, "bookings"),
+        where("tutorUid", "==", tutorUid)
+      );
+
+      const snapshot = await getDocs(bookingsQuery);
+
+      const requests = snapshot.docs.map((bookingDoc) => ({
+        id: bookingDoc.id,
+        ...bookingDoc.data()
+      }));
+
+      requests.sort((a, b) => {
+        const dateA = a.createdAt?.toMillis?.() || 0;
+        const dateB = b.createdAt?.toMillis?.() || 0;
+        return dateB - dateA;
+      });
+
+      setBookingRequests(requests);
+    } catch (error) {
+      console.error("Error fetching booking requests:", error);
+      alert("Unable to load booking requests.");
+    } finally {
+      setBookingLoading(false);
+    }
+  };
+
+  fetchBookingRequests();
+}, [currentUser]);
   // LOGOUT
   const handleLogout = async () => {
     try {
@@ -144,6 +192,31 @@ const handleSaveProfile = async (e) => {
   }
 };
 
+// UPDATE BOOKING STATUS
+const handleBookingStatus = async (bookingId, newStatus) => {
+  try {
+    setUpdatingBooking(bookingId);
+
+    await updateDoc(doc(db, "bookings", bookingId), {
+      status: newStatus
+    });
+
+    setBookingRequests((previous) =>
+      previous.map((booking) =>
+        booking.id === bookingId
+          ? { ...booking, status: newStatus }
+          : booking
+      )
+    );
+
+    alert(`Booking ${newStatus.toLowerCase()} successfully!`);
+  } catch (error) {
+    console.error("Error updating booking:", error);
+    alert(`Unable to update booking: ${error.message}`);
+  } finally {
+    setUpdatingBooking("");
+  }
+};
 
   if (!currentUser) {
     return (
@@ -331,21 +404,83 @@ const handleSaveProfile = async (e) => {
         );
 
       // BOOKING REQUESTS
-      case "Booking Requests":
-        return (
-          <section className="tutor-content-section">
-            <h2>Booking Requests</h2>
-            <p>
-              Review and manage tutoring requests from students.
-            </p>
+      // BOOKING REQUESTS
+case "Booking Requests":
+  return (
+    <section className="tutor-content-section">
+      <h2>Booking Requests</h2>
+      <p>Review and manage tutoring requests from students.</p>
 
-            <div className="empty-state">
-              <span>📩</span>
-              <h3>No booking requests yet</h3>
-              <p>New student requests will appear here.</p>
+      {bookingLoading ? (
+        <div className="empty-state">
+          <p>Loading booking requests...</p>
+        </div>
+      ) : bookingRequests.length === 0 ? (
+        <div className="empty-state">
+          <span>📩</span>
+          <h3>No booking requests yet</h3>
+          <p>New student requests will appear here.</p>
+        </div>
+      ) : (
+        <div className="booking-request-list">
+          {bookingRequests.map((booking) => (
+            <div className="booking-request-card" key={booking.id}>
+              <div className="booking-request-header">
+                <div>
+                  <h3>{booking.studentName || "Student"}</h3>
+                  <p>{booking.studentEmail || ""}</p>
+                </div>
+
+                <span className={`booking-status ${(
+                  booking.status || "Pending"
+                ).toLowerCase()}`}>
+                  {booking.status || "Pending"}
+                </span>
+              </div>
+
+              <div className="booking-request-details">
+                <p>
+                  <strong>Subject:</strong> {booking.subject || "Not specified"}
+                </p>
+                <p>
+                  <strong>Teaching Mode:</strong> {booking.teachingMode || "Not specified"}
+                </p>
+                <p>
+                  <strong>Preferred Date:</strong> {booking.preferredDate || "Not specified"}
+                </p>
+                <p>
+                  <strong>Preferred Time:</strong> {booking.preferredTime || "Not specified"}
+                </p>
+                <p>
+                  <strong>Message:</strong> {booking.message || "No message"}
+                </p>
+              </div>
+
+              {booking.status === "Pending" && (
+                <div className="booking-request-actions">
+                  <button
+                    type="button"
+                    disabled={updatingBooking === booking.id}
+                    onClick={() => handleBookingStatus(booking.id, "Accepted")}
+                  >
+                    {updatingBooking === booking.id ? "Updating..." : "Accept"}
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={updatingBooking === booking.id}
+                    onClick={() => handleBookingStatus(booking.id, "Rejected")}
+                  >
+                    {updatingBooking === booking.id ? "Updating..." : "Reject"}
+                  </button>
+                </div>
+              )}
             </div>
-          </section>
-        );
+          ))}
+        </div>
+      )}
+    </section>
+  );
 
       // MY SESSIONS
       case "My Sessions":
