@@ -10,7 +10,9 @@ import {
   collection,
   query,
   where,
-  getDocs
+  onSnapshot,
+  addDoc,
+  serverTimestamp
 } from "firebase/firestore";
 
 import { auth, db } from "../services/firebase";
@@ -22,20 +24,26 @@ function TutorDashboard() {
   const [currentUser, setCurrentUser] = useState(null);
   const [activePage, setActivePage] = useState("Dashboard");
 
-  // TUTOR PROFILE STATES
+  // PROFILE STATES
   const [profileData, setProfileData] = useState({
     subjects: "",
     bio: "",
     teachingMode: ""
   });
 
-  // BOOKING REQUEST STATES
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  // BOOKING STATES
   const [bookingRequests, setBookingRequests] = useState([]);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [updatingBooking, setUpdatingBooking] = useState("");
 
-  const [savingProfile, setSavingProfile] = useState(false);
-  const [profileLoading, setProfileLoading] = useState(false);
+  const tutorName =
+    currentUser?.fullName ||
+    currentUser?.name ||
+    currentUser?.firstName ||
+    "Tutor";
 
   // CHECK CURRENT USER
   useEffect(() => {
@@ -51,7 +59,7 @@ function TutorDashboard() {
     setCurrentUser(savedUser);
   }, [navigate]);
 
-  // FETCH TUTOR PROFILE FROM FIRESTORE
+  // LOAD TUTOR PROFILE
   useEffect(() => {
     const fetchTutorProfile = async () => {
       if (!currentUser?.uid) return;
@@ -89,45 +97,44 @@ function TutorDashboard() {
     fetchTutorProfile();
   }, [currentUser]);
 
-  // FETCH TUTOR BOOKING REQUESTS
-useEffect(() => {
-  const fetchBookingRequests = async () => {
-    const tutorUid = auth.currentUser?.uid;
-
-    if (!tutorUid) return;
+  // REAL-TIME BOOKING REQUESTS
+  useEffect(() => {
+    if (!currentUser?.uid) return;
 
     setBookingLoading(true);
 
-    try {
-      const bookingsQuery = query(
-        collection(db, "bookings"),
-        where("tutorUid", "==", tutorUid)
-      );
+    const bookingsQuery = query(
+      collection(db, "bookings"),
+      where("tutorUid", "==", currentUser.uid)
+    );
 
-      const snapshot = await getDocs(bookingsQuery);
+    const unsubscribe = onSnapshot(
+      bookingsQuery,
+      (snapshot) => {
+        const requests = snapshot.docs.map((bookingDoc) => ({
+          id: bookingDoc.id,
+          ...bookingDoc.data()
+        }));
 
-      const requests = snapshot.docs.map((bookingDoc) => ({
-        id: bookingDoc.id,
-        ...bookingDoc.data()
-      }));
+        requests.sort((a, b) => {
+          const dateA = a.createdAt?.toMillis?.() || 0;
+          const dateB = b.createdAt?.toMillis?.() || 0;
+          return dateB - dateA;
+        });
 
-      requests.sort((a, b) => {
-        const dateA = a.createdAt?.toMillis?.() || 0;
-        const dateB = b.createdAt?.toMillis?.() || 0;
-        return dateB - dateA;
-      });
+        setBookingRequests(requests);
+        setBookingLoading(false);
+      },
+      (error) => {
+        console.error("Error fetching booking requests:", error);
+        alert("Unable to load booking requests.");
+        setBookingLoading(false);
+      }
+    );
 
-      setBookingRequests(requests);
-    } catch (error) {
-      console.error("Error fetching booking requests:", error);
-      alert("Unable to load booking requests.");
-    } finally {
-      setBookingLoading(false);
-    }
-  };
+    return () => unsubscribe();
+  }, [currentUser]);
 
-  fetchBookingRequests();
-}, [currentUser]);
   // LOGOUT
   const handleLogout = async () => {
     try {
@@ -141,82 +148,122 @@ useEffect(() => {
   };
 
   // SAVE TUTOR PROFILE
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
 
-const handleSaveProfile = async (e) => {
-  e.preventDefault();
+    const authenticatedUser = auth.currentUser;
 
-  const authenticatedUser = auth.currentUser;
+    if (!authenticatedUser) {
+      alert("You are not currently authenticated. Please log in again.");
+      return;
+    }
 
-  console.log("SESSION UID:", currentUser?.uid);
-  console.log("FIREBASE AUTH UID:", authenticatedUser?.uid);
+    if (authenticatedUser.uid !== currentUser?.uid) {
+      alert("Your session does not match your account. Please log in again.");
+      return;
+    }
 
-  if (!authenticatedUser) {
-    alert("You are not currently authenticated. Please log in again.");
-    return;
-  }
+    setSavingProfile(true);
 
-  const tutorUid = authenticatedUser.uid;
+    try {
+      const profileRef = doc(
+        db,
+        "tutorProfiles",
+        authenticatedUser.uid
+      );
 
-  setSavingProfile(true);
+      const subjectsArray = profileData.subjects
+        .split(",")
+        .map((subject) => subject.trim())
+        .filter(Boolean);
 
-  try {
-    const profileRef = doc(db, "tutorProfiles", tutorUid);
+      await updateDoc(profileRef, {
+        subjects: subjectsArray,
+        bio: profileData.bio.trim(),
+        teachingMode: profileData.teachingMode
+      });
 
-    const subjectsArray = profileData.subjects
-      .split(",")
-      .map((subject) => subject.trim())
-      .filter(Boolean);
+      setProfileData((previous) => ({
+        ...previous,
+        subjects: subjectsArray.join(", ")
+      }));
 
-    await updateDoc(profileRef, {
-      subjects: subjectsArray,
-      bio: profileData.bio.trim(),
-      teachingMode: profileData.teachingMode
-    });
+      alert("Tutor profile updated successfully!");
+    } catch (error) {
+      console.error("PROFILE UPDATE ERROR:", error);
 
-    setProfileData((previous) => ({
-      ...previous,
-      subjects: subjectsArray.join(", ")
-    }));
+      alert(
+        `Unable to update profile.\nError: ${error.code || "Unknown"}\nMessage: ${error.message}`
+      );
+    } finally {
+      setSavingProfile(false);
+    }
+  };
 
-    alert("Tutor profile updated successfully!");
+  // ACCEPT OR REJECT BOOKING AND NOTIFY STUDENT
+  const handleBookingStatus = async (bookingId, newStatus) => {
+    const authenticatedUser = auth.currentUser;
 
-  } catch (error) {
-    console.error("PROFILE UPDATE ERROR:", error);
+    if (!authenticatedUser) {
+      alert("Please log in again.");
+      return;
+    }
 
-    alert(
-      `Unable to update profile.\nError: ${error.code}\nMessage: ${error.message}`
+    const booking = bookingRequests.find(
+      (item) => item.id === bookingId
     );
 
-  } finally {
-    setSavingProfile(false);
-  }
-};
+    if (!booking) {
+      alert("Booking request not found.");
+      return;
+    }
 
-// UPDATE BOOKING STATUS
-const handleBookingStatus = async (bookingId, newStatus) => {
-  try {
+    if (booking.status !== "Pending") {
+      alert("This booking request has already been processed.");
+      return;
+    }
+
+    if (!booking.studentUid) {
+      alert("Student information is missing from this booking.");
+      return;
+    }
+
     setUpdatingBooking(bookingId);
 
-    await updateDoc(doc(db, "bookings", bookingId), {
-      status: newStatus
-    });
+    try {
+      // Update booking status
+      await updateDoc(doc(db, "bookings", bookingId), {
+        status: newStatus
+      });
 
-    setBookingRequests((previous) =>
-      previous.map((booking) =>
-        booking.id === bookingId
-          ? { ...booking, status: newStatus }
-          : booking
-      )
-    );
+      // Create notification for the student
+      const notificationMessage =
+        newStatus === "Accepted"
+          ? `${tutorName} accepted your tutoring request for ${booking.subject}.`
+          : `${tutorName} rejected your tutoring request for ${booking.subject}.`;
 
-    alert(`Booking ${newStatus.toLowerCase()} successfully!`);
-  } catch (error) {
-    console.error("Error updating booking:", error);
-    alert(`Unable to update booking: ${error.message}`);
-  } finally {
-    setUpdatingBooking("");
-  }
-};
+      await addDoc(collection(db, "notifications"), {
+        recipientUid: booking.studentUid,
+        senderUid: authenticatedUser.uid,
+        title: `Booking ${newStatus}`,
+        message: notificationMessage,
+        type: "booking",
+        bookingId,
+        read: false,
+        createdAt: serverTimestamp()
+      });
+
+      alert(`Booking ${newStatus.toLowerCase()} successfully!`);
+    } catch (error) {
+      console.error("Error updating booking:", error);
+
+      alert(
+        `Unable to complete the booking action.\nError: ${error.code || "Unknown"}\nMessage: ${error.message}`
+      );
+    } finally {
+      setUpdatingBooking("");
+    }
+  };
 
   if (!currentUser) {
     return (
@@ -226,12 +273,6 @@ const handleBookingStatus = async (bookingId, newStatus) => {
     );
   }
 
-  const tutorName =
-    currentUser.fullName ||
-    currentUser.name ||
-    currentUser.firstName ||
-    "Tutor";
-
   const menuItems = [
     { name: "Dashboard", icon: "🏠" },
     { name: "My Profile", icon: "👤" },
@@ -240,6 +281,23 @@ const handleBookingStatus = async (bookingId, newStatus) => {
     { name: "Messages", icon: "💬" },
     { name: "Notifications", icon: "🔔" }
   ];
+
+  const pendingBookings = bookingRequests.filter(
+    (booking) => booking.status === "Pending"
+  ).length;
+
+  const acceptedBookings = bookingRequests.filter(
+    (booking) => booking.status === "Accepted"
+  ).length;
+
+  // ACCEPTED SESSIONS
+  const acceptedSessions = bookingRequests
+    .filter((booking) => booking.status === "Accepted")
+    .sort((a, b) => {
+      const dateA = `${a.preferredDate || ""} ${a.preferredTime || ""}`;
+      const dateB = `${b.preferredDate || ""} ${b.preferredTime || ""}`;
+      return dateA.localeCompare(dateB);
+    });
 
   // PAGE CONTENT
   const renderContent = () => {
@@ -273,7 +331,6 @@ const handleBookingStatus = async (bookingId, newStatus) => {
                   className="tutor-profile-form"
                   onSubmit={handleSaveProfile}
                 >
-                  {/* PERSONAL INFORMATION */}
                   <div className="profile-info-card">
                     <div>
                       <span>First Name</span>
@@ -314,7 +371,6 @@ const handleBookingStatus = async (bookingId, newStatus) => {
                     </div>
                   </div>
 
-                  {/* EDITABLE TUTOR INFORMATION */}
                   <div className="profile-edit-fields">
                     <div className="profile-field">
                       <label htmlFor="subjects">
@@ -393,9 +449,7 @@ const handleBookingStatus = async (bookingId, newStatus) => {
                     className="save-profile-button"
                     disabled={savingProfile}
                   >
-                    {savingProfile
-                      ? "Saving..."
-                      : "Save Changes"}
+                    {savingProfile ? "Saving..." : "Save Changes"}
                   </button>
                 </form>
               </>
@@ -404,98 +458,176 @@ const handleBookingStatus = async (bookingId, newStatus) => {
         );
 
       // BOOKING REQUESTS
-      // BOOKING REQUESTS
-case "Booking Requests":
-  return (
-    <section className="tutor-content-section">
-      <h2>Booking Requests</h2>
-      <p>Review and manage tutoring requests from students.</p>
+      case "Booking Requests":
+        return (
+          <section className="tutor-content-section">
+            <h2>Booking Requests</h2>
+            <p>Review and manage tutoring requests from students.</p>
 
-      {bookingLoading ? (
-        <div className="empty-state">
-          <p>Loading booking requests...</p>
-        </div>
-      ) : bookingRequests.length === 0 ? (
-        <div className="empty-state">
-          <span>📩</span>
-          <h3>No booking requests yet</h3>
-          <p>New student requests will appear here.</p>
-        </div>
-      ) : (
-        <div className="booking-request-list">
-          {bookingRequests.map((booking) => (
-            <div className="booking-request-card" key={booking.id}>
-              <div className="booking-request-header">
-                <div>
-                  <h3>{booking.studentName || "Student"}</h3>
-                  <p>{booking.studentEmail || ""}</p>
-                </div>
-
-                <span className={`booking-status ${(
-                  booking.status || "Pending"
-                ).toLowerCase()}`}>
-                  {booking.status || "Pending"}
-                </span>
+            {bookingLoading ? (
+              <div className="empty-state">
+                <p>Loading booking requests...</p>
               </div>
-
-              <div className="booking-request-details">
-                <p>
-                  <strong>Subject:</strong> {booking.subject || "Not specified"}
-                </p>
-                <p>
-                  <strong>Teaching Mode:</strong> {booking.teachingMode || "Not specified"}
-                </p>
-                <p>
-                  <strong>Preferred Date:</strong> {booking.preferredDate || "Not specified"}
-                </p>
-                <p>
-                  <strong>Preferred Time:</strong> {booking.preferredTime || "Not specified"}
-                </p>
-                <p>
-                  <strong>Message:</strong> {booking.message || "No message"}
-                </p>
+            ) : bookingRequests.length === 0 ? (
+              <div className="empty-state">
+                <span>📩</span>
+                <h3>No booking requests yet</h3>
+                <p>New student requests will appear here.</p>
               </div>
-
-              {booking.status === "Pending" && (
-                <div className="booking-request-actions">
-                  <button
-                    type="button"
-                    disabled={updatingBooking === booking.id}
-                    onClick={() => handleBookingStatus(booking.id, "Accepted")}
+            ) : (
+              <div className="booking-request-list">
+                {bookingRequests.map((booking) => (
+                  <div
+                    className="booking-request-card"
+                    key={booking.id}
                   >
-                    {updatingBooking === booking.id ? "Updating..." : "Accept"}
-                  </button>
+                    <div className="booking-request-header">
+                      <div>
+                        <h3>{booking.studentName || "Student"}</h3>
+                        <p>{booking.studentEmail || ""}</p>
+                      </div>
 
-                  <button
-                    type="button"
-                    disabled={updatingBooking === booking.id}
-                    onClick={() => handleBookingStatus(booking.id, "Rejected")}
-                  >
-                    {updatingBooking === booking.id ? "Updating..." : "Reject"}
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </section>
-  );
+                      <span
+                        className={`booking-status ${(booking.status || "Pending").toLowerCase()}`}
+                      >
+                        {booking.status || "Pending"}
+                      </span>
+                    </div>
+
+                    <div className="booking-request-details">
+                      <p>
+                        <strong>Subject:</strong>{" "}
+                        {booking.subject || "Not specified"}
+                      </p>
+
+                      <p>
+                        <strong>Teaching Mode:</strong>{" "}
+                        {booking.teachingMode || "Not specified"}
+                      </p>
+
+                      <p>
+                        <strong>Preferred Date:</strong>{" "}
+                        {booking.preferredDate || "Not specified"}
+                      </p>
+
+                      <p>
+                        <strong>Preferred Time:</strong>{" "}
+                        {booking.preferredTime || "Not specified"}
+                      </p>
+
+                      <p>
+                        <strong>Message:</strong>{" "}
+                        {booking.message || "No message"}
+                      </p>
+                    </div>
+
+                    {booking.status === "Pending" && (
+                      <div className="booking-request-actions">
+                        <button
+                          type="button"
+                          disabled={updatingBooking === booking.id}
+                          onClick={() =>
+                            handleBookingStatus(
+                              booking.id,
+                              "Accepted"
+                            )
+                          }
+                        >
+                          {updatingBooking === booking.id
+                            ? "Updating..."
+                            : "Accept"}
+                        </button>
+
+                        <button
+                          type="button"
+                          disabled={updatingBooking === booking.id}
+                          onClick={() =>
+                            handleBookingStatus(
+                              booking.id,
+                              "Rejected"
+                            )
+                          }
+                        >
+                          {updatingBooking === booking.id
+                            ? "Updating..."
+                            : "Reject"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        );
 
       // MY SESSIONS
       case "My Sessions":
         return (
           <section className="tutor-content-section">
             <h2>My Sessions</h2>
-            <p>
-              View your upcoming and completed tutoring sessions.
-            </p>
+            <p>View your confirmed tutoring sessions with students.</p>
 
-            <div className="empty-state">
-              <span>📅</span>
-              <h3>No sessions scheduled</h3>
-              <p>Your confirmed tutoring sessions will appear here.</p>
-            </div>
+            {bookingLoading ? (
+              <div className="empty-state">
+                <p>Loading your sessions...</p>
+              </div>
+            ) : acceptedSessions.length === 0 ? (
+              <div className="empty-state">
+                <span>📅</span>
+                <h3>No sessions scheduled</h3>
+                <p>
+                  Your accepted tutoring bookings will appear here.
+                </p>
+              </div>
+            ) : (
+              <div className="booking-request-list">
+                {acceptedSessions.map((session) => (
+                  <div
+                    className="booking-request-card"
+                    key={session.id}
+                  >
+                    <div className="booking-request-header">
+                      <div>
+                        <h3>{session.studentName || "Student"}</h3>
+                        <p>{session.studentEmail || ""}</p>
+                      </div>
+
+                      <span className="booking-status accepted">
+                        Confirmed
+                      </span>
+                    </div>
+
+                    <div className="booking-request-details">
+                      <p>
+                        <strong>Subject:</strong>{" "}
+                        {session.subject || "Not specified"}
+                      </p>
+
+                      <p>
+                        <strong>Teaching Mode:</strong>{" "}
+                        {session.teachingMode || "Not specified"}
+                      </p>
+
+                      <p>
+                        <strong>Session Date:</strong>{" "}
+                        {session.preferredDate || "Not specified"}
+                      </p>
+
+                      <p>
+                        <strong>Session Time:</strong>{" "}
+                        {session.preferredTime || "Not specified"}
+                      </p>
+
+                      <p>
+                        <strong>Student Message:</strong>{" "}
+                        {session.message || "No message"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
         );
 
@@ -521,9 +653,7 @@ case "Booking Requests":
         return (
           <section className="tutor-content-section">
             <h2>Notifications</h2>
-            <p>
-              Stay updated with your tutoring activities.
-            </p>
+            <p>Stay updated with your tutoring activities.</p>
 
             <div className="empty-state">
               <span>🔔</span>
@@ -559,14 +689,14 @@ case "Booking Requests":
             <div className="tutor-stats-grid">
               <div className="tutor-stat-card">
                 <span className="stat-icon">📩</span>
-                <p>Booking Requests</p>
-                <h3>0</h3>
+                <p>Pending Requests</p>
+                <h3>{pendingBookings}</h3>
               </div>
 
               <div className="tutor-stat-card">
                 <span className="stat-icon">📅</span>
-                <p>Upcoming Sessions</p>
-                <h3>0</h3>
+                <p>Accepted Bookings</p>
+                <h3>{acceptedBookings}</h3>
               </div>
 
               <div className="tutor-stat-card">
@@ -677,6 +807,12 @@ case "Booking Requests":
             >
               <span>{item.icon}</span>
               {item.name}
+              {item.name === "Booking Requests" &&
+                pendingBookings > 0 && (
+                  <span className="notification-count">
+                    {pendingBookings}
+                  </span>
+                )}
             </button>
           ))}
         </nav>
