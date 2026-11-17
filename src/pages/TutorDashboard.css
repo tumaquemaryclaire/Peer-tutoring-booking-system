@@ -912,3 +912,29 @@
     flex: 1;
   }
 }
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sidebar-link svg {
+  flex-shrink: 0;
+  color: #64748b;
+  transition: 0.2s ease;
+}
+
+.sidebar-link:hover svg,
+.sidebar-link.active svg {
+  color: #4f46e5;
+}
+
+.tutor-logout-button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tutor-logout-button svg {
+  color: #dc2626;
+}

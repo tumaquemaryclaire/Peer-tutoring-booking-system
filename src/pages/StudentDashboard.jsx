@@ -12,8 +12,19 @@ import {
   updateDoc
 } from "firebase/firestore";
 
+import {
+  LayoutDashboard,
+  Search,
+  CalendarDays,
+  MessagesSquare,
+  Bell,
+  UserRound,
+  LogOut
+} from "lucide-react";
+
 import { logoutUser } from "../services/auth";
 import { db } from "../services/firebase";
+import Messenger from "../components/Messenger";
 
 import "./StudentDashboard.css";
 
@@ -29,11 +40,9 @@ function StudentDashboard() {
   const [myBookings, setMyBookings] = useState([]);
   const [loadingBookings, setLoadingBookings] = useState(true);
 
-  // NOTIFICATION STATES
   const [notifications, setNotifications] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(true);
 
-  // BOOKING FORM STATES
   const [selectedTutor, setSelectedTutor] = useState(null);
 
   const [bookingForm, setBookingForm] = useState({
@@ -45,6 +54,16 @@ function StudentDashboard() {
   });
 
   const [submittingBooking, setSubmittingBooking] = useState(false);
+
+  // SIDEBAR MENU WITH PROFESSIONAL ICONS
+  const menuItems = [
+    { name: "Dashboard", icon: LayoutDashboard },
+    { name: "Find Tutors", icon: Search },
+    { name: "My Bookings", icon: CalendarDays },
+    { name: "Messages", icon: MessagesSquare },
+    { name: "Notifications", icon: Bell },
+    { name: "My Profile", icon: UserRound }
+  ];
 
   // CHECK STUDENT LOGIN
   useEffect(() => {
@@ -87,9 +106,9 @@ function StudentDashboard() {
     );
 
     return () => unsubscribe();
-  }, [currentUser]);
+  }, [currentUser?.uid]);
 
-  // LOAD STUDENT BOOKINGS IN REAL TIME
+  // LOAD STUDENT BOOKINGS
   useEffect(() => {
     if (!currentUser?.uid) return;
 
@@ -124,9 +143,9 @@ function StudentDashboard() {
     );
 
     return () => unsubscribe();
-  }, [currentUser]);
+  }, [currentUser?.uid]);
 
-  // LOAD STUDENT NOTIFICATIONS IN REAL TIME
+  // LOAD STUDENT NOTIFICATIONS
   useEffect(() => {
     if (!currentUser?.uid) return;
 
@@ -161,7 +180,7 @@ function StudentDashboard() {
     );
 
     return () => unsubscribe();
-  }, [currentUser]);
+  }, [currentUser?.uid]);
 
   // LOGOUT
   async function handleLogout() {
@@ -209,7 +228,6 @@ function StudentDashboard() {
     }));
   }
 
-  
   // SUBMIT BOOKING REQUEST
   async function handleBookingSubmit(e) {
     e.preventDefault();
@@ -251,7 +269,6 @@ function StudentDashboard() {
         ].filter(Boolean).join(" ") +
         (currentUser.suffix ? `, ${currentUser.suffix}` : "");
 
-      // SAVE BOOKING
       const bookingRef = await addDoc(collection(db, "bookings"), {
         studentUid: currentUser.uid,
         studentName,
@@ -303,7 +320,6 @@ function StudentDashboard() {
       setSubmittingBooking(false);
     }
   }
-
 
   // MARK NOTIFICATION AS READ
   async function markNotificationAsRead(notificationId) {
@@ -361,6 +377,13 @@ function StudentDashboard() {
   const unreadCount = notifications.filter(
     (notification) => notification.read !== true
   ).length;
+
+  // ONLY ACCEPTED ONLINE BOOKINGS CAN USE MESSENGER
+  const onlineAcceptedBookings = myBookings.filter(
+    (booking) =>
+      booking.status === "Accepted" &&
+      booking.teachingMode === "Online"
+  );
 
   // RENDER PAGE CONTENT
   const renderContent = () => {
@@ -441,6 +464,16 @@ function StudentDashboard() {
                         ? "Your booking request was rejected."
                         : "Waiting for the tutor to review your request."}
                     </p>
+
+                    {booking.status === "Accepted" &&
+                      booking.teachingMode === "Online" && (
+                        <button
+                          className="primary-small-button"
+                          onClick={() => setActivePage("Messages")}
+                        >
+                          Open Messages
+                        </button>
+                      )}
                   </div>
                 ))}
               </div>
@@ -449,6 +482,17 @@ function StudentDashboard() {
             <footer className="student-footer">
               © 2026 PeerTutor. Learn together, grow together.
             </footer>
+          </section>
+        );
+
+      // MESSAGES
+      case "Messages":
+        return (
+          <section className="student-content">
+            <Messenger
+              currentUser={currentUser}
+              bookings={onlineAcceptedBookings}
+            />
           </section>
         );
 
@@ -836,58 +880,35 @@ function StudentDashboard() {
         <div className="sidebar-label">MENU</div>
 
         <nav className="student-nav">
-          <button
-            className={`student-nav-item ${
-              activePage === "Dashboard" ? "active" : ""
-            }`}
-            onClick={() => setActivePage("Dashboard")}
-          >
-            <span className="nav-icon">▦</span>
-            Dashboard
-          </button>
+          {menuItems
+            .filter((item) => item.name !== "My Profile")
+            .map((item) => {
+              const Icon = item.icon;
 
-          <button
-            className={`student-nav-item ${
-              activePage === "Find Tutors" ? "active" : ""
-            }`}
-            onClick={() => setActivePage("Find Tutors")}
-          >
-            <span className="nav-icon">⌕</span>
-            Find Tutors
-          </button>
+              return (
+                <button
+                  key={item.name}
+                  className={`student-nav-item ${
+                    activePage === item.name ? "active" : ""
+                  }`}
+                  onClick={() => setActivePage(item.name)}
+                >
+                  <Icon
+                    size={20}
+                    strokeWidth={1.8}
+                    className="nav-icon"
+                  />
 
-          <button
-            className={`student-nav-item ${
-              activePage === "My Bookings" ? "active" : ""
-            }`}
-            onClick={() => setActivePage("My Bookings")}
-          >
-            <span className="nav-icon">▣</span>
-            My Bookings
-          </button>
+                  {item.name}
 
-          <button
-            className="student-nav-item"
-            onClick={() => showComingSoon("Messages")}
-          >
-            <span className="nav-icon">✉</span>
-            Messages
-          </button>
-
-          <button
-            className={`student-nav-item ${
-              activePage === "Notifications" ? "active" : ""
-            }`}
-            onClick={() => setActivePage("Notifications")}
-          >
-            <span className="nav-icon">♧</span>
-            Notifications
-            {unreadCount > 0 && (
-              <span className="notification-count">
-                {unreadCount}
-              </span>
-            )}
-          </button>
+                  {item.name === "Notifications" && unreadCount > 0 && (
+                    <span className="notification-count">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
         </nav>
 
         <div className="sidebar-label sidebar-bottom-label">
@@ -899,7 +920,11 @@ function StudentDashboard() {
             className="student-nav-item"
             onClick={() => showComingSoon("My Profile")}
           >
-            <span className="nav-icon">♙</span>
+            <UserRound
+              size={20}
+              strokeWidth={1.8}
+              className="nav-icon"
+            />
             My Profile
           </button>
 
@@ -907,7 +932,11 @@ function StudentDashboard() {
             className="student-nav-item logout-item"
             onClick={handleLogout}
           >
-            <span className="nav-icon">↪</span>
+            <LogOut
+              size={20}
+              strokeWidth={1.8}
+              className="nav-icon"
+            />
             Logout
           </button>
         </nav>
@@ -935,7 +964,8 @@ function StudentDashboard() {
               onClick={() => setActivePage("Notifications")}
               aria-label="Notifications"
             >
-              ♧
+              <Bell size={21} strokeWidth={1.8} />
+
               {unreadCount > 0 && (
                 <span className="notification-dot"></span>
               )}

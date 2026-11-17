@@ -15,7 +15,18 @@ import {
   serverTimestamp
 } from "firebase/firestore";
 
+import {
+  LayoutDashboard,
+  UserRound,
+  Inbox,
+  CalendarDays,
+  MessagesSquare,
+  Bell,
+  LogOut
+} from "lucide-react";
+
 import { auth, db } from "../services/firebase";
+import Messenger from "../components/Messenger";
 import "./TutorDashboard.css";
 
 // CONVERT SESSION DATE AND TIME
@@ -36,7 +47,6 @@ function getSessionDateTime(session) {
 
   const time = (session.preferredTime || "12:00 AM").trim();
 
-  // Supports both 24-hour and 12-hour time formats
   let hours;
   let minutes;
 
@@ -348,7 +358,7 @@ function TutorDashboard() {
         senderUid: authenticatedUser.uid,
         title: `Booking ${newStatus}`,
         message: notificationMessage,
-        type: "booking",
+        type: newStatus,
         bookingId,
         read: false,
         createdAt: serverTimestamp()
@@ -411,13 +421,13 @@ function TutorDashboard() {
   }
 
   const menuItems = [
-    { name: "Dashboard", icon: "🏠" },
-    { name: "My Profile", icon: "👤" },
-    { name: "Booking Requests", icon: "📩" },
-    { name: "My Sessions", icon: "📅" },
-    { name: "Messages", icon: "💬" },
-    { name: "Notifications", icon: "🔔" }
-  ];
+  { name: "Dashboard", icon: LayoutDashboard },
+  { name: "My Profile", icon: UserRound },
+  { name: "Booking Requests", icon: Inbox },
+  { name: "My Sessions", icon: CalendarDays },
+  { name: "Messages", icon: MessagesSquare },
+  { name: "Notifications", icon: Bell }
+];
 
   const pendingBookings = bookingRequests.filter(
     (booking) => booking.status === "Pending"
@@ -463,6 +473,13 @@ function TutorDashboard() {
         getSessionDateTime(b).getTime()
       );
     });
+
+  // ONLY ACCEPTED ONLINE BOOKINGS CAN USE MESSENGER
+  const onlineMessageBookings = bookingRequests.filter(
+    (booking) =>
+      booking.status === "Accepted" &&
+      booking.teachingMode === "Online"
+  );
 
   // PAGE CONTENT
   const renderContent = () => {
@@ -785,22 +802,22 @@ function TutorDashboard() {
           </section>
         );
 
-      // MESSAGES
-      case "Messages":
-        return (
-          <section className="tutor-content-section">
-            <h2>Messages</h2>
-            <p>
-              Communicate with students who want tutoring assistance.
-            </p>
+     
+// MESSAGES
+case "Messages":
+  return (
+    <section className="tutor-content-section">
+      <Messenger
+        currentUser={currentUser}
+        bookings={bookingRequests.filter(
+          (booking) =>
+            booking.status === "Accepted" &&
+            booking.teachingMode === "Online"
+        )}
+      />
+    </section>
+  );
 
-            <div className="empty-state">
-              <span>💬</span>
-              <h3>No messages yet</h3>
-              <p>Your student conversations will appear here.</p>
-            </div>
-          </section>
-        );
 
       // NOTIFICATIONS
       case "Notifications":
@@ -1084,6 +1101,12 @@ function TutorDashboard() {
                   </button>
 
                   <button
+                    onClick={() => setActivePage("Messages")}
+                  >
+                    💬 Open Messages
+                  </button>
+
+                  <button
                     onClick={() => setActivePage("Notifications")}
                   >
                     🔔 View Notifications
@@ -1158,7 +1181,7 @@ function TutorDashboard() {
               }
               onClick={() => setActivePage(item.name)}
             >
-              <span>{item.icon}</span>
+              <item.icon size={20} strokeWidth={1.8} />
               {item.name}
 
               {item.name === "Booking Requests" &&
@@ -1182,7 +1205,7 @@ function TutorDashboard() {
           className="tutor-logout-button"
           onClick={handleLogout}
         >
-          <span>🚪</span>
+          <LogOut size={20} strokeWidth={1.8} />
           Logout
         </button>
       </aside>
