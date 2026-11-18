@@ -188,7 +188,7 @@ const uniqueBookings = [
 
             {uniqueBookings.map((booking) => (
               <button
-                key={booking.tutorUid || booking.id}
+                key={getConversationKey(booking) || booking.id}
                 className={`conversation-item ${
                   selectedBooking?.id === booking.id ? "selected" : ""
                 }`}

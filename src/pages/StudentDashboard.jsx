@@ -19,7 +19,13 @@ import {
   MessagesSquare,
   Bell,
   UserRound,
-  LogOut
+  LogOut,
+  Pencil,
+  Save,
+  X,
+  Mail,
+  Phone,
+  User
 } from "lucide-react";
 
 import { logoutUser } from "../services/auth";
@@ -45,6 +51,19 @@ function StudentDashboard() {
 
   const [selectedTutor, setSelectedTutor] = useState(null);
 
+  // STUDENT PROFILE STATES
+  const [profileForm, setProfileForm] = useState({
+  firstName: "",
+  middleName: "",
+  lastName: "",
+  suffix: "",
+  contactNumber: ""
+});
+
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [savingProfile, setSavingProfile] = useState(false);
+
   const [bookingForm, setBookingForm] = useState({
     subject: "",
     teachingMode: "",
@@ -55,7 +74,7 @@ function StudentDashboard() {
 
   const [submittingBooking, setSubmittingBooking] = useState(false);
 
-  // SIDEBAR MENU WITH PROFESSIONAL ICONS
+  // SIDEBAR MENU
   const menuItems = [
     { name: "Dashboard", icon: LayoutDashboard },
     { name: "Find Tutors", icon: Search },
@@ -78,6 +97,53 @@ function StudentDashboard() {
 
     setCurrentUser(savedUser);
   }, [navigate]);
+
+  // LOAD STUDENT PROFILE FROM FIRESTORE
+  useEffect(() => {
+    if (!currentUser?.uid) return;
+
+    setLoadingProfile(true);
+
+    const userRef = doc(db, "users", currentUser.uid);
+
+    const unsubscribe = onSnapshot(
+      userRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const userData = snapshot.data();
+
+          setProfileForm({
+  firstName: userData.firstName || "",
+  middleName: userData.middleName || "",
+  lastName: userData.lastName || "",
+  suffix: userData.suffix || "",
+  contactNumber: userData.contactNumber || ""
+});
+
+          const updatedUser = {
+            ...currentUser,
+            ...userData,
+            uid: currentUser.uid
+          };
+
+          setCurrentUser(updatedUser);
+
+          sessionStorage.setItem(
+            "pt_current_user",
+            JSON.stringify(updatedUser)
+          );
+        }
+
+        setLoadingProfile(false);
+      },
+      (error) => {
+        console.error("Error loading student profile:", error);
+        setLoadingProfile(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [currentUser?.uid]);
 
   // LOAD ACTIVE TUTORS
   useEffect(() => {
@@ -194,9 +260,106 @@ function StudentDashboard() {
     }
   }
 
-  // TEMPORARY PAGE ACTION
-  function showComingSoon(page) {
-    alert(`${page} page will be available soon.`);
+  // HANDLE PROFILE INPUTS
+  function handleProfileChange(e) {
+    const { name, value } = e.target;
+
+    setProfileForm((previousForm) => ({
+      ...previousForm,
+      [name]: value
+    }));
+  }
+
+  // ENABLE PROFILE EDITING
+  function handleEditProfile() {
+    setProfileForm({
+  firstName: currentUser.firstName || "",
+  middleName: currentUser.middleName || "",
+  lastName: currentUser.lastName || "",
+  suffix: currentUser.suffix || "",
+  contactNumber: currentUser.contactNumber || ""
+});
+
+    setEditingProfile(true);
+  }
+
+  // CANCEL PROFILE EDITING
+  function handleCancelProfile() {
+    setProfileForm({
+  firstName: currentUser.firstName || "",
+  middleName: currentUser.middleName || "",
+  lastName: currentUser.lastName || "",
+  suffix: currentUser.suffix || "",
+  contactNumber: currentUser.contactNumber || ""
+});
+
+    setEditingProfile(false);
+  }
+
+  // SAVE PROFILE CHANGES
+  async function handleSaveProfile(e) {
+    e.preventDefault();
+
+    if (!currentUser?.uid) {
+      alert("Unable to identify your account.");
+      return;
+    }
+
+    const firstName = profileForm.firstName.trim();
+    const lastName = profileForm.lastName.trim();
+    const contactNumber = profileForm.contactNumber.trim();
+
+    if (!firstName || !lastName || !contactNumber) {
+      alert("Please complete all profile fields.");
+      return;
+    }
+
+    setSavingProfile(true);
+
+    try {
+      const fullName = [
+  firstName,
+  profileForm.middleName.trim(),
+  lastName
+].filter(Boolean).join(" ") +
+  (profileForm.suffix.trim()
+    ? `, ${profileForm.suffix.trim()}`
+    : "");
+
+const userRef = doc(db, "users", currentUser.uid);
+
+await updateDoc(userRef, {
+  firstName,
+  middleName: profileForm.middleName.trim(),
+  lastName,
+  suffix: profileForm.suffix.trim(),
+  fullName,
+  contactNumber
+});
+
+const updatedUser = {
+  ...currentUser,
+  firstName,
+  middleName: profileForm.middleName.trim(),
+  lastName,
+  suffix: profileForm.suffix.trim(),
+  fullName,
+  contactNumber
+};
+
+setCurrentUser(updatedUser);
+
+sessionStorage.setItem(
+  "pt_current_user",
+  JSON.stringify(updatedUser)
+);
+
+setEditingProfile(false);
+
+alert("Your profile has been updated successfully!");
+    } finally {
+      setSavingProfile(false);
+    }
   }
 
   // OPEN BOOKING FORM
@@ -287,7 +450,6 @@ function StudentDashboard() {
         createdAt: serverTimestamp()
       });
 
-      // CREATE NOTIFICATION FOR TUTOR
       await addDoc(collection(db, "notifications"), {
         recipientUid: selectedTutor.id,
         senderUid: currentUser.uid,
@@ -385,9 +547,264 @@ function StudentDashboard() {
       booking.teachingMode === "Online"
   );
 
+  // TUTOR CARD
+  const renderTutorCards = () => {
+    if (loadingTutors) {
+      return (
+        <div className="tutor-empty-message">
+          Loading registered tutors...
+        </div>
+      );
+    }
+
+    if (tutors.length === 0) {
+      return (
+        <div className="tutor-empty-message">
+          <div className="empty-icon">👨‍🏫</div>
+          <h3>No tutors available yet</h3>
+          <p>
+            Registered tutors will appear here once they
+            create their tutor profiles.
+          </p>
+        </div>
+      );
+    }
+
+    return tutors.map((tutor) => (
+      <div className="recommended-tutor-card" key={tutor.id}>
+        <div className="tutor-avatar">
+          {(tutor.firstName || "T").charAt(0).toUpperCase()}
+        </div>
+
+        <div className="tutor-details">
+          <h3>
+            {tutor.fullName ||
+              [
+                tutor.firstName || "",
+                tutor.middleName || "",
+                tutor.lastName || ""
+              ].filter(Boolean).join(" ") +
+              (tutor.suffix ? `, ${tutor.suffix}` : "")}
+          </h3>
+
+          <p>
+            {tutor.subjects?.length
+              ? tutor.subjects.join(", ")
+              : "Subjects not added yet"}
+          </p>
+
+          <span>
+            {tutor.teachingMode || "Teaching mode not added yet"}
+          </span>
+        </div>
+
+        <div className="tutor-rating">
+          <button onClick={() => openBookingForm(tutor)}>
+            Book Tutor
+          </button>
+        </div>
+      </div>
+    ));
+  };
+
   // RENDER PAGE CONTENT
   const renderContent = () => {
     switch (activePage) {
+
+      // MY PROFILE
+      case "My Profile":
+        return (
+          <section className="student-content">
+            <div className="dashboard-section-heading">
+              <div>
+                <h2>My Profile</h2>
+                <p>Manage your personal and contact information.</p>
+              </div>
+            </div>
+
+            <div className="student-profile-panel">
+              {loadingProfile ? (
+                <p>Loading your profile...</p>
+              ) : (
+                <>
+                  <div className="student-profile-header">
+                    <div className="student-profile-avatar">
+                      {initials}
+                    </div>
+
+                    <div className="student-profile-heading">
+                      <h2>{fullName}</h2>
+                      <p>Student Account</p>
+                    </div>
+
+                    {!editingProfile && (
+                      <button
+                        type="button"
+                        className="student-edit-profile-button"
+                        onClick={handleEditProfile}
+                      >
+                        <Pencil size={17} />
+                        Edit Profile
+                      </button>
+                    )}
+                  </div>
+
+                  <form
+                    className="student-profile-form"
+                    onSubmit={handleSaveProfile}
+                  >
+                    <div className="student-profile-section-title">
+                      <User size={19} />
+                      <h3>Personal Information</h3>
+                    </div>
+
+                    <div className="student-profile-grid">
+  <div className="student-profile-field">
+    <label htmlFor="profileFirstName">First Name</label>
+    <input
+      id="profileFirstName"
+      type="text"
+      name="firstName"
+      value={profileForm.firstName}
+      onChange={handleProfileChange}
+      disabled={!editingProfile}
+      required
+    />
+  </div>
+
+  <div className="student-profile-field">
+    <label htmlFor="profileMiddleName">Middle Name</label>
+    <input
+      id="profileMiddleName"
+      type="text"
+      name="middleName"
+      value={profileForm.middleName}
+      onChange={handleProfileChange}
+      disabled={!editingProfile}
+      placeholder="Enter middle name"
+    />
+  </div>
+
+  <div className="student-profile-field">
+    <label htmlFor="profileLastName">Last Name</label>
+    <input
+      id="profileLastName"
+      type="text"
+      name="lastName"
+      value={profileForm.lastName}
+      onChange={handleProfileChange}
+      disabled={!editingProfile}
+      required
+    />
+  </div>
+
+  <div className="student-profile-field">
+    <label htmlFor="profileSuffix">Suffix</label>
+    <input
+      id="profileSuffix"
+      type="text"
+      name="suffix"
+      value={profileForm.suffix}
+      onChange={handleProfileChange}
+      disabled={!editingProfile}
+      placeholder="e.g. Jr., Sr., III"
+    />
+  </div>
+</div>
+
+                    <div className="student-profile-section-title">
+                      <Mail size={19} />
+                      <h3>Account Information</h3>
+                    </div>
+
+                    <div className="student-profile-grid">
+                      <div className="student-profile-field">
+                        <label htmlFor="profileEmail">Email Address</label>
+                        <input
+                          id="profileEmail"
+                          type="email"
+                          value={currentUser.email || ""}
+                          disabled
+                        />
+                        <small>Email address cannot be changed here.</small>
+                      </div>
+
+                      <div className="student-profile-field">
+                        <label htmlFor="profileContact">
+                          Contact Number
+                        </label>
+                        <div className="student-profile-input-icon">
+                          <Phone size={17} />
+                          <input
+                            id="profileContact"
+                            type="tel"
+                            name="contactNumber"
+                            value={profileForm.contactNumber}
+                            onChange={handleProfileChange}
+                            disabled={!editingProfile}
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="student-profile-section-title">
+                      <UserRound size={19} />
+                      <h3>Account Details</h3>
+                    </div>
+
+                    <div className="student-profile-grid">
+                      <div className="student-profile-field">
+                        <label>Account Role</label>
+                        <input
+                          type="text"
+                          value="Student"
+                          disabled
+                        />
+                      </div>
+
+                      <div className="student-profile-field">
+                        <label>Account Status</label>
+                        <input
+                          type="text"
+                          value={currentUser.status || "Active"}
+                          disabled
+                        />
+                      </div>
+                    </div>
+
+                    {editingProfile && (
+                      <div className="student-profile-actions">
+                        <button
+                          type="button"
+                          className="student-cancel-profile-button"
+                          onClick={handleCancelProfile}
+                          disabled={savingProfile}
+                        >
+                          <X size={17} />
+                          Cancel
+                        </button>
+
+                        <button
+                          type="submit"
+                          className="student-save-profile-button"
+                          disabled={savingProfile}
+                        >
+                          <Save size={17} />
+                          {savingProfile ? "Saving..." : "Save Changes"}
+                        </button>
+                      </div>
+                    )}
+                  </form>
+                </>
+              )}
+            </div>
+
+            <footer className="student-footer">
+              © 2026 PeerTutor. Learn together, grow together.
+            </footer>
+          </section>
+        );
 
       // MY BOOKINGS
       case "My Bookings":
@@ -414,7 +831,7 @@ function StudentDashboard() {
                 </p>
                 <button
                   className="primary-small-button"
-                  onClick={() => setActivePage("Dashboard")}
+                  onClick={() => setActivePage("Find Tutors")}
                 >
                   Find a Tutor
                 </button>
@@ -601,60 +1018,7 @@ function StudentDashboard() {
 
             <div className="dashboard-panel tutors-panel">
               <div className="recommended-tutors">
-                {loadingTutors ? (
-                  <div className="tutor-empty-message">
-                    Loading registered tutors...
-                  </div>
-                ) : tutors.length === 0 ? (
-                  <div className="tutor-empty-message">
-                    <div className="empty-icon">👨‍🏫</div>
-                    <h3>No tutors available yet</h3>
-                    <p>
-                      Registered tutors will appear here once they
-                      create their tutor profiles.
-                    </p>
-                  </div>
-                ) : (
-                  tutors.map((tutor) => (
-                    <div
-                      className="recommended-tutor-card"
-                      key={tutor.id}
-                    >
-                      <div className="tutor-avatar">
-                        {(tutor.firstName || "T").charAt(0).toUpperCase()}
-                      </div>
-
-                      <div className="tutor-details">
-                        <h3>
-                          {tutor.fullName ||
-                            [
-                              tutor.firstName || "",
-                              tutor.middleName || "",
-                              tutor.lastName || ""
-                            ].filter(Boolean).join(" ") +
-                            (tutor.suffix ? `, ${tutor.suffix}` : "")}
-                        </h3>
-
-                        <p>
-                          {tutor.subjects?.length
-                            ? tutor.subjects.join(", ")
-                            : "Subjects not added yet"}
-                        </p>
-
-                        <span>
-                          {tutor.teachingMode ||
-                            "Teaching mode not added yet"}
-                        </span>
-                      </div>
-
-                      <div className="tutor-rating">
-                        <button onClick={() => openBookingForm(tutor)}>
-                          Book Tutor
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
+                {renderTutorCards()}
               </div>
             </div>
           </section>
@@ -799,60 +1163,7 @@ function StudentDashboard() {
               </div>
 
               <div className="recommended-tutors">
-                {loadingTutors ? (
-                  <div className="tutor-empty-message">
-                    Loading registered tutors...
-                  </div>
-                ) : tutors.length === 0 ? (
-                  <div className="tutor-empty-message">
-                    <div className="empty-icon">👨‍🏫</div>
-                    <h3>No tutors available yet</h3>
-                    <p>
-                      Registered tutors will appear here once they
-                      create their tutor profiles.
-                    </p>
-                  </div>
-                ) : (
-                  tutors.map((tutor) => (
-                    <div
-                      className="recommended-tutor-card"
-                      key={tutor.id}
-                    >
-                      <div className="tutor-avatar">
-                        {(tutor.firstName || "T").charAt(0).toUpperCase()}
-                      </div>
-
-                      <div className="tutor-details">
-                        <h3>
-                          {tutor.fullName ||
-                            [
-                              tutor.firstName || "",
-                              tutor.middleName || "",
-                              tutor.lastName || ""
-                            ].filter(Boolean).join(" ") +
-                            (tutor.suffix ? `, ${tutor.suffix}` : "")}
-                        </h3>
-
-                        <p>
-                          {tutor.subjects?.length
-                            ? tutor.subjects.join(", ")
-                            : "Subjects not added yet"}
-                        </p>
-
-                        <span>
-                          {tutor.teachingMode ||
-                            "Teaching mode not added yet"}
-                        </span>
-                      </div>
-
-                      <div className="tutor-rating">
-                        <button onClick={() => openBookingForm(tutor)}>
-                          Book Tutor
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
+                {renderTutorCards()}
               </div>
             </section>
 
@@ -917,8 +1228,10 @@ function StudentDashboard() {
 
         <nav className="student-nav">
           <button
-            className="student-nav-item"
-            onClick={() => showComingSoon("My Profile")}
+            className={`student-nav-item ${
+              activePage === "My Profile" ? "active" : ""
+            }`}
+            onClick={() => setActivePage("My Profile")}
           >
             <UserRound
               size={20}

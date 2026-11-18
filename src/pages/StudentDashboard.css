@@ -1183,3 +1183,216 @@
 .notification-button svg {
   color: #475569;
 }
+
+/* STUDENT PROFILE */
+
+.student-profile-panel {
+  background: #ffffff;
+  border: 1px solid #e8eaf0;
+  border-radius: 14px;
+  padding: 28px;
+  margin-bottom: 25px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.03);
+}
+
+.student-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 25px;
+  border-bottom: 1px solid #edf0f5;
+  margin-bottom: 28px;
+}
+
+.student-profile-avatar {
+  width: 65px;
+  height: 65px;
+  border-radius: 50%;
+  background: #eee9ff;
+  color: #6544c5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.student-profile-heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.student-profile-heading h2 {
+  margin: 0 0 5px;
+  font-size: 20px;
+  color: #25243a;
+}
+
+.student-profile-heading p {
+  margin: 0;
+  color: #85859a;
+  font-size: 14px;
+}
+
+.student-edit-profile-button,
+.student-save-profile-button,
+.student-cancel-profile-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  border-radius: 8px;
+  padding: 11px 17px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.student-edit-profile-button {
+  background: #eee9ff;
+  color: #6544c5;
+}
+
+.student-edit-profile-button:hover {
+  background: #e1d9ff;
+}
+
+.student-profile-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #6544c5;
+  margin: 25px 0 18px;
+}
+
+.student-profile-section-title h3 {
+  margin: 0;
+  color: #29283c;
+  font-size: 16px;
+}
+
+.student-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.student-profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.student-profile-field label {
+  color: #55546a;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.student-profile-field input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 45px;
+  padding: 11px 13px;
+  border: 1px solid #dedee8;
+  border-radius: 8px;
+  outline: none;
+  background: #ffffff;
+  color: #29283c;
+  font-size: 14px;
+}
+
+.student-profile-field input:focus {
+  border-color: #8062d5;
+  box-shadow: 0 0 0 3px rgba(128, 98, 213, 0.10);
+}
+
+.student-profile-field input:disabled {
+  background: #f6f6f9;
+  color: #77778a;
+  cursor: not-allowed;
+}
+
+.student-profile-field small {
+  color: #9292a1;
+  font-size: 11px;
+}
+
+.student-profile-input-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.student-profile-input-icon > svg {
+  position: absolute;
+  left: 12px;
+  color: #9292a1;
+  pointer-events: none;
+}
+
+.student-profile-input-icon input {
+  padding-left: 38px;
+}
+
+.student-profile-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 30px;
+  padding-top: 22px;
+  border-top: 1px solid #edf0f5;
+}
+
+.student-cancel-profile-button {
+  background: #f0f0f4;
+  color: #55546a;
+}
+
+.student-cancel-profile-button:hover {
+  background: #e5e5eb;
+}
+
+.student-save-profile-button {
+  background: #6544c5;
+  color: #ffffff;
+}
+
+.student-save-profile-button:hover {
+  background: #5234ad;
+}
+
+.student-save-profile-button:disabled,
+.student-cancel-profile-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 650px) {
+  .student-profile-panel {
+    padding: 18px;
+  }
+
+  .student-profile-header {
+    flex-wrap: wrap;
+  }
+
+  .student-edit-profile-button {
+    width: 100%;
+  }
+
+  .student-profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .student-profile-actions {
+    flex-direction: column-reverse;
+  }
+
+  .student-profile-actions button {
+    width: 100%;
+  }
+}
