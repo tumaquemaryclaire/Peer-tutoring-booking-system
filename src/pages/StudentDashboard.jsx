@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -34,12 +33,70 @@ import Messenger from "../components/Messenger";
 
 import "./StudentDashboard.css";
 
+// COMPRESS PROFILE PHOTO BEFORE SAVING IT IN FIRESTORE
+async function compressProfileImage(file) {
+  if (!file || !file.type.startsWith("image/")) {
+    throw new Error("Please select a valid image file.");
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    throw new Error("The image must be 5MB or smaller.");
+  }
+
+  const imageUrl = URL.createObjectURL(file);
+
+  try {
+    const image = new Image();
+    image.src = imageUrl;
+
+    await new Promise((resolve, reject) => {
+      image.onload = resolve;
+      image.onerror = () => reject(new Error("Unable to read this image."));
+    });
+
+    const maxDimension = 400;
+    const scale = Math.min(
+      1,
+      maxDimension / Math.max(image.width, image.height)
+    );
+
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(image.width * scale);
+    canvas.height = Math.round(image.height * scale);
+
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      throw new Error("Unable to process this image.");
+    }
+
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    let quality = 0.75;
+    let dataUrl = canvas.toDataURL("image/jpeg", quality);
+
+    while (dataUrl.length > 350000 && quality > 0.35) {
+      quality -= 0.1;
+      dataUrl = canvas.toDataURL("image/jpeg", quality);
+    }
+
+    if (dataUrl.length > 350000) {
+      throw new Error(
+        "This image is too large after compression. Please choose another photo."
+      );
+    }
+
+    return dataUrl;
+  } finally {
+    URL.revokeObjectURL(imageUrl);
+  }
+}
+
 function StudentDashboard() {
   const navigate = useNavigate();
 
   const [currentUser, setCurrentUser] = useState(null);
   const [activePage, setActivePage] = useState("Dashboard");
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const [tutors, setTutors] = useState([]);
   const [loadingTutors, setLoadingTutors] = useState(true);
@@ -54,17 +111,24 @@ function StudentDashboard() {
 
   // STUDENT PROFILE STATES
   const [profileForm, setProfileForm] = useState({
-  firstName: "",
-  middleName: "",
-  lastName: "",
-  suffix: "",
-  contactNumber: "",
-  gender: ""
-});
+    firstName: "",
+    middleName: "",
+    lastName: "",
+    suffix: "",
+    contactNumber: "",
+    gender: ""
+  });
 
   const [editingProfile, setEditingProfile] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
+
+  // PROFILE PICTURE STATES
+  const [profilePicture, setProfilePicture] = useState("");
+  const [uploadingPicture, setUploadingPicture] = useState(false);
+
+  // LOGOUT CONFIRMATION STATE
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const [bookingForm, setBookingForm] = useState({
     subject: "",
@@ -115,13 +179,15 @@ function StudentDashboard() {
           const userData = snapshot.data();
 
           setProfileForm({
-  firstName: userData.firstName || "",
-  middleName: userData.middleName || "",
-  lastName: userData.lastName || "",
-  suffix: userData.suffix || "",
-  contactNumber: userData.contactNumber || "",
-  gender: userData.gender || ""
-});
+            firstName: userData.firstName || "",
+            middleName: userData.middleName || "",
+            lastName: userData.lastName || "",
+            suffix: userData.suffix || "",
+            contactNumber: userData.contactNumber || "",
+            gender: userData.gender || ""
+          });
+
+          setProfilePicture(userData.profilePicture || "");
 
           const updatedUser = {
             ...currentUser,
@@ -251,8 +317,14 @@ function StudentDashboard() {
     return () => unsubscribe();
   }, [currentUser?.uid]);
 
-  // LOGOUT
-  async function handleLogout() {
+  // LOGOUT CONFIRMATION
+  function handleLogout() {
+    setShowLogoutConfirm(true);
+  }
+
+  async function confirmLogout() {
+    setShowLogoutConfirm(false);
+
     try {
       await logoutUser();
       sessionStorage.removeItem("pt_current_user");
@@ -260,6 +332,87 @@ function StudentDashboard() {
     } catch (error) {
       console.error("Logout error:", error);
       alert("Unable to log out. Please try again.");
+    }
+  }
+
+  // UPLOAD STUDENT PROFILE PHOTO
+  async function handleProfilePictureUpload(e) {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    setUploadingPicture(true);
+
+    try {
+      const compressedImage = await compressProfileImage(file);
+
+      await updateDoc(doc(db, "users", currentUser.uid), {
+        profilePicture: compressedImage
+      });
+
+      setProfilePicture(compressedImage);
+
+      const updatedUser = {
+        ...currentUser,
+        profilePicture: compressedImage
+      };
+
+      setCurrentUser(updatedUser);
+
+      sessionStorage.setItem(
+        "pt_current_user",
+        JSON.stringify(updatedUser)
+      );
+
+      alert("Profile picture updated successfully!");
+    } catch (error) {
+      console.error("Profile picture upload error:", error);
+
+      alert(
+        error.message ||
+        "Unable to upload profile picture. Please try again."
+      );
+    } finally {
+      setUploadingPicture(false);
+      e.target.value = "";
+    }
+  }
+
+  // REMOVE STUDENT PROFILE PHOTO
+  async function handleRemoveProfilePicture() {
+    if (
+      !window.confirm(
+        "Are you sure you want to remove your profile picture?"
+      )
+    ) {
+      return;
+    }
+
+    setUploadingPicture(true);
+
+    try {
+      await updateDoc(doc(db, "users", currentUser.uid), {
+        profilePicture: ""
+      });
+
+      setProfilePicture("");
+
+      const updatedUser = {
+        ...currentUser,
+        profilePicture: ""
+      };
+
+      setCurrentUser(updatedUser);
+
+      sessionStorage.setItem(
+        "pt_current_user",
+        JSON.stringify(updatedUser)
+      );
+    } catch (error) {
+      console.error("Remove profile picture error:", error);
+      alert("Unable to remove profile picture. Please try again.");
+    } finally {
+      setUploadingPicture(false);
     }
   }
 
@@ -276,13 +429,13 @@ function StudentDashboard() {
   // ENABLE PROFILE EDITING
   function handleEditProfile() {
     setProfileForm({
-  firstName: currentUser.firstName || "",
-  middleName: currentUser.middleName || "",
-  lastName: currentUser.lastName || "",
-  suffix: currentUser.suffix || "",
-  contactNumber: currentUser.contactNumber || "",
-  gender: currentUser.gender || ""
-});
+      firstName: currentUser.firstName || "",
+      middleName: currentUser.middleName || "",
+      lastName: currentUser.lastName || "",
+      suffix: currentUser.suffix || "",
+      contactNumber: currentUser.contactNumber || "",
+      gender: currentUser.gender || ""
+    });
 
     setEditingProfile(true);
   }
@@ -290,13 +443,13 @@ function StudentDashboard() {
   // CANCEL PROFILE EDITING
   function handleCancelProfile() {
     setProfileForm({
-  firstName: currentUser.firstName || "",
-  middleName: currentUser.middleName || "",
-  lastName: currentUser.lastName || "",
-  suffix: currentUser.suffix || "",
-  contactNumber: currentUser.contactNumber || "",
-  gender: currentUser || ""
-});
+      firstName: currentUser.firstName || "",
+      middleName: currentUser.middleName || "",
+      lastName: currentUser.lastName || "",
+      suffix: currentUser.suffix || "",
+      contactNumber: currentUser.contactNumber || "",
+      gender: currentUser.gender || ""
+    });
 
     setEditingProfile(false);
   }
@@ -315,7 +468,7 @@ function StudentDashboard() {
     const contactNumber = profileForm.contactNumber.trim();
 
     if (!firstName || !lastName || !contactNumber) {
-      alert("Please complete all profile fields.");
+      alert("Please complete all required profile fields.");
       return;
     }
 
@@ -323,47 +476,50 @@ function StudentDashboard() {
 
     try {
       const fullName = [
-  firstName,
-  profileForm.middleName.trim(),
-  lastName
-].filter(Boolean).join(" ") +
-  (profileForm.suffix.trim()
-    ? `, ${profileForm.suffix.trim()}`
-    : "");
+        firstName,
+        profileForm.middleName.trim(),
+        lastName
+      ].filter(Boolean).join(" ") +
+        (profileForm.suffix.trim()
+          ? `, ${profileForm.suffix.trim()}`
+          : "");
 
-const userRef = doc(db, "users", currentUser.uid);
+      const userRef = doc(db, "users", currentUser.uid);
 
-await updateDoc(userRef, {
-  firstName,
-  middleName: profileForm.middleName.trim(),
-  lastName,
-  suffix: profileForm.suffix.trim(),
-  fullName,
-  contactNumber,
-  gender: profileForm.gender
-});
+      await updateDoc(userRef, {
+        firstName,
+        middleName: profileForm.middleName.trim(),
+        lastName,
+        suffix: profileForm.suffix.trim(),
+        fullName,
+        contactNumber,
+        gender: profileForm.gender
+      });
 
-const updatedUser = {
-  ...currentUser,
-  firstName,
-  middleName: profileForm.middleName.trim(),
-  lastName,
-  suffix: profileForm.suffix.trim(),
-  fullName,
-  contactNumber,
-  gender: profileForm.gender,
-};
+      const updatedUser = {
+        ...currentUser,
+        firstName,
+        middleName: profileForm.middleName.trim(),
+        lastName,
+        suffix: profileForm.suffix.trim(),
+        fullName,
+        contactNumber,
+        gender: profileForm.gender
+      };
 
-setCurrentUser(updatedUser);
+      setCurrentUser(updatedUser);
 
-sessionStorage.setItem(
-  "pt_current_user",
-  JSON.stringify(updatedUser)
-);
+      sessionStorage.setItem(
+        "pt_current_user",
+        JSON.stringify(updatedUser)
+      );
 
-setEditingProfile(false);
+      setEditingProfile(false);
 
-alert("Your profile has been updated successfully!");
+      alert("Your profile has been updated successfully!");
+    } catch (error) {
+      console.error("Profile update error:", error);
+      alert("Unable to update your profile. Please try again.");
     } finally {
       setSavingProfile(false);
     }
@@ -481,7 +637,6 @@ alert("Your profile has been updated successfully!");
       });
 
       setActivePage("My Bookings");
-
     } catch (error) {
       console.error("Booking submission error:", error);
       alert("Unable to submit your booking request. Please try again.");
@@ -580,7 +735,14 @@ alert("Your profile has been updated successfully!");
     return tutors.map((tutor) => (
       <div className="recommended-tutor-card" key={tutor.id}>
         <div className="tutor-avatar">
-          {(tutor.firstName || "T").charAt(0).toUpperCase()}
+          {tutor.profilePicture ? (
+            <img
+              src={tutor.profilePicture}
+              alt={`${tutor.firstName || "Tutor"} profile`}
+            />
+          ) : (
+            (tutor.firstName || "T").charAt(0).toUpperCase()
+          )}
         </div>
 
         <div className="tutor-details">
@@ -636,7 +798,14 @@ alert("Your profile has been updated successfully!");
                 <>
                   <div className="student-profile-header">
                     <div className="student-profile-avatar">
-                      {initials}
+                      {profilePicture ? (
+                        <img
+                          src={profilePicture}
+                          alt="Student profile"
+                        />
+                      ) : (
+                        initials
+                      )}
                     </div>
 
                     <div className="student-profile-heading">
@@ -656,6 +825,38 @@ alert("Your profile has been updated successfully!");
                     )}
                   </div>
 
+                  <div className="student-profile-photo-controls">
+                    <label className="student-photo-upload-button">
+                      {uploadingPicture
+                        ? "Uploading..."
+                        : profilePicture
+                        ? "Change Photo"
+                        : "Upload Photo"}
+
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleProfilePictureUpload}
+                        disabled={uploadingPicture}
+                      />
+                    </label>
+
+                    {profilePicture && (
+                      <button
+                        type="button"
+                        className="student-photo-remove-button"
+                        onClick={handleRemoveProfilePicture}
+                        disabled={uploadingPicture}
+                      >
+                        Remove Photo
+                      </button>
+                    )}
+
+                    <small>
+                      JPG, PNG, or other image format. Maximum file size: 5MB.
+                    </small>
+                  </div>
+
                   <form
                     className="student-profile-form"
                     onSubmit={handleSaveProfile}
@@ -666,75 +867,88 @@ alert("Your profile has been updated successfully!");
                     </div>
 
                     <div className="student-profile-grid">
-  <div className="student-profile-field">
-    <label htmlFor="profileFirstName">First Name</label>
-    <input
-      id="profileFirstName"
-      type="text"
-      name="firstName"
-      value={profileForm.firstName}
-      onChange={handleProfileChange}
-      disabled={!editingProfile}
-      required
-    />
-  </div>
+                      <div className="student-profile-field">
+                        <label htmlFor="profileFirstName">
+                          First Name
+                        </label>
+                        <input
+                          id="profileFirstName"
+                          type="text"
+                          name="firstName"
+                          value={profileForm.firstName}
+                          onChange={handleProfileChange}
+                          disabled={!editingProfile}
+                          required
+                        />
+                      </div>
 
-  <div className="student-profile-field">
-    <label htmlFor="profileMiddleName">Middle Name</label>
-    <input
-      id="profileMiddleName"
-      type="text"
-      name="middleName"
-      value={profileForm.middleName}
-      onChange={handleProfileChange}
-      disabled={!editingProfile}
-      placeholder="Enter middle name"
-    />
-  </div>
+                      <div className="student-profile-field">
+                        <label htmlFor="profileMiddleName">
+                          Middle Name
+                        </label>
+                        <input
+                          id="profileMiddleName"
+                          type="text"
+                          name="middleName"
+                          value={profileForm.middleName}
+                          onChange={handleProfileChange}
+                          disabled={!editingProfile}
+                          placeholder="Enter middle name"
+                        />
+                      </div>
 
-  <div className="student-profile-field">
-    <label htmlFor="profileLastName">Last Name</label>
-    <input
-      id="profileLastName"
-      type="text"
-      name="lastName"
-      value={profileForm.lastName}
-      onChange={handleProfileChange}
-      disabled={!editingProfile}
-      required
-    />
-  </div>
+                      <div className="student-profile-field">
+                        <label htmlFor="profileLastName">
+                          Last Name
+                        </label>
+                        <input
+                          id="profileLastName"
+                          type="text"
+                          name="lastName"
+                          value={profileForm.lastName}
+                          onChange={handleProfileChange}
+                          disabled={!editingProfile}
+                          required
+                        />
+                      </div>
 
-  <div className="student-profile-field">
-    <label htmlFor="profileSuffix">Suffix</label>
-    <input
-      id="profileSuffix"
-      type="text"
-      name="suffix"
-      value={profileForm.suffix}
-      onChange={handleProfileChange}
-      disabled={!editingProfile}
-      placeholder="e.g. Jr., Sr., III"
-    />
-  </div>
+                      <div className="student-profile-field">
+                        <label htmlFor="profileSuffix">
+                          Suffix
+                        </label>
+                        <input
+                          id="profileSuffix"
+                          type="text"
+                          name="suffix"
+                          value={profileForm.suffix}
+                          onChange={handleProfileChange}
+                          disabled={!editingProfile}
+                          placeholder="e.g. Jr., Sr., III"
+                        />
+                      </div>
+                    </div>
 
-  <div className="student-profile-field">
-  <label htmlFor="profileGender">Gender</label>
-  <select
-    id="profileGender"
-    name="gender"
-    value={profileForm.gender}
-    onChange={handleProfileChange}
-    disabled={!editingProfile}
-    required
-  >
-    <option value="">Select gender</option>
-    <option value="Male">Male</option>
-    <option value="Female">Female</option>
-    <option value="Prefer not to say">Prefer not to say</option>
-  </select>
-</div>
-</div>
+                    <div className="student-profile-grid">
+                      <div className="student-profile-field">
+                        <label htmlFor="profileGender">
+                          Gender
+                        </label>
+                        <select
+                          id="profileGender"
+                          name="gender"
+                          value={profileForm.gender}
+                          onChange={handleProfileChange}
+                          disabled={!editingProfile}
+                        >
+                          <option value="">Select gender</option>
+                          <option value="Female">Female</option>
+                          <option value="Male">Male</option>
+                          <option value="Prefer not to say">
+                            Prefer not to say
+                          </option>
+                        </select>
+                      </div>
+                    </div>
 
                     <div className="student-profile-section-title">
                       <Mail size={19} />
@@ -743,14 +957,18 @@ alert("Your profile has been updated successfully!");
 
                     <div className="student-profile-grid">
                       <div className="student-profile-field">
-                        <label htmlFor="profileEmail">Email Address</label>
+                        <label htmlFor="profileEmail">
+                          Email Address
+                        </label>
                         <input
                           id="profileEmail"
                           type="email"
                           value={currentUser.email || ""}
                           disabled
                         />
-                        <small>Email address cannot be changed here.</small>
+                        <small>
+                          Email address cannot be changed here.
+                        </small>
                       </div>
 
                       <div className="student-profile-field">
@@ -815,7 +1033,9 @@ alert("Your profile has been updated successfully!");
                           disabled={savingProfile}
                         >
                           <Save size={17} />
-                          {savingProfile ? "Saving..." : "Save Changes"}
+                          {savingProfile
+                            ? "Saving..."
+                            : "Save Changes"}
                         </button>
                       </div>
                     )}
@@ -867,7 +1087,9 @@ alert("Your profile has been updated successfully!");
                     <div className="my-booking-header">
                       <div>
                         <h3>{booking.tutorName || "Tutor"}</h3>
-                        <p>{booking.subject || "No subject specified"}</p>
+                        <p>
+                          {booking.subject || "No subject specified"}
+                        </p>
                       </div>
 
                       <span
@@ -1267,7 +1489,7 @@ alert("Your profile has been updated successfully!");
 
           <button
             className="student-nav-item logout-item"
-            onClick={() => setShowLogoutConfirm(true)}
+            onClick={handleLogout}
           >
             <LogOut
               size={20}
@@ -1279,7 +1501,14 @@ alert("Your profile has been updated successfully!");
         </nav>
 
         <div className="sidebar-footer">
-          <div className="sidebar-avatar">{initials}</div>
+          <div className="sidebar-avatar">
+            {profilePicture ? (
+              <img src={profilePicture} alt="Student profile" />
+            ) : (
+              initials
+            )}
+          </div>
+
           <div className="sidebar-user-info">
             <strong>{fullName}</strong>
             <span>Student Account</span>
@@ -1309,7 +1538,14 @@ alert("Your profile has been updated successfully!");
             </button>
 
             <div className="topbar-profile">
-              <div className="topbar-avatar">{initials}</div>
+              <div className="topbar-avatar">
+                {profilePicture ? (
+                  <img src={profilePicture} alt="Student profile" />
+                ) : (
+                  initials
+                )}
+              </div>
+
               <div>
                 <strong>{firstName}</strong>
                 <span>Student</span>
@@ -1350,9 +1586,14 @@ alert("Your profile has been updated successfully!");
 
             <div className="booking-selected-tutor">
               <div className="booking-tutor-avatar">
-                {(selectedTutor.firstName || "T")
-                  .charAt(0)
-                  .toUpperCase()}
+                {selectedTutor.profilePicture ? (
+                  <img
+                    src={selectedTutor.profilePicture}
+                    alt="Tutor profile"
+                  />
+                ) : (
+                  (selectedTutor.firstName || "T").charAt(0).toUpperCase()
+                )}
               </div>
 
               <div>
@@ -1472,43 +1713,47 @@ alert("Your profile has been updated successfully!");
                   className="submit-booking-button"
                   disabled={submittingBooking}
                 >
-                  {submittingBooking ? "Submitting..." : "Submit Request"}
+                  {submittingBooking
+                    ? "Submitting..."
+                    : "Submit Request"}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* LOGOUT CONFIRMATION MODAL */}
       {showLogoutConfirm && (
-  <div className="logout-modal-overlay">
-    <div className="logout-modal">
-      <div className="logout-modal-icon">
-        <LogOut size={26} />
-      </div>
+        <div className="student-logout-overlay">
+          <div className="student-logout-modal">
+            <div className="student-logout-icon">
+              <LogOut size={25} />
+            </div>
 
-      <h2>Confirm Logout</h2>
-      <p>Are you sure you want to logout?</p>
+            <h2>Confirm Logout</h2>
+            <p>Are you sure you want to logout?</p>
 
-      <div className="logout-modal-actions">
-        <button
-          type="button"
-          className="logout-cancel-button"
-          onClick={() => setShowLogoutConfirm(false)}
-        >
-          No, Stay
-        </button>
+            <div className="student-logout-actions">
+              <button
+                type="button"
+                className="student-logout-cancel"
+                onClick={() => setShowLogoutConfirm(false)}
+              >
+                No, Stay
+              </button>
 
-        <button
-          type="button"
-          className="logout-confirm-button"
-          onClick={handleLogout}
-        >
-          Yes, Logout
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+              <button
+                type="button"
+                className="student-logout-confirm"
+                onClick={confirmLogout}
+              >
+                Yes, Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

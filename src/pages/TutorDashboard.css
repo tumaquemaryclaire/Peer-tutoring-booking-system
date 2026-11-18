@@ -1011,3 +1011,86 @@
 .logout-modal-actions button:hover {
   opacity: 0.88;
 }
+/* TUTOR PROFILE PHOTO */
+.tutor-profile-photo-area {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.profile-avatar {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.profile-avatar img,
+.sidebar-avatar img,
+.topbar-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.profile-photo-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.profile-photo-upload-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: #5145cd;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.profile-photo-upload-button:hover {
+  background: #4035ad;
+}
+
+.profile-photo-upload-button input {
+  display: none;
+}
+
+.profile-photo-remove-button {
+  padding: 8px 14px;
+  border: 1px solid #dc3545;
+  border-radius: 8px;
+  background: white;
+  color: #dc3545;
+  cursor: pointer;
+}
+
+.profile-photo-remove-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.profile-photo-controls small {
+  color: #777;
+  font-size: 12px;
+}
+
+.sidebar-avatar,
+.topbar-avatar {
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}

@@ -1468,3 +1468,159 @@
 .logout-modal-actions button:hover {
   opacity: 0.88;
 }
+/* STUDENT PROFILE PICTURE */
+.student-profile-avatar,
+.sidebar-avatar,
+.topbar-avatar,
+.tutor-avatar,
+.booking-tutor-avatar {
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.student-profile-avatar img,
+.sidebar-avatar img,
+.topbar-avatar img,
+.tutor-avatar img,
+.booking-tutor-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.student-profile-photo-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 18px 0 25px;
+}
+
+.student-photo-upload-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: #5145cd;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.student-photo-upload-button:hover {
+  background: #4035ad;
+}
+
+.student-photo-upload-button input {
+  display: none;
+}
+
+.student-photo-remove-button {
+  padding: 9px 14px;
+  border: 1px solid #dc3545;
+  border-radius: 8px;
+  background: white;
+  color: #dc3545;
+  cursor: pointer;
+}
+
+.student-photo-remove-button:hover {
+  background: #fff1f2;
+}
+
+.student-photo-remove-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.student-profile-photo-controls small {
+  width: 100%;
+  color: #777;
+  font-size: 12px;
+}
+
+/* LOGOUT CONFIRMATION MODAL */
+.student-logout-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.student-logout-modal {
+  width: 100%;
+  max-width: 400px;
+  padding: 30px;
+  border-radius: 16px;
+  background: #ffffff;
+  text-align: center;
+  box-shadow: 0 15px 45px rgba(0, 0, 0, 0.2);
+}
+
+.student-logout-icon {
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #fff1f2;
+  color: #dc3545;
+}
+
+.student-logout-modal h2 {
+  margin: 0 0 10px;
+  color: #1f2937;
+  font-size: 21px;
+}
+
+.student-logout-modal p {
+  margin: 0 0 25px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.student-logout-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.student-logout-actions button {
+  flex: 1;
+  padding: 11px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.student-logout-cancel {
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+}
+
+.student-logout-cancel:hover {
+  background: #f3f4f6;
+}
+
+.student-logout-confirm {
+  border: 1px solid #dc3545;
+  background: #dc3545;
+  color: #ffffff;
+}
+
+.student-logout-confirm:hover {
+  background: #bd2130;
+}
