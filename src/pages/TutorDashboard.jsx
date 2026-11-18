@@ -93,11 +93,15 @@ function TutorDashboard() {
   const [currentUser, setCurrentUser] = useState(null);
   const [activePage, setActivePage] = useState("Dashboard");
 
+  // LOGOUT CONFIRMATION
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
   // PROFILE STATES
   const [profileData, setProfileData] = useState({
     subjects: "",
     bio: "",
-    teachingMode: ""
+    teachingMode: "",
+    gender: ""
   });
 
   const [profileLoading, setProfileLoading] = useState(false);
@@ -156,7 +160,8 @@ function TutorDashboard() {
               ? data.subjects.join(", ")
               : "",
             bio: data.bio || "",
-            teachingMode: data.teachingMode || ""
+            teachingMode: data.teachingMode || "",
+            gender: data.gender || ""
           });
         }
       } catch (error) {
@@ -293,7 +298,8 @@ function TutorDashboard() {
       await updateDoc(profileRef, {
         subjects: subjectsArray,
         bio: profileData.bio.trim(),
-        teachingMode: profileData.teachingMode
+        teachingMode: profileData.teachingMode,
+        gender: profileData.gender
       });
 
       setProfileData((previous) => ({
@@ -421,13 +427,13 @@ function TutorDashboard() {
   }
 
   const menuItems = [
-  { name: "Dashboard", icon: LayoutDashboard },
-  { name: "My Profile", icon: UserRound },
-  { name: "Booking Requests", icon: Inbox },
-  { name: "My Sessions", icon: CalendarDays },
-  { name: "Messages", icon: MessagesSquare },
-  { name: "Notifications", icon: Bell }
-];
+    { name: "Dashboard", icon: LayoutDashboard },
+    { name: "My Profile", icon: UserRound },
+    { name: "Booking Requests", icon: Inbox },
+    { name: "My Sessions", icon: CalendarDays },
+    { name: "Messages", icon: MessagesSquare },
+    { name: "Notifications", icon: Bell }
+  ];
 
   const pendingBookings = bookingRequests.filter(
     (booking) => booking.status === "Pending"
@@ -555,6 +561,34 @@ function TutorDashboard() {
                   </div>
 
                   <div className="profile-edit-fields">
+
+                    {/* GENDER */}
+                    <div className="profile-field">
+                      <label htmlFor="tutorGender">
+                        Gender
+                      </label>
+
+                      <select
+                        id="tutorGender"
+                        value={profileData.gender}
+                        onChange={(e) =>
+                          setProfileData({
+                            ...profileData,
+                            gender: e.target.value
+                          })
+                        }
+                        required
+                      >
+                        <option value="">Select gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Prefer not to say">
+                          Prefer not to say
+                        </option>
+                      </select>
+                    </div>
+
+                    {/* SUBJECTS */}
                     <div className="profile-field">
                       <label htmlFor="subjects">
                         Subjects You Teach
@@ -578,6 +612,7 @@ function TutorDashboard() {
                       </small>
                     </div>
 
+                    {/* TEACHING MODE */}
                     <div className="profile-field">
                       <label htmlFor="teachingMode">
                         Teaching Mode
@@ -597,10 +632,13 @@ function TutorDashboard() {
                         <option value="">Select teaching mode</option>
                         <option value="Online">Online</option>
                         <option value="Face-to-Face">Face-to-Face</option>
-                        <option value="Both">Both Online and Face-to-Face</option>
+                        <option value="Both">
+                          Both Online and Face-to-Face
+                        </option>
                       </select>
                     </div>
 
+                    {/* TUTOR BIO */}
                     <div className="profile-field">
                       <label htmlFor="bio">
                         About Me / Tutor Bio
@@ -802,22 +840,16 @@ function TutorDashboard() {
           </section>
         );
 
-     
-// MESSAGES
-case "Messages":
-  return (
-    <section className="tutor-content-section">
-      <Messenger
-        currentUser={currentUser}
-        bookings={bookingRequests.filter(
-          (booking) =>
-            booking.status === "Accepted" &&
-            booking.teachingMode === "Online"
-        )}
-      />
-    </section>
-  );
-
+      // MESSAGES
+      case "Messages":
+        return (
+          <section className="tutor-content-section">
+            <Messenger
+              currentUser={currentUser}
+              bookings={onlineMessageBookings}
+            />
+          </section>
+        );
 
       // NOTIFICATIONS
       case "Notifications":
@@ -1149,6 +1181,8 @@ case "Messages":
 
   return (
     <div className="tutor-dashboard">
+
+      {/* SIDEBAR */}
       <aside className="tutor-sidebar">
         <div className="tutor-brand">
           <span>📚</span>
@@ -1201,15 +1235,17 @@ case "Messages":
           ))}
         </nav>
 
+        {/* LOGOUT BUTTON */}
         <button
           className="tutor-logout-button"
-          onClick={handleLogout}
+          onClick={() => setShowLogoutConfirm(true)}
         >
           <LogOut size={20} strokeWidth={1.8} />
           Logout
         </button>
       </aside>
 
+      {/* MAIN CONTENT */}
       <main className="tutor-main">
         <header className="tutor-topbar">
           <div>
@@ -1230,6 +1266,46 @@ case "Messages":
           {renderContent()}
         </div>
       </main>
+
+      {/* LOGOUT CONFIRMATION MODAL */}
+      {showLogoutConfirm && (
+        <div
+          className="logout-modal-overlay"
+          onClick={() => setShowLogoutConfirm(false)}
+        >
+          <div
+            className="logout-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="logout-modal-icon">
+              <LogOut size={26} />
+            </div>
+
+            <h2>Confirm Logout</h2>
+
+            <p>Are you sure you want to logout?</p>
+
+            <div className="logout-modal-actions">
+              <button
+                type="button"
+                className="logout-cancel-button"
+                onClick={() => setShowLogoutConfirm(false)}
+              >
+                No, Stay
+              </button>
+
+              <button
+                type="button"
+                className="logout-confirm-button"
+                onClick={handleLogout}
+              >
+                Yes, Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

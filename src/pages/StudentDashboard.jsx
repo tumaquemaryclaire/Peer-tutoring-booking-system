@@ -39,6 +39,7 @@ function StudentDashboard() {
 
   const [currentUser, setCurrentUser] = useState(null);
   const [activePage, setActivePage] = useState("Dashboard");
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const [tutors, setTutors] = useState([]);
   const [loadingTutors, setLoadingTutors] = useState(true);
@@ -57,7 +58,8 @@ function StudentDashboard() {
   middleName: "",
   lastName: "",
   suffix: "",
-  contactNumber: ""
+  contactNumber: "",
+  gender: ""
 });
 
   const [editingProfile, setEditingProfile] = useState(false);
@@ -117,7 +119,8 @@ function StudentDashboard() {
   middleName: userData.middleName || "",
   lastName: userData.lastName || "",
   suffix: userData.suffix || "",
-  contactNumber: userData.contactNumber || ""
+  contactNumber: userData.contactNumber || "",
+  gender: userData.gender || ""
 });
 
           const updatedUser = {
@@ -277,7 +280,8 @@ function StudentDashboard() {
   middleName: currentUser.middleName || "",
   lastName: currentUser.lastName || "",
   suffix: currentUser.suffix || "",
-  contactNumber: currentUser.contactNumber || ""
+  contactNumber: currentUser.contactNumber || "",
+  gender: currentUser.gender || ""
 });
 
     setEditingProfile(true);
@@ -290,7 +294,8 @@ function StudentDashboard() {
   middleName: currentUser.middleName || "",
   lastName: currentUser.lastName || "",
   suffix: currentUser.suffix || "",
-  contactNumber: currentUser.contactNumber || ""
+  contactNumber: currentUser.contactNumber || "",
+  gender: currentUser || ""
 });
 
     setEditingProfile(false);
@@ -334,7 +339,8 @@ await updateDoc(userRef, {
   lastName,
   suffix: profileForm.suffix.trim(),
   fullName,
-  contactNumber
+  contactNumber,
+  gender: profileForm.gender
 });
 
 const updatedUser = {
@@ -344,7 +350,8 @@ const updatedUser = {
   lastName,
   suffix: profileForm.suffix.trim(),
   fullName,
-  contactNumber
+  contactNumber,
+  gender: profileForm.gender,
 };
 
 setCurrentUser(updatedUser);
@@ -710,6 +717,23 @@ alert("Your profile has been updated successfully!");
       placeholder="e.g. Jr., Sr., III"
     />
   </div>
+
+  <div className="student-profile-field">
+  <label htmlFor="profileGender">Gender</label>
+  <select
+    id="profileGender"
+    name="gender"
+    value={profileForm.gender}
+    onChange={handleProfileChange}
+    disabled={!editingProfile}
+    required
+  >
+    <option value="">Select gender</option>
+    <option value="Male">Male</option>
+    <option value="Female">Female</option>
+    <option value="Prefer not to say">Prefer not to say</option>
+  </select>
+</div>
 </div>
 
                     <div className="student-profile-section-title">
@@ -1243,7 +1267,7 @@ alert("Your profile has been updated successfully!");
 
           <button
             className="student-nav-item logout-item"
-            onClick={handleLogout}
+            onClick={() => setShowLogoutConfirm(true)}
           >
             <LogOut
               size={20}
@@ -1455,6 +1479,36 @@ alert("Your profile has been updated successfully!");
           </div>
         </div>
       )}
+      {showLogoutConfirm && (
+  <div className="logout-modal-overlay">
+    <div className="logout-modal">
+      <div className="logout-modal-icon">
+        <LogOut size={26} />
+      </div>
+
+      <h2>Confirm Logout</h2>
+      <p>Are you sure you want to logout?</p>
+
+      <div className="logout-modal-actions">
+        <button
+          type="button"
+          className="logout-cancel-button"
+          onClick={() => setShowLogoutConfirm(false)}
+        >
+          No, Stay
+        </button>
+
+        <button
+          type="button"
+          className="logout-confirm-button"
+          onClick={handleLogout}
+        >
+          Yes, Logout
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }
