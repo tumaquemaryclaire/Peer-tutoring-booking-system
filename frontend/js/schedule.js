@@ -179,38 +179,65 @@ function getActiveBooking(scheduleId) {
 }
 
 
-// ===================================
-// DISPLAY TUTOR INFORMATION
-// ===================================
-
 function displayTutorInformation() {
-
     if (!currentUser) return;
 
     const name = currentUser.name || "Tutor";
 
     document.getElementById("tutorName").textContent = name;
 
-    const initials = name
-        .split(" ")
-        .filter(Boolean)
-        .map(part => part.charAt(0).toUpperCase())
-        .slice(0, 2)
-        .join("");
+    const avatar = document.getElementById("userInitials");
 
-    document.getElementById("userInitials").textContent =
-        initials || "TU";
+    // Get tutor initials
+    const nameParts = name.trim().split(/\s+/).filter(Boolean);
+
+    const suffixes = ["JR.", "JR", "SR.", "SR", "II", "III", "IV", "V"];
+
+    const filteredParts = nameParts.filter(function(part) {
+        return !suffixes.includes(part.toUpperCase());
+    });
+
+    let initials = "";
+
+    if (filteredParts.length >= 2) {
+        initials =
+            filteredParts[0].charAt(0) +
+            filteredParts[filteredParts.length - 1].charAt(0);
+    } else if (filteredParts.length === 1) {
+        initials = filteredParts[0].substring(0, 2);
+    }
+
+    initials = initials.toUpperCase() || "TU";
+
+    // Display uploaded profile picture if available
+    if (tutorProfile && tutorProfile.profilePicture) {
+        avatar.innerHTML = "";
+
+        const image = document.createElement("img");
+        image.src = tutorProfile.profilePicture;
+        image.alt = name + " Profile Picture";
+
+        image.style.width = "100%";
+        image.style.height = "100%";
+        image.style.objectFit = "cover";
+        image.style.borderRadius = "50%";
+
+        image.onerror = function() {
+            avatar.textContent = initials;
+        };
+
+        avatar.appendChild(image);
+    } else {
+        avatar.textContent = initials;
+    }
 
     document.getElementById("currentDate").textContent =
         new Date().toLocaleDateString("en-US", {
-
             weekday: "long",
             month: "long",
             day: "numeric",
             year: "numeric"
-
         });
-
 }
 
 

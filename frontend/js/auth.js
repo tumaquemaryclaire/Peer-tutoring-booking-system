@@ -1,45 +1,67 @@
 
 // ===================================
-// PEERTUTOR - AUTHENTICATION
+// PEERTUTOR - FIREBASE AUTHENTICATION
 // Login and Registration
 // ===================================
 
+import { auth, db } from "./firebase-config.js";
 
-// GET REGISTERED USERS
+import {
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    signOut
+} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+
+import {
+    doc,
+    setDoc,
+    getDoc,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+
+// ===================================
+// LOCAL USER DATA
+// Keep compatibility with existing features
+// ===================================
 
 function getUsers() {
     try {
-        const users = JSON.parse(localStorage.getItem("pt_users") || "[]");
+        const users = JSON.parse(
+            localStorage.getItem("pt_users") || "[]"
+        );
+
         return Array.isArray(users) ? users : [];
+
     } catch (error) {
-        console.error("Unable to load users:", error);
+        console.error("Unable to load local users:", error);
         return [];
     }
 }
 
-
-// SAVE REGISTERED USERS
 
 function saveUsers(users) {
     localStorage.setItem("pt_users", JSON.stringify(users));
 }
 
 
+// ===================================
 // DISPLAY MESSAGES
+// ===================================
 
 function showMessage(elementId, message, success = false) {
     const messageElement = document.getElementById(elementId);
 
-    if (!messageElement) {
-        return;
-    }
+    if (!messageElement) return;
 
     messageElement.textContent = message;
     messageElement.style.color = success ? "#16804a" : "#d92d20";
 }
 
 
+// ===================================
 // EMAIL VALIDATION
+// ===================================
 
 function isValidEmail(email) {
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -48,18 +70,67 @@ function isValidEmail(email) {
 
 
 // ===================================
-// REGISTRATION VALIDATION
+// FIREBASE ERROR MESSAGES
+// ===================================
+
+function getFirebaseError(error) {
+
+    switch (error.code) {
+
+        case "auth/email-already-in-use":
+            return "This email is already registered.";
+
+        case "auth/invalid-email":
+            return "Please enter a valid email address.";
+
+        case "auth/weak-password":
+            return "Your password is too weak. Use at least 8 characters.";
+
+        case "auth/invalid-credential":
+            return "Incorrect email or password.";
+
+        case "auth/user-not-found":
+            return "No account found with this email.";
+
+        case "auth/wrong-password":
+            return "Incorrect password.";
+
+        case "auth/too-many-requests":
+            return "Too many attempts. Please try again later.";
+
+        case "permission-denied":
+            return "Database permission denied. Please check Firestore rules.";
+
+        default:
+            console.error("Firebase error:", error);
+            return "Something went wrong. Please try again.";
+    }
+}
+
+
+// ===================================
+// REGISTRATION
 // ===================================
 
 const registerForm = document.getElementById("registerForm");
 
 if (registerForm) {
 
-    registerForm.addEventListener("submit", function(event) {
+    registerForm.addEventListener("submit", async function(event) {
 
         event.preventDefault();
 
-        const fullName = document.getElementById("fullName").value.trim();
+        const firstName = document.getElementById("firstName").value.trim();
+        const middleName = document.getElementById("middleName").value.trim();
+        const lastName = document.getElementById("lastName").value.trim();
+        const suffix = document.getElementById("suffix").value.trim();
+
+        const fullName = [
+            firstName,
+            middleName,
+            lastName,
+            suffix
+        ].filter(Boolean).join(" ");
 
         const contactNumber = document.getElementById("contactNumber").value.trim();
 
@@ -72,127 +143,139 @@ if (registerForm) {
         const role = document.getElementById("userRole").value;
 
 
-        // VALIDATE FULL NAME
+        // VALIDATION
 
-        if (fullName === "") {
-            showMessage("registerMessage", "Please enter your full name.");
+        if (!firstName || !lastName) {
+            showMessage("registerMessage", "First name and last name are required.");
             return;
         }
 
-
-        // VALIDATE CONTACT NUMBER: EXACTLY 11 DIGITS
-
-        const numberPattern = /^[0-9]{11}$/;
-
-        if (!numberPattern.test(contactNumber)) {
-            showMessage(
-                "registerMessage",
-                "Invalid contact number! Please enter exactly 11 digits."
-            );
+        if (!/^\d{11}$/.test(contactNumber)) {
+            showMessage("registerMessage", "Contact number must contain exactly 11 digits.");
             return;
         }
-
-
-        // VALIDATE EMAIL
 
         if (!isValidEmail(email)) {
-            showMessage(
-                "registerMessage",
-                "Invalid email! Please enter a valid email address (example@gmail.com)."
-            );
+            showMessage("registerMessage", "Please enter a valid email address.");
             return;
         }
-
-
-        // VALIDATE PASSWORD
 
         if (password.length < 8) {
-            showMessage(
-                "registerMessage",
-                "Password must contain at least 8 characters."
-            );
+            showMessage("registerMessage", "Password must contain at least 8 characters.");
             return;
         }
-
-
-        // VALIDATE CONFIRM PASSWORD
 
         if (password !== confirmPassword) {
-            showMessage(
-                "registerMessage",
-                "Passwords do not match."
-            );
+            showMessage("registerMessage", "Passwords do not match.");
+            return;
+        }
+
+        if (!["student", "tutor"].includes(role)) {
+            showMessage("registerMessage", "Please select a valid account role.");
             return;
         }
 
 
-        // VALIDATE USER ROLE
-        // Only Student and Tutor can register.
+        try {
 
-        if (role !== "student" && role !== "tutor") {
+            showMessage("registerMessage", "Creating your account...", true);
+
+            // CREATE FIREBASE ACCOUNT
+
+            const userCredential = await createUserWithEmailAndPassword(
+                auth,
+                email,
+                password
+            );
+
+            const firebaseUser = userCredential.user;
+
+            // CHECK EXISTING LOCAL RECORD TO PRESERVE OLD ID
+
+            const users = getUsers();
+
+            const oldUser = users.find(
+                user => String(user.email || "").toLowerCase() === email
+            );
+
+            const userProfile = {
+                uid: firebaseUser.uid,
+
+                firstName,
+                middleName,
+                lastName,
+                suffix,
+
+                fullName,
+                name: fullName,
+
+                contactNumber,
+                email,
+                role,
+
+                status: "active",
+
+                createdAt: serverTimestamp()
+            };
+
+
+            // SAVE PROFILE TO FIRESTORE
+
+            await setDoc(
+                doc(db, "users", firebaseUser.uid),
+                userProfile
+            );
+
+
+            // SAVE A PASSWORD-FREE LOCAL RECORD
+            // Existing local records are preserved.
+
+            if (!oldUser) {
+
+                users.push({
+                    id: firebaseUser.uid,
+                    uid: firebaseUser.uid,
+                    firstName,
+                    middleName,
+                    lastName,
+                    suffix,
+                    fullName,
+                    name: fullName,
+                    contactNumber,
+                    email,
+                    role,
+                    status: "active"
+                });
+
+                saveUsers(users);
+            }
+
+
+            // SIGN OUT AFTER REGISTRATION
+
+            await signOut(auth);
+
             showMessage(
                 "registerMessage",
-                "Please select Student or Tutor."
+                "Registration successful! Redirecting to login...",
+                true
             );
-            return;
-        }
+
+            registerForm.reset();
+
+            setTimeout(() => {
+                window.location.href = "login.html";
+            }, 1500);
 
 
-        // GET EXISTING USERS
+        } catch (error) {
 
-        const users = getUsers();
-
-
-        // CHECK DUPLICATE EMAIL
-
-        const existingUser = users.find(function(user) {
-            return String(user.email || "").toLowerCase() === email;
-        });
-
-        if (existingUser) {
             showMessage(
                 "registerMessage",
-                "This email is already registered."
+                getFirebaseError(error)
             );
-            return;
+
         }
-
-
-        // CREATE NEW USER ACCOUNT
-
-        const newUser = {
-            id: Date.now(),
-            fullName: fullName,
-            name: fullName,
-            contactNumber: contactNumber,
-            email: email,
-            password: password,
-            role: role,
-            status: "active"
-        };
-
-
-        // SAVE USER ACCOUNT
-
-        users.push(newUser);
-        saveUsers(users);
-
-
-        showMessage(
-            "registerMessage",
-            "Account created successfully! Redirecting to login...",
-            true
-        );
-
-
-        registerForm.reset();
-
-
-        // REDIRECT TO LOGIN
-
-        setTimeout(function() {
-            window.location.href = "login.html";
-        }, 1500);
 
     });
 
@@ -200,15 +283,14 @@ if (registerForm) {
 
 
 // ===================================
-// LOGIN FUNCTION
-// STUDENT AND TUTOR ONLY
+// LOGIN
 // ===================================
 
 const loginForm = document.getElementById("loginForm");
 
 if (loginForm) {
 
-    loginForm.addEventListener("submit", function(event) {
+    loginForm.addEventListener("submit", async function(event) {
 
         event.preventDefault();
 
@@ -217,112 +299,154 @@ if (loginForm) {
         const password = document.getElementById("loginPassword").value;
 
 
-        // CHECK EMAIL FORMAT
-
         if (!isValidEmail(email)) {
-            showMessage(
-                "loginMessage",
-                "Please enter a valid email address."
-            );
+            showMessage("loginMessage", "Please enter a valid email address.");
             return;
         }
 
 
-        // GET REGISTERED USERS
+        try {
 
-        const users = getUsers();
+            showMessage("loginMessage", "Logging in...", true);
 
+            // FIREBASE LOGIN
 
-        // FIND ACCOUNT
-
-        const loggedInUser = users.find(function(user) {
-            return String(user.email || "").toLowerCase() === email &&
-                   user.password === password;
-        });
-
-
-        // CHECK ACCOUNT
-
-        if (!loggedInUser) {
-            showMessage(
-                "loginMessage",
-                "Invalid email or password. Please try again."
-            );
-            return;
-        }
-
-
-        // CHECK ACCOUNT ROLE
-        // Admin must use the separate Admin Login page.
-
-        if (loggedInUser.role !== "student" &&
-            loggedInUser.role !== "tutor") {
-
-            showMessage(
-                "loginMessage",
-                "Admin accounts must use the separate Admin Login page."
+            const userCredential = await signInWithEmailAndPassword(
+                auth,
+                email,
+                password
             );
 
-            return;
-        }
+            const firebaseUser = userCredential.user;
 
 
-        // CHECK ACCOUNT STATUS
+            // GET USER PROFILE FROM FIRESTORE
 
-        if (loggedInUser.status === "inactive") {
-            showMessage(
-                "loginMessage",
-                "Your account has been deactivated. Please contact the administrator."
+            const userDocument = await getDoc(
+                doc(db, "users", firebaseUser.uid)
             );
 
-            return;
-        }
+            if (!userDocument.exists()) {
 
+                await signOut(auth);
 
-        // SAVE CURRENT USER SESSION
+                showMessage(
+                    "loginMessage",
+                    "Account profile not found. Please contact the administrator."
+                );
 
-        const currentUser = {
-            id: loggedInUser.id,
-            name: loggedInUser.fullName || loggedInUser.name,
-            email: loggedInUser.email,
-            role: loggedInUser.role
-        };
-
-        sessionStorage.setItem(
-            "pt_current_user",
-            JSON.stringify(currentUser)
-        );
-
-
-        // DISPLAY SUCCESS MESSAGE
-
-        showMessage(
-            "loginMessage",
-            "Login successful! Welcome, " +
-            (loggedInUser.fullName || loggedInUser.name) + ".",
-            true
-        );
-
-
-        // REDIRECT BASED ON USER ROLE
-
-        setTimeout(function() {
-
-            if (loggedInUser.role === "student") {
-
-                window.location.href = "student/dashboard.html";
-
-            } else if (loggedInUser.role === "tutor") {
-
-                window.location.href = "tutor/dashboard.html";
-
+                return;
             }
 
-        }, 1200);
+
+            const userData = userDocument.data();
+
+
+            // CHECK ACCOUNT ROLE
+
+            if (!["student", "tutor"].includes(userData.role)) {
+
+                await signOut(auth);
+
+                showMessage(
+                    "loginMessage",
+                    "This account does not have student or tutor access."
+                );
+
+                return;
+            }
+
+
+            // CHECK ACCOUNT STATUS
+
+            if (userData.status !== "active") {
+
+                await signOut(auth);
+
+                showMessage(
+                    "loginMessage",
+                    "Your account is inactive. Please contact the administrator."
+                );
+
+                return;
+            }
+
+
+            // PRESERVE LEGACY ID IF AVAILABLE
+
+            const users = getUsers();
+
+            const oldUser = users.find(
+                user => String(user.email || "").toLowerCase() === email
+            );
+
+
+            // CURRENT LOGGED-IN USER
+
+            const currentUser = {
+
+                id: oldUser?.id || firebaseUser.uid,
+
+                uid: firebaseUser.uid,
+
+                name: userData.fullName || userData.name,
+
+                fullName: userData.fullName || userData.name,
+
+                firstName: userData.firstName || "",
+                middleName: userData.middleName || "",
+                lastName: userData.lastName || "",
+                suffix: userData.suffix || "",
+
+                email: userData.email,
+
+                contactNumber: userData.contactNumber || "",
+
+                role: userData.role
+
+            };
+
+
+            sessionStorage.setItem(
+                "pt_current_user",
+                JSON.stringify(currentUser)
+            );
+
+
+            showMessage(
+                "loginMessage",
+                "Login successful! Redirecting...",
+                true
+            );
+
+
+            // ROLE-BASED REDIRECTION
+
+            setTimeout(() => {
+
+                if (userData.role === "student") {
+                    window.location.href = "student/dashboard.html";
+                }
+
+                if (userData.role === "tutor") {
+                    window.location.href = "tutor/dashboard.html";
+                }
+
+            }, 1000);
+
+
+        } catch (error) {
+
+            showMessage(
+                "loginMessage",
+                getFirebaseError(error)
+            );
+
+        }
 
     });
 
 }
 
 
-console.log("PeerTutor Authentication Loaded Successfully!");
+console.log("PeerTutor Firebase Authentication Loaded Successfully!");

@@ -46,16 +46,39 @@ const feedbackSuccess = document.getElementById("feedbackSuccess");
 
 let selectedRating = 0;
 
+function normalizeEmail(email) {
+    return String(email || "").trim().toLowerCase();
+}
 
 // ===================================
 // GET SAVED BOOKINGS
 // ===================================
 
 function getAllBookings() {
+    try {
+        const data = JSON.parse(
+            localStorage.getItem("pt_bookings") || "[]"
+        );
 
-    return JSON.parse(
-        localStorage.getItem("pt_bookings") || "[]"
-    );
+        return Array.isArray(data) ? data : [];
+
+    } catch (error) {
+        console.error("Error loading bookings:", error);
+        return [];
+    }
+}
+
+
+// GET ONLY CURRENT STUDENT BOOKINGS
+function getStudentBookings() {
+
+    const studentEmail = normalizeEmail(currentUser.email);
+
+    return getAllBookings().filter(function(booking) {
+
+        return normalizeEmail(booking.studentEmail) === studentEmail;
+
+    });
 
 }
 
@@ -78,9 +101,31 @@ function getStudentBookings() {
 
 function getAllFeedback() {
 
-    return JSON.parse(
-        localStorage.getItem("pt_feedback") || "[]"
-    );
+    try {
+        const data = JSON.parse(
+            localStorage.getItem("pt_feedback") || "[]"
+        );
+
+        return Array.isArray(data) ? data : [];
+
+    } catch (error) {
+        console.error("Error loading feedback:", error);
+        return [];
+    }
+
+}
+
+
+// GET CURRENT STUDENT FEEDBACK
+function getStudentFeedback() {
+
+    const studentEmail = normalizeEmail(currentUser.email);
+
+    return getAllFeedback().filter(function(feedback) {
+
+        return normalizeEmail(feedback.studentEmail) === studentEmail;
+
+    });
 
 }
 
@@ -520,12 +565,13 @@ feedbackForm.addEventListener("submit", function(event) {
 
     const duplicateFeedback = allFeedback.some(function(feedback) {
 
-        return (
-            String(feedback.bookingId) === String(bookingId) &&
-            feedback.studentEmail === currentUser.email
-        );
+    return (
+        String(feedback.bookingId) === String(bookingId) &&
+        normalizeEmail(feedback.studentEmail) ===
+        normalizeEmail(currentUser.email)
+    );
 
-    });
+});
 
 
     if (duplicateFeedback) {
@@ -541,30 +587,23 @@ feedbackForm.addEventListener("submit", function(event) {
 
     // CREATE FEEDBACK RECORD
     const newFeedback = {
+    id: Date.now(),
+    bookingId: booking.id,
 
-        id: Date.now(),
+    studentId: currentUser.id,
+    studentName: currentUser.name,
+    studentEmail: currentUser.email,
 
-        bookingId: booking.id,
+    tutorId: booking.tutorId,
+    tutorName: booking.tutorName,
+    tutorEmail: booking.tutorEmail || "",
 
-        studentId: currentUser.id,
+    subject: booking.subject,
+    rating: selectedRating,
+    comment: comment,
 
-        studentName: currentUser.name,
-
-        studentEmail: currentUser.email,
-
-        tutorId: booking.tutorId,
-
-        tutorName: booking.tutorName,
-
-        subject: booking.subject,
-
-        rating: selectedRating,
-
-        comment: comment,
-
-        createdAt: new Date().toISOString()
-
-    };
+    createdAt: new Date().toISOString()
+};
 
 
     // SAVE FEEDBACK

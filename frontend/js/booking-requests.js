@@ -102,28 +102,94 @@ function getTutorBookingById(bookingId) {
 // ===================================
 
 function displayTutorInfo() {
-    const name = currentUser.name || "Tutor";
+    if (!currentUser) return;
+
+    // Get the tutor's registered account
+    const users = getSavedData("pt_users");
+
+    const registeredUser = users.find(function(user) {
+        return String(user.email || "").trim().toLowerCase() ===
+            String(currentUser.email || "").trim().toLowerCase();
+    });
+
+    // Get the correct tutor name
+    const name =
+        (registeredUser && (
+            registeredUser.fullName ||
+            registeredUser.name
+        )) ||
+        currentUser.fullName ||
+        currentUser.name ||
+        "Tutor";
 
     document.getElementById("tutorName").textContent = name;
 
-    const initials = name
-        .split(" ")
-        .filter(Boolean)
-        .map(part => part.charAt(0).toUpperCase())
-        .slice(0, 2)
-        .join("");
+    const avatar = document.getElementById("userInitials");
 
-    document.getElementById("userInitials").textContent =
-        initials || "TU";
+    if (avatar) {
+        // Generate initials
+        const nameParts = name.trim().split(/\s+/).filter(Boolean);
 
-    document.getElementById("currentDate").textContent =
-        new Date().toLocaleDateString("en-US", {
+        const suffixes = ["JR.", "JR", "SR.", "SR", "II", "III", "IV", "V"];
+
+        const filteredParts = nameParts.filter(function(part) {
+            return !suffixes.includes(part.toUpperCase());
+        });
+
+        let initials = "";
+
+        if (filteredParts.length >= 2) {
+            initials =
+                filteredParts[0].charAt(0) +
+                filteredParts[filteredParts.length - 1].charAt(0);
+        } else if (filteredParts.length === 1) {
+            initials = filteredParts[0].substring(0, 2);
+        }
+
+        initials = initials.toUpperCase() || "TU";
+
+        // Find the tutor's saved profile
+        const tutorProfiles = getSavedData("pt_tutor_profiles");
+
+        const tutorProfile = tutorProfiles.find(function(profile) {
+            return String(profile.email || "").trim().toLowerCase() ===
+                String(currentUser.email || "").trim().toLowerCase();
+        });
+
+        // Display uploaded profile picture or initials
+        avatar.innerHTML = "";
+
+        if (tutorProfile && tutorProfile.profilePicture) {
+            const image = document.createElement("img");
+
+            image.src = tutorProfile.profilePicture;
+            image.alt = name + " Profile Picture";
+
+            image.onerror = function() {
+                avatar.innerHTML = "";
+                avatar.textContent = initials;
+            };
+
+            avatar.appendChild(image);
+        } else {
+            avatar.textContent = initials;
+        }
+    }
+
+    // Display current date
+    const currentDate = document.getElementById("currentDate");
+
+    if (currentDate) {
+        currentDate.textContent = new Date().toLocaleDateString("en-US", {
             weekday: "long",
             month: "long",
             day: "numeric",
             year: "numeric"
         });
+    }
 }
+
+
 
 // ===================================
 // HELPER FUNCTIONS
@@ -559,23 +625,39 @@ function updateMeetingLink(bookingId) {
 // ===================================
 
 function completeBooking(bookingId) {
+
     const booking = getTutorBookingById(bookingId);
 
-    if (!booking || booking.status !== "Approved") {
+    if (!booking) {
+        alert("Booking not found.");
+        return;
+    }
+
+    // Check booking status regardless of capitalization
+    if (
+        String(booking.status || "").toLowerCase() !== "approved"
+    ) {
         alert("Only approved bookings can be marked as completed.");
         return;
     }
 
-    if (!confirm("Have you already conducted this tutoring session?")) {
-        return;
-    }
+    const confirmed = confirm(
+        "Have you already conducted this tutoring session?"
+    );
 
-    if (updateBooking(bookingId, {
+    if (!confirmed) return;
+
+    const success = updateBooking(bookingId, {
         status: "Completed",
         completedAt: new Date().toISOString()
-    })) {
+    });
+
+    if (success) {
         alert("Tutoring session marked as completed!");
+
         refreshRequests();
+    } else {
+        alert("Unable to complete this booking. Please try again.");
     }
 }
 

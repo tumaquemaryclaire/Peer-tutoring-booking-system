@@ -1,0 +1,399 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Profile | PeerTutor</title>
+
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+
+<body class="dashboard-page">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <a href="../index.html" class="dashboard-logo">
+            📚 Peer<span>Tutor</span>
+        </a>
+
+        <p class="sidebar-label">TUTOR MENU</p>
+
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="sidebar-link">
+                <span>▦</span> Dashboard
+            </a>
+
+            <a href="profile.html" class="sidebar-link active">
+                <span>👤</span> My Profile
+            </a>
+
+            <a href="manage-schedule.html" class="sidebar-link">
+                <span>📅</span> Manage Schedule
+            </a>
+
+            <a href="booking-requests.html" class="sidebar-link">
+                <span>📋</span> Booking Requests
+            </a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <a href="../index.html" class="sidebar-link">
+                <span>🏠</span> Homepage
+            </a>
+
+            <button id="logoutBtn" class="sidebar-logout">
+                <span>↪</span> Logout
+            </button>
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+    <main class="dashboard-main">
+
+        <!-- TOP BAR -->
+        <header class="dashboard-topbar">
+
+            <div>
+                <p class="dashboard-date" id="currentDate"></p>
+                <h2>Manage My Profile</h2>
+            </div>
+
+            <div class="user-information">
+                <div class="user-avatar" id="userInitials">TU</div>
+
+                <div>
+                    <strong id="tutorName">Tutor</strong>
+                    <p>Tutor Account</p>
+                </div>
+            </div>
+
+        </header>
+
+
+        <!-- PAGE BANNER -->
+        <section class="manage-profile-banner">
+
+            <div>
+                <span class="welcome-small">TUTOR PROFILE MANAGEMENT</span>
+
+                <h1>Build Your Tutor Profile!</h1>
+
+                <p>
+                    Tell students about yourself, your skills, and the
+                    subjects you can teach. Help them find the right tutor.
+                </p>
+            </div>
+
+            <div class="manage-profile-icon">👩‍🏫</div>
+
+        </section>
+
+
+        <!-- PROFILE FORM LAYOUT -->
+        <section class="manage-profile-layout">
+
+            <!-- PROFILE FORM -->
+            <div class="manage-profile-card">
+
+                <div class="manage-profile-heading">
+                    <h2>Personal and Academic Information</h2>
+
+                    <p>
+                        Complete your profile so students can learn
+                        more about your tutoring services.
+                    </p>
+                </div>
+
+
+                <form id="tutorProfileForm">
+
+                    <!-- FULL NAME -->
+                    <div class="profile-form-group">
+
+                        <label for="tutorFullName">Full Name</label>
+
+                        <input
+                            type="text"
+                            id="tutorFullName"
+                            readonly
+                        >
+
+                        <small>
+                            Your name comes from your registered account.
+                        </small>
+
+                    </div>
+
+
+                    <!-- EMAIL -->
+                    <div class="profile-form-group">
+
+                        <label for="tutorEmail">Email Address</label>
+
+                        <input
+                            type="email"
+                            id="tutorEmail"
+                            readonly
+                        >
+
+                    </div>
+
+
+                    <!-- EXPERTISE -->
+                    <div class="profile-form-group">
+
+                        <label for="tutorExpertise">
+                            Skills and Expertise
+                        </label>
+
+                        <input
+                            type="text"
+                            id="tutorExpertise"
+                            placeholder="Example: JavaScript, HTML, CSS, MySQL"
+                            maxlength="150"
+                            required
+                        >
+
+                        <small>
+                            Enter your programming skills or areas of knowledge.
+                        </small>
+
+                    </div>
+
+
+                    <!-- SUBJECTS -->
+                    <div class="profile-form-group">
+
+                        <label>Subjects You Can Teach</label>
+
+                        <p class="profile-help-text">
+                            Select all subjects you are comfortable teaching.
+                        </p>
+
+                        <div class="profile-checkbox-grid">
+
+                            <label class="profile-checkbox">
+                                <input type="checkbox" name="tutorSubjects" value="JavaScript Programming">
+                                <span>JavaScript Programming</span>
+                            </label>
+
+                            <label class="profile-checkbox">
+                                <input type="checkbox" name="tutorSubjects" value="Database Management">
+                                <span>Database Management</span>
+                            </label>
+
+                            <label class="profile-checkbox">
+                                <input type="checkbox" name="tutorSubjects" value="Web Development">
+                                <span>Web Development</span>
+                            </label>
+
+                            <label class="profile-checkbox">
+                                <input type="checkbox" name="tutorSubjects" value="Java Programming">
+                                <span>Java Programming</span>
+                            </label>
+
+                            <label class="profile-checkbox">
+                                <input type="checkbox" name="tutorSubjects" value="Python Programming">
+                                <span>Python Programming</span>
+                            </label>
+
+                            <label class="profile-checkbox">
+                                <input type="checkbox" name="tutorSubjects" value="Mathematics">
+                                <span>Mathematics</span>
+                            </label>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- TUTORING MODES -->
+                    <div class="profile-form-group">
+
+                        <label>Available Tutoring Modes</label>
+
+                        <p class="profile-help-text">
+                            Select the tutoring methods you can offer.
+                        </p>
+
+                        <div class="profile-mode-options">
+
+                            <label class="profile-mode-option">
+                                <input
+                                    type="checkbox"
+                                    name="tutorModes"
+                                    value="Online"
+                                >
+
+                                <span class="mode-option-icon">💻</span>
+
+                                <span>
+                                    <strong>Online Tutoring</strong>
+                                    <small>Teach students through online meetings.</small>
+                                </span>
+                            </label>
+
+
+                            <label class="profile-mode-option">
+                                <input
+                                    type="checkbox"
+                                    name="tutorModes"
+                                    value="Face-to-Face"
+                                >
+
+                                <span class="mode-option-icon">🤝</span>
+
+                                <span>
+                                    <strong>Face-to-Face Tutoring</strong>
+                                    <small>Meet students at an agreed location.</small>
+                                </span>
+                            </label>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- BIOGRAPHY -->
+                    <div class="profile-form-group">
+
+                        <label for="tutorBio">About Me / Biography</label>
+
+                        <textarea
+                            id="tutorBio"
+                            rows="5"
+                            minlength="20"
+                            maxlength="500"
+                            placeholder="Introduce yourself and explain how you can help other students..."
+                            required
+                        ></textarea>
+
+                        <small>
+                            Write at least 20 characters and a maximum of 500.
+                        </small>
+
+                    </div>
+
+
+                    <!-- MESSAGE -->
+                    <p
+                        id="profileMessage"
+                        class="profile-message"
+                        aria-live="polite"
+                    ></p>
+
+
+                    <!-- BUTTONS -->
+                    <div class="profile-form-buttons">
+
+                        <button
+                            type="reset"
+                            class="profile-reset-btn"
+                            id="resetProfileBtn"
+                        >
+                            Reset
+                        </button>
+
+                        <button
+                            type="submit"
+                            class="profile-save-btn"
+                        >
+                            Save My Profile
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+
+            <!-- PROFILE PREVIEW -->
+            <aside class="profile-preview-card">
+
+                <span class="preview-label">PROFILE PREVIEW</span>
+
+                <div class="preview-avatar" id="previewInitials">
+                    TU
+                </div>
+
+                <h3 id="previewName">Tutor Name</h3>
+
+                <p class="preview-role">Peer Tutor</p>
+
+                <div class="preview-divider"></div>
+
+                <div class="preview-information">
+
+                    <h4>Skills and Expertise</h4>
+
+                    <p id="previewExpertise">
+                        Your skills will appear here.
+                    </p>
+
+                </div>
+
+
+                <div class="preview-information">
+
+                    <h4>Subjects</h4>
+
+                    <div id="previewSubjects">
+                        <span class="preview-placeholder">
+                            No subjects selected.
+                        </span>
+                    </div>
+
+                </div>
+
+
+                <div class="preview-information">
+
+                    <h4>Tutoring Modes</h4>
+
+                    <div id="previewModes">
+                        <span class="preview-placeholder">
+                            No tutoring mode selected.
+                        </span>
+                    </div>
+
+                </div>
+
+
+                <div class="preview-information">
+
+                    <h4>About Me</h4>
+
+                    <p id="previewBio">
+                        Your biography will appear here.
+                    </p>
+
+                </div>
+
+
+                <div class="preview-note">
+                    💡 Your profile information will be displayed to students
+                    when you save it.
+                </div>
+
+            </aside>
+
+        </section>
+
+
+        <footer class="dashboard-footer">
+            © 2026 PeerTutor. All Rights Reserved.
+        </footer>
+
+    </main>
+
+
+    <script src="../js/manage-profile.js"></script>
+
+</body>
+</html>

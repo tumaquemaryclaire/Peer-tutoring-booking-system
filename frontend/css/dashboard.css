@@ -4609,3 +4609,98 @@
     object-fit: cover;
     border-radius: 50%;
 }
+
+/* ===================================
+   FIND TUTORS - PROFILE PICTURE FIX
+=================================== */
+
+/* ===================================
+   FIND TUTORS - PROFILE PICTURE FIX
+=================================== */
+
+.find-tutor-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+    align-items: stretch;
+}
+
+.find-tutor-card {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.find-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0;
+    margin-bottom: 15px;
+}
+
+.find-tutor-avatar {
+    width: 57px !important;
+    height: 57px !important;
+    min-width: 57px !important;
+    max-width: 57px !important;
+    min-height: 57px !important;
+    max-height: 57px !important;
+
+    flex: 0 0 57px !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50% !important;
+    overflow: hidden !important;
+    position: relative !important;
+    box-sizing: border-box !important;
+}
+
+.find-tutor-avatar > img,
+.find-tutor-avatar > img.tutor-card-picture {
+    display: block !important;
+    position: static !important;
+
+    width: 100% !important;
+    height: 100% !important;
+
+    min-width: 0 !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+
+    object-fit: cover !important;
+    object-position: center !important;
+
+    border-radius: 50% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    transform: none !important;
+}
+
+.find-tutor-card h3,
+.find-tutor-card p {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+}
+
+@media (max-width: 1100px) {
+    .find-tutor-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 650px) {
+    .find-tutor-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .find-tutor-avatar {
+        width: 57px !important;
+        height: 57px !important;
+    }
+}

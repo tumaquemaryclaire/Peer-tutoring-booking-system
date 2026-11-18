@@ -71,7 +71,7 @@
 
             <div class="user-information">
 
-                <div class="user-avatar" id="userInitials">TU</div>
+                <div class="user-avatar" id="userInitials"></div>
 
                 <div>
                     <strong id="tutorName">Tutor</strong>
@@ -301,6 +301,45 @@
         </section>
 
 
+<!-- STUDENT FEEDBACK -->
+<section class="dashboard-section">
+
+    <div class="dashboard-section-heading">
+        <div>
+            <h2>Student Feedback</h2>
+            <p>See the ratings and comments submitted by your students.</p>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon orange-icon">⭐</div>
+            <div>
+                <p>Average Rating</p>
+                <h2 id="tutorAverageRating">0.0</h2>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon blue-icon">💬</div>
+            <div>
+                <p>Total Feedback</p>
+                <h2 id="tutorFeedbackCount">0</h2>
+            </div>
+        </div>
+    </div>
+
+    <div id="tutorFeedbackList" class="booking-table-wrapper"
+         style="margin-top: 20px; padding: 20px; background: white; border-radius: 12px;">
+
+        <p id="noTutorFeedback" style="text-align: center; color: #777;">
+            No student feedback yet.
+        </p>
+
+    </div>
+
+</section>
+
         <!-- REMINDER -->
         <section class="dashboard-reminder">
 
@@ -327,6 +366,7 @@
 
 
     <script src="../js/tutor.js"></script>
+    <script src="../js/tutor-feedback.js"></script>
 
 </body>
 </html>

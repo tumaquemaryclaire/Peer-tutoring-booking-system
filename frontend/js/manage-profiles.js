@@ -4,19 +4,126 @@
 // ===================================
 
 
+// ===================================
 // CHECK CURRENT TUTOR
+// ===================================
+
 const currentUser = JSON.parse(
     sessionStorage.getItem("pt_current_user") || "null"
 );
 
 if (!currentUser || currentUser.role !== "tutor") {
-
     alert("Please log in using your tutor account.");
-
     window.location.href = "../login.html";
-
 }
 
+
+// ===================================
+// GET REGISTERED ACCOUNT INFORMATION
+// ===================================
+
+function getRegisteredTutor() {
+    const users = JSON.parse(
+        localStorage.getItem("pt_users") || "[]"
+    );
+
+    const email = String(currentUser.email || "").trim().toLowerCase();
+
+    const account = users.find(function(user) {
+        return String(user.email || "").trim().toLowerCase() === email;
+    });
+
+    console.log("Current Session:", currentUser);
+    console.log("Registered Tutor Account:", account);
+
+    return account;
+}
+
+
+// ===================================
+// GET COMPLETE TUTOR NAME
+// ===================================
+
+function getCompleteTutorName() {
+    const account = getRegisteredTutor();
+
+    if (account) {
+        const composedName = [
+            account.firstName,
+            account.middleName,
+            account.lastName,
+            account.suffix
+        ]
+        .filter(function(part) {
+            return String(part || "").trim() !== "";
+        })
+        .join(" ");
+
+        const completeName =
+            composedName ||
+            account.fullName ||
+            account.name ||
+            currentUser.fullName ||
+            currentUser.name;
+
+        if (completeName && completeName.trim()) {
+            currentUser.name = completeName.trim();
+            currentUser.fullName = completeName.trim();
+
+            currentUser.firstName =
+                account.firstName || currentUser.firstName || "";
+
+            currentUser.middleName =
+                account.middleName || currentUser.middleName || "";
+
+            currentUser.lastName =
+                account.lastName || currentUser.lastName || "";
+
+            currentUser.suffix =
+                account.suffix || currentUser.suffix || "";
+
+            sessionStorage.setItem(
+                "pt_current_user",
+                JSON.stringify(currentUser)
+            );
+
+            return completeName.trim();
+        }
+    }
+
+    return (
+        currentUser.fullName ||
+        currentUser.name ||
+        "Tutor"
+    );
+}
+
+
+// ===================================
+// GET TUTOR INITIALS
+// ===================================
+
+function getTutorInitials() {
+    const fullName = getCompleteTutorName();
+
+    const nameParts = fullName
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean);
+
+    if (nameParts.length >= 2) {
+        return (
+            nameParts[0].charAt(0) +
+            nameParts[nameParts.length - 1].charAt(0)
+        ).toUpperCase();
+    }
+
+    if (nameParts.length === 1) {
+        return nameParts[0].substring(0, 2).toUpperCase();
+    }
+
+    return "TU";
+}
 
 // ===================================
 // GET HTML ELEMENTS
@@ -41,10 +148,20 @@ let selectedProfilePicture = "";
 
 function getTutorProfiles() {
 
-    return JSON.parse(
-        localStorage.getItem("pt_tutor_profiles") || "[]"
-    );
+    try {
 
+        const profiles = JSON.parse(
+            localStorage.getItem("pt_tutor_profiles") || "[]"
+        );
+
+        return Array.isArray(profiles) ? profiles : [];
+
+    } catch (error) {
+
+        console.error("Unable to load tutor profiles:", error);
+        return [];
+
+    }
 }
 
 
@@ -72,8 +189,8 @@ function getCurrentProfile() {
 
     return profiles.find(function(profile) {
 
-        return profile.email?.toLowerCase() ===
-               currentUser.email?.toLowerCase();
+        return String(profile.email || "").toLowerCase() ===
+               String(currentUser.email || "").toLowerCase();
 
     });
 
@@ -112,46 +229,27 @@ function setCheckedValues(name, values) {
 
 }
 
-
-// ===================================
-// GET TUTOR INITIALS
-// ===================================
-
-function getTutorInitials() {
-
-    return (currentUser.name || "Tutor")
-        .split(" ")
-        .filter(Boolean)
-        .map(part => part.charAt(0).toUpperCase())
-        .slice(0, 2)
-        .join("") || "TU";
-
-}
-
-
 // ===================================
 // DISPLAY TUTOR INFORMATION
 // ===================================
 
 function displayTutorInformation() {
 
-    const name = currentUser.name || "Tutor";
+    const name = getCompleteTutorName();
 
     document.getElementById("tutorName").textContent = name;
 
     document.getElementById("tutorFullName").value = name;
 
     document.getElementById("tutorEmail").value =
-        currentUser.email;
+        currentUser.email || "";
 
     document.getElementById("currentDate").textContent =
         new Date().toLocaleDateString("en-US", {
-
             weekday: "long",
             month: "long",
             day: "numeric",
             year: "numeric"
-
         });
 
     displayProfilePicture(selectedProfilePicture);
@@ -190,7 +288,6 @@ function displayProfilePicture(image) {
             const img = document.createElement("img");
 
             img.src = image;
-
             img.alt = "Tutor Profile Picture";
 
             element.appendChild(img);
@@ -228,7 +325,9 @@ pictureInput.addEventListener("change", function() {
 
     if (!file) return;
 
+
     // CHECK IMAGE FILE
+
     if (!file.type.startsWith("image/")) {
 
         alert("Please select a valid image.");
@@ -239,7 +338,9 @@ pictureInput.addEventListener("change", function() {
 
     }
 
+
     // CHECK FILE SIZE (1 MB)
+
     if (file.size > 1024 * 1024) {
 
         alert("Image must not exceed 1 MB.");
@@ -249,6 +350,7 @@ pictureInput.addEventListener("change", function() {
         return;
 
     }
+
 
     const reader = new FileReader();
 
@@ -294,7 +396,7 @@ removePictureBtn.addEventListener("click", function() {
 
 function updateProfilePreview() {
 
-    const name = currentUser.name || "Tutor";
+    const name = getCompleteTutorName();
 
     const expertise =
         document.getElementById("tutorExpertise").value.trim();
@@ -308,24 +410,29 @@ function updateProfilePreview() {
 
 
     // PROFILE NAME
+
     document.getElementById("previewName").textContent = name;
 
 
     // PROFILE PICTURE
+
     displayProfilePicture(selectedProfilePicture);
 
 
     // EXPERTISE
+
     document.getElementById("previewExpertise").textContent =
         expertise || "Your skills will appear here.";
 
 
     // BIOGRAPHY
+
     document.getElementById("previewBio").textContent =
         bio || "Your biography will appear here.";
 
 
     // DISPLAY SUBJECTS
+
     const previewSubjects =
         document.getElementById("previewSubjects");
 
@@ -359,6 +466,7 @@ function updateProfilePreview() {
 
 
     // DISPLAY TUTORING MODES
+
     const previewModes =
         document.getElementById("previewModes");
 
@@ -437,6 +545,8 @@ function loadProfile() {
 
     pictureInput.value = "";
 
+    displayTutorInformation();
+
     updateProfilePreview();
 
 }
@@ -476,6 +586,7 @@ profileForm.addEventListener("submit", function(event) {
 
 
     // VALIDATE EXPERTISE
+
     if (!expertise) {
 
         showProfileMessage("Please enter your skills and expertise.");
@@ -486,6 +597,7 @@ profileForm.addEventListener("submit", function(event) {
 
 
     // VALIDATE SUBJECTS
+
     if (subjects.length === 0) {
 
         showProfileMessage("Please select at least one subject.");
@@ -496,6 +608,7 @@ profileForm.addEventListener("submit", function(event) {
 
 
     // VALIDATE TUTORING MODES
+
     if (modes.length === 0) {
 
         showProfileMessage("Please select at least one tutoring mode.");
@@ -506,6 +619,7 @@ profileForm.addEventListener("submit", function(event) {
 
 
     // VALIDATE BIOGRAPHY
+
     if (bio.length < 20) {
 
         showProfileMessage(
@@ -518,28 +632,31 @@ profileForm.addEventListener("submit", function(event) {
 
 
     // GET EXISTING PROFILES
+
     const profiles = getTutorProfiles();
 
-    const existingProfile = profiles.find(function(profile) {
+    const existingProfile = getCurrentProfile();
 
-        return profile.email?.toLowerCase() ===
-               currentUser.email?.toLowerCase();
 
-    });
+    // GET COMPLETE NAME
+
+    const fullName = getCompleteTutorName();
 
 
     // GET INITIALS
+
     const initials = getTutorInitials();
 
 
     // CREATE PROFILE DATA
+
     const newProfile = {
 
         id: currentUser.id,
 
         email: currentUser.email,
 
-        name: currentUser.name,
+        name: fullName,
 
         expertise: expertise,
 
@@ -549,14 +666,12 @@ profileForm.addEventListener("submit", function(event) {
 
         bio: bio,
 
-        // KEEP EXISTING RATING
         rating: existingProfile?.rating || 0,
 
         initials: initials,
 
         color: existingProfile?.color || "tutor-blue",
 
-        // SAVE PROFILE PICTURE
         profilePicture: selectedProfilePicture,
 
         updatedAt: new Date().toISOString()
@@ -565,10 +680,11 @@ profileForm.addEventListener("submit", function(event) {
 
 
     // CHECK IF PROFILE ALREADY EXISTS
+
     const existingIndex = profiles.findIndex(function(profile) {
 
-        return profile.email?.toLowerCase() ===
-               currentUser.email?.toLowerCase();
+        return String(profile.email || "").toLowerCase() ===
+               String(currentUser.email || "").toLowerCase();
 
     });
 
@@ -576,17 +692,20 @@ profileForm.addEventListener("submit", function(event) {
     if (existingIndex !== -1) {
 
         // UPDATE EXISTING PROFILE
+
         profiles[existingIndex] = newProfile;
 
     } else {
 
         // ADD NEW PROFILE
+
         profiles.push(newProfile);
 
     }
 
 
     // SAVE TO LOCAL STORAGE
+
     try {
 
         saveTutorProfiles(profiles);
@@ -605,10 +724,13 @@ profileForm.addEventListener("submit", function(event) {
 
 
     // DISPLAY SUCCESS
+
     showProfileMessage(
         "Your tutor profile has been saved successfully!",
         true
     );
+
+    displayTutorInformation();
 
     updateProfilePreview();
 
@@ -633,10 +755,8 @@ profileForm.addEventListener("change", updateProfilePreview);
 document.getElementById("resetProfileBtn")
     .addEventListener("click", function(event) {
 
-        // Prevent the browser from clearing the form
         event.preventDefault();
 
-        // Restore saved profile information
         loadProfile();
 
         showProfileMessage(
@@ -678,5 +798,6 @@ if (currentUser && currentUser.role === "tutor") {
     loadProfile();
 
 }
+
 
 console.log("Tutor Profile Management Loaded Successfully!");

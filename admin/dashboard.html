@@ -1,0 +1,454 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin Dashboard | PeerTutor</title>
+
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+
+<body class="dashboard-page">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <a href="../index.html" class="dashboard-logo">
+            📚 Peer<span>Tutor</span>
+        </a>
+
+        <p class="sidebar-label">ADMIN MENU</p>
+
+        <nav class="sidebar-nav">
+
+            <a href="dashboard.html" class="sidebar-link active">
+                <span>▦</span> Dashboard
+            </a>
+
+            <a href="manage-users.html" class="sidebar-link">
+                <span>👥</span> Manage Users
+            </a>
+
+            <a href="manage-subjects.html" class="sidebar-link">
+                <span>📚</span> Manage Subjects
+            </a>
+
+            <a href="manage-bookings.html" class="sidebar-link">
+                <span>📋</span> Manage Bookings
+            </a>
+
+        </nav>
+
+        <div class="sidebar-bottom">
+
+            <a href="../index.html" class="sidebar-link">
+                <span>🏠</span> Homepage
+            </a>
+
+            <button id="logoutBtn" class="sidebar-logout">
+                <span>↪</span> Logout
+            </button>
+
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+    <main class="dashboard-main">
+
+        <!-- TOP BAR -->
+        <header class="dashboard-topbar">
+
+            <div>
+                <p class="dashboard-date" id="currentDate"></p>
+                <h2>Admin Dashboard</h2>
+            </div>
+
+            <div class="user-information">
+
+                <div class="user-avatar" id="adminInitials">AD</div>
+
+                <div>
+                    <strong id="adminName">Administrator</strong>
+                    <p>System Administrator</p>
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- WELCOME BANNER -->
+        <section class="admin-welcome">
+
+            <div>
+
+                <span class="welcome-small">ADMINISTRATION PORTAL</span>
+
+                <h1>Welcome, <span id="welcomeAdminName">Admin</span>! 👋</h1>
+
+                <p>
+                    Monitor the PeerTutor platform, manage registered
+                    users, organize tutoring subjects, and oversee
+                    student booking activities.
+                </p>
+
+                <a href="manage-users.html" class="admin-primary-btn">
+                    Manage Users →
+                </a>
+
+            </div>
+
+            <div class="admin-welcome-icon">
+                🖥️
+                <span>System Management</span>
+            </div>
+
+        </section>
+
+
+        <!-- USER STATISTICS -->
+        <section class="dashboard-section">
+
+            <div class="dashboard-section-heading">
+
+                <div>
+                    <h2>User Overview</h2>
+                    <p>Summary of registered PeerTutor accounts.</p>
+                </div>
+
+            </div>
+
+
+            <div class="admin-stats-grid">
+
+                <div class="admin-stat-card">
+
+                    <div class="admin-stat-icon blue-icon">👥</div>
+
+                    <div>
+                        <p>Total Users</p>
+                        <h2 id="adminTotalUsers">0</h2>
+                    </div>
+
+                </div>
+
+
+                <div class="admin-stat-card">
+
+                    <div class="admin-stat-icon green-icon">🎓</div>
+
+                    <div>
+                        <p>Total Students</p>
+                        <h2 id="adminTotalStudents">0</h2>
+                    </div>
+
+                </div>
+
+
+                <div class="admin-stat-card">
+
+                    <div class="admin-stat-icon purple-icon">👩‍🏫</div>
+
+                    <div>
+                        <p>Total Tutors</p>
+                        <h2 id="adminTotalTutors">0</h2>
+                    </div>
+
+                </div>
+
+
+                <div class="admin-stat-card">
+
+                    <div class="admin-stat-icon orange-icon">🛡️</div>
+
+                    <div>
+                        <p>Administrators</p>
+                        <h2 id="adminTotalAdmins">0</h2>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- BOOKING STATISTICS -->
+        <section class="dashboard-section">
+
+            <div class="dashboard-section-heading">
+
+                <div>
+                    <h2>Booking Overview</h2>
+                    <p>Monitor tutoring reservations and their current status.</p>
+                </div>
+
+            </div>
+
+
+            <div class="admin-stats-grid">
+
+                <div class="admin-stat-card">
+
+                    <div class="admin-stat-icon blue-icon">📋</div>
+
+                    <div>
+                        <p>Total Bookings</p>
+                        <h2 id="adminTotalBookings">0</h2>
+                    </div>
+
+                </div>
+
+
+                <div class="admin-stat-card">
+
+                    <div class="admin-stat-icon orange-icon">⏳</div>
+
+                    <div>
+                        <p>Pending</p>
+                        <h2 id="adminPendingBookings">0</h2>
+                    </div>
+
+                </div>
+
+
+                <div class="admin-stat-card">
+
+                    <div class="admin-stat-icon green-icon">✓</div>
+
+                    <div>
+                        <p>Approved</p>
+                        <h2 id="adminApprovedBookings">0</h2>
+                    </div>
+
+                </div>
+
+
+                <div class="admin-stat-card">
+
+                    <div class="admin-stat-icon purple-icon">🎓</div>
+
+                    <div>
+                        <p>Completed</p>
+                        <h2 id="adminCompletedBookings">0</h2>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- QUICK MANAGEMENT -->
+        <section class="dashboard-section">
+
+            <div class="dashboard-section-heading">
+
+                <div>
+                    <h2>Quick Management</h2>
+
+                    <p>
+                        Access the main administration modules.
+                    </p>
+                </div>
+
+            </div>
+
+
+            <div class="quick-action-grid">
+
+                <a href="manage-users.html" class="quick-action-card">
+
+                    <div class="quick-icon">👥</div>
+
+                    <h3>Manage Users</h3>
+
+                    <p>
+                        View and manage registered student and tutor accounts.
+                    </p>
+
+                    <span>Manage Accounts →</span>
+
+                </a>
+
+
+                <a href="manage-subjects.html" class="quick-action-card">
+
+                    <div class="quick-icon">📚</div>
+
+                    <h3>Manage Subjects</h3>
+
+                    <p>
+                        Organize the subjects available for tutoring.
+                    </p>
+
+                    <span>Manage Subjects →</span>
+
+                </a>
+
+
+                <a href="manage-bookings.html" class="quick-action-card">
+
+                    <div class="quick-icon">📋</div>
+
+                    <h3>Manage Bookings</h3>
+
+                    <p>
+                        Monitor tutoring reservations and booking statuses.
+                    </p>
+
+                    <span>View Bookings →</span>
+
+                </a>
+
+            </div>
+
+        </section>
+
+
+        <!-- ADDITIONAL SYSTEM INFORMATION -->
+        <section class="dashboard-section">
+
+            <div class="dashboard-section-heading">
+
+                <div>
+                    <h2>System Information</h2>
+                    <p>Overview of available tutoring resources.</p>
+                </div>
+
+            </div>
+
+
+            <div class="admin-information-grid">
+
+                <div class="admin-information-card">
+
+                    <div class="admin-information-icon">📚</div>
+
+                    <div>
+                        <p>Available Subjects</p>
+                        <h2 id="adminTotalSubjects">0</h2>
+                        <span>Subjects listed in tutor profiles</span>
+                    </div>
+
+                </div>
+
+
+                <div class="admin-information-card">
+
+                    <div class="admin-information-icon">⭐</div>
+
+                    <div>
+                        <p>Submitted Feedback</p>
+                        <h2 id="adminTotalFeedback">0</h2>
+                        <span>Student feedback records</span>
+                    </div>
+
+                </div>
+
+
+                <div class="admin-information-card">
+
+                    <div class="admin-information-icon">📅</div>
+
+                    <div>
+                        <p>Available Schedules</p>
+                        <h2 id="adminTotalSchedules">0</h2>
+                        <span>Schedules created by tutors</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- RECENT BOOKINGS -->
+        <section class="dashboard-section">
+
+            <div class="dashboard-section-heading">
+
+                <div>
+                    <h2>Recent Booking Activities</h2>
+
+                    <p>
+                        Latest tutoring booking records from the system.
+                    </p>
+                </div>
+
+                <a href="manage-bookings.html" class="view-all-btn">
+                    View All →
+                </a>
+
+            </div>
+
+
+            <div class="booking-table-wrapper">
+
+                <table class="booking-table">
+
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Tutor</th>
+                            <th>Subject</th>
+                            <th>Mode</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="adminRecentBookings">
+
+                        <tr>
+                            <td colspan="5" class="empty-booking">
+                                No booking records available.
+                            </td>
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+
+        <!-- ADMIN REMINDER -->
+        <section class="dashboard-reminder">
+
+            <div class="reminder-icon">💡</div>
+
+            <div>
+                <h3>Keep the System Organized!</h3>
+
+                <p>
+                    Regularly review user accounts, tutoring subjects,
+                    and booking records to maintain an organized
+                    learning platform.
+                </p>
+            </div>
+
+        </section>
+
+
+        <!-- FOOTER -->
+        <footer class="dashboard-footer">
+            © 2026 PeerTutor. All Rights Reserved.
+        </footer>
+
+    </main>
+
+
+    <script src="admin-guard.js"></script>
+    <script src="../js/admin.js"></script>
+
+</body>
+</html>

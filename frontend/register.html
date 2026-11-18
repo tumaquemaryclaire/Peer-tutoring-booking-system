@@ -7,6 +7,7 @@
     <title>Register | PeerTutor</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body class="auth-page" data-page="register">
 
     <header class="navbar">
@@ -34,15 +35,50 @@
 
             <form id="registerForm">
 
-                <!-- FULL NAME -->
+                <!-- FIRST NAME -->
                 <div class="form-group">
-                    <label for="fullName">Full Name</label>
+                    <label for="firstName">First Name</label>
                     <input
                         type="text"
-                        id="fullName"
-                        placeholder="Enter your full name"
+                        id="firstName"
+                        placeholder="Enter your first name"
                         required
                     >
+                </div>
+
+                <!-- MIDDLE NAME -->
+                <div class="form-group">
+                    <label for="middleName">Middle Name <small>(Optional)</small></label>
+                    <input
+                        type="text"
+                        id="middleName"
+                        placeholder="Enter your middle name"
+                    >
+                </div>
+
+                <!-- LAST NAME -->
+                <div class="form-group">
+                    <label for="lastName">Last Name</label>
+                    <input
+                        type="text"
+                        id="lastName"
+                        placeholder="Enter your last name"
+                        required
+                    >
+                </div>
+
+                <!-- SUFFIX -->
+                <div class="form-group">
+                    <label for="suffix">Suffix <small>(Optional)</small></label>
+                    <select id="suffix">
+                        <option value="">None</option>
+                        <option value="Jr.">Jr.</option>
+                        <option value="Sr.">Sr.</option>
+                        <option value="II">II</option>
+                        <option value="III">III</option>
+                        <option value="IV">IV</option>
+                        <option value="V">V</option>
+                    </select>
                 </div>
 
                 <!-- CONTACT NUMBER -->
@@ -130,7 +166,7 @@
         © 2026 PeerTutor. All Rights Reserved.
     </footer>
 
-    <script src="js/auth.js"></script>
+    <script type="module" src="js/auth.js"></script>
 
 </body>
 </html>

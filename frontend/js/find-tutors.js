@@ -340,10 +340,9 @@ function displayTutors(tutorData) {
 
 }
 
-
-// ===================================
-// VIEW TUTOR PROFILE
-// ===================================
+ // ===================================
+ // VIEW TUTOR PROFILE
+ // ===================================
 
 tutorList.addEventListener("click", function(event) {
 
@@ -351,37 +350,31 @@ tutorList.addEventListener("click", function(event) {
 
     if (!button) return;
 
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+
     const tutorId = button.dataset.tutorId;
 
     const selectedTutor = tutors.find(function(tutor) {
-
         return String(tutor.id) === String(tutorId);
-
     });
 
     if (!selectedTutor) {
-
         alert("Tutor profile not found. Please try again.");
         return;
-
     }
 
-    // Keep all subjects in the selected tutor information.
-
-    const tutorForProfile = {
-
-        ...selectedTutor,
-
-        subject: selectedTutor.subjects.join(", ")
-
-    };
-
+    // SAVE SELECTED TUTOR
     sessionStorage.setItem(
         "pt_selected_tutor",
-        JSON.stringify(tutorForProfile)
+        JSON.stringify(selectedTutor)
     );
 
-    window.location.href = "profile.html";
+    // OPEN THE CORRECT STUDENT TUTOR PROFILE
+    window.location.assign(
+        "/frontend/student/tutor-profile.html"
+    );
 
 });
 
@@ -564,8 +557,6 @@ if (currentUser && currentUser.role === "student") {
 // ===================================
 
 console.log("PeerTutor Find Tutors Loaded Successfully!");
-
-console.log("Sample Tutors:", sampleTutors);
 
 console.log("Registered Tutors:", registeredTutors);
 
