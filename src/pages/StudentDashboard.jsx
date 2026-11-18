@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -24,12 +25,14 @@ import {
   X,
   Mail,
   Phone,
-  User
+  User,
+  Video
 } from "lucide-react";
 
 import { logoutUser } from "../services/auth";
 import { db } from "../services/firebase";
 import Messenger from "../components/Messenger";
+import VideoCall from "../components/VideoCall";
 
 import "./StudentDashboard.css";
 
@@ -108,6 +111,9 @@ function StudentDashboard() {
   const [loadingNotifications, setLoadingNotifications] = useState(true);
 
   const [selectedTutor, setSelectedTutor] = useState(null);
+
+  // VIDEO CALL STATE
+  const [activeVideoCall, setActiveVideoCall] = useState(null);
 
   // STUDENT PROFILE STATES
   const [profileForm, setProfileForm] = useState({
@@ -333,6 +339,24 @@ function StudentDashboard() {
       console.error("Logout error:", error);
       alert("Unable to log out. Please try again.");
     }
+  }
+
+  // OPEN VIDEO CALL
+  function handleOpenVideoCall(booking) {
+    if (
+      booking.status !== "Accepted" ||
+      booking.teachingMode !== "Online"
+    ) {
+      alert("Video calls are only available for accepted online bookings.");
+      return;
+    }
+
+    setActiveVideoCall(booking);
+  }
+
+  // CLOSE VIDEO CALL WINDOW
+  function handleCloseVideoCall() {
+    setActiveVideoCall(null);
   }
 
   // UPLOAD STUDENT PROFILE PHOTO
@@ -702,7 +726,7 @@ function StudentDashboard() {
     (notification) => notification.read !== true
   ).length;
 
-  // ONLY ACCEPTED ONLINE BOOKINGS CAN USE MESSENGER
+  // ONLY ACCEPTED ONLINE BOOKINGS CAN USE MESSENGER AND VIDEO CALL
   const onlineAcceptedBookings = myBookings.filter(
     (booking) =>
       booking.status === "Accepted" &&
@@ -1130,12 +1154,25 @@ function StudentDashboard() {
 
                     {booking.status === "Accepted" &&
                       booking.teachingMode === "Online" && (
-                        <button
-                          className="primary-small-button"
-                          onClick={() => setActivePage("Messages")}
-                        >
-                          Open Messages
-                        </button>
+                        <div className="student-online-booking-actions">
+                          <button
+                            type="button"
+                            className="primary-small-button"
+                            onClick={() => setActivePage("Messages")}
+                          >
+                            <MessagesSquare size={16} />
+                            Open Messages
+                          </button>
+
+                          <button
+                            type="button"
+                            className="student-video-call-button"
+                            onClick={() => handleOpenVideoCall(booking)}
+                          >
+                            <Video size={17} />
+                            Join Video Call
+                          </button>
+                        </div>
                       )}
                   </div>
                 ))}
@@ -1556,6 +1593,15 @@ function StudentDashboard() {
 
         {renderContent()}
       </main>
+
+      {/* VIDEO CALL MODAL */}
+      {activeVideoCall && (
+        <VideoCall
+          booking={activeVideoCall}
+          currentUser={currentUser}
+          onClose={handleCloseVideoCall}
+        />
+      )}
 
       {/* BOOKING FORM MODAL */}
       {selectedTutor && (
