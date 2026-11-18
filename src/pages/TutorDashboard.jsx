@@ -26,6 +26,7 @@ import {
 
 import { auth, db } from "../services/firebase";
 import Messenger from "../components/Messenger";
+import VideoCall from "../components/VideoCall";
 import "./TutorDashboard.css";
 
 // CONVERT SESSION DATE AND TIME
@@ -147,6 +148,8 @@ function TutorDashboard() {
 
   const [currentUser, setCurrentUser] = useState(null);
   const [activePage, setActivePage] = useState("Dashboard");
+  // VIDEO CALL STATE
+const [activeVideoBooking, setActiveVideoBooking] = useState(null);
 
   // LOGOUT CONFIRMATION
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -1010,6 +1013,16 @@ function TutorDashboard() {
                         {session.message || "No message"}
                       </p>
                     </div>
+                    {session.teachingMode === "Online" && (
+  <div className="booking-request-actions">
+    <button
+      type="button"
+      onClick={() => setActiveVideoBooking(session)}
+    >
+      Join Video Call
+    </button>
+  </div>
+)}
                   </div>
                 ))}
               </div>
@@ -1490,6 +1503,14 @@ function TutorDashboard() {
           </div>
         </div>
       )}
+      {/* VIDEO CALL MODAL */}
+{activeVideoBooking && (
+  <VideoCall
+    booking={activeVideoBooking}
+    currentUser={currentUser}
+    onClose={() => setActiveVideoBooking(null)}
+  />
+)}
 
     </div>
   );

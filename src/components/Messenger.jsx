@@ -8,6 +8,7 @@ import {
 } from "firebase/firestore";
 
 import { db } from "../services/firebase";
+import VideoCall from "./VideoCall";
 import "./Messenger.css";
 
 function Messenger({ currentUser, bookings = [] }) {
@@ -17,32 +18,33 @@ function Messenger({ currentUser, bookings = [] }) {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [activeVideoBooking, setActiveVideoBooking] = useState(null);
 
-  // FILTER ACCEPTED ONLINE BOOKINGS
+  // Only accepted online bookings
   const eligibleBookings = bookings.filter(
     (booking) =>
       booking.status === "Accepted" &&
       booking.teachingMode === "Online"
   );
 
-  // SHOW ONLY ONE CONVERSATION PER TUTOR
-  // Keep the newest booking because StudentDashboard sorts bookings newest first.
+  // Get the other participant's UID
   const getConversationKey = (booking) => {
-  return currentUser?.role === "tutor"
-    ? booking.studentUid
-    : booking.tutorUid;
-};
+    return currentUser?.role === "tutor"
+      ? booking.studentUid
+      : booking.tutorUid;
+  };
 
-const uniqueBookings = [
-  ...new Map(
-    eligibleBookings.map((booking) => [
-      getConversationKey(booking) || booking.id,
-      booking
-    ])
-  ).values()
-];
+  // Show only one conversation per person
+  const uniqueBookings = [
+    ...new Map(
+      eligibleBookings.map((booking) => [
+        getConversationKey(booking) || booking.id,
+        booking
+      ])
+    ).values()
+  ];
 
-  // SELECT FIRST AVAILABLE CONVERSATION
+  // Automatically select the first conversation
   useEffect(() => {
     if (uniqueBookings.length === 0) {
       setSelectedBooking(null);
@@ -58,7 +60,7 @@ const uniqueBookings = [
     }
   }, [bookings, selectedBooking?.id]);
 
-  // LOAD MESSAGES IN REAL TIME
+  // Load messages in real time
   useEffect(() => {
     if (!selectedBooking?.id || !currentUser?.uid) {
       setMessages([]);
@@ -102,7 +104,7 @@ const uniqueBookings = [
     return () => unsubscribe();
   }, [selectedBooking?.id, currentUser?.uid]);
 
-  // GET OTHER PERSON'S NAME
+  // Get the other person's name
   const getOtherPersonName = (booking) => {
     if (!booking) return "Conversation";
 
@@ -113,7 +115,7 @@ const uniqueBookings = [
     return booking.studentName || "Student";
   };
 
-  // FORMAT MESSAGE TIME
+  // Format message time
   const formatTime = (timestamp) => {
     if (!timestamp?.toDate) return "";
 
@@ -123,7 +125,7 @@ const uniqueBookings = [
     });
   };
 
-  // SEND MESSAGE
+  // Send message
   const handleSendMessage = async (e) => {
     e.preventDefault();
 
@@ -184,37 +186,46 @@ const uniqueBookings = [
       ) : (
         <div className="messenger-container">
           <aside className="conversation-sidebar">
-            <h3>Conversations</h3>
+            <div className="conversation-sidebar-header">
+              <h3>Conversations</h3>
+              <span>{uniqueBookings.length}</span>
+            </div>
 
-            {uniqueBookings.map((booking) => (
-              <button
-                key={getConversationKey(booking) || booking.id}
-                className={`conversation-item ${
-                  selectedBooking?.id === booking.id ? "selected" : ""
-                }`}
-                onClick={() => {
-                  setSelectedBooking(booking);
-                  setError("");
-                }}
-              >
-                <div className="conversation-avatar">
-                  {getOtherPersonName(booking)
-                    .charAt(0)
-                    .toUpperCase()}
-                </div>
+            <div className="conversation-list">
+              {uniqueBookings.map((booking) => (
+                <button
+                  key={getConversationKey(booking) || booking.id}
+                  className={`conversation-item ${
+                    selectedBooking?.id === booking.id ? "selected" : ""
+                  }`}
+                  onClick={() => {
+                    setSelectedBooking(booking);
+                    setError("");
+                    setActiveVideoBooking(null);
+                  }}
+                  type="button"
+                >
+                  <div className="conversation-avatar">
+                    {getOtherPersonName(booking)
+                      .charAt(0)
+                      .toUpperCase()}
+                  </div>
 
-                <div className="conversation-info">
-                  <strong>{getOtherPersonName(booking)}</strong>
-                  <span>{booking.subject || "Tutoring session"}</span>
-                  <small>
-                    {booking.preferredDate || "Online tutoring"}
-                  </small>
-                </div>
-              </button>
-            ))}
+                  <div className="conversation-info">
+                    <strong>{getOtherPersonName(booking)}</strong>
+                    <span>{booking.subject || "Tutoring session"}</span>
+                    <small>
+                      {booking.preferredDate || "Online tutoring"}
+                    </small>
+                  </div>
+
+                  <span className="online-booking-dot"></span>
+                </button>
+              ))}
+            </div>
           </aside>
 
-          <section className="chat-area">
+          <section className="chat-window">
             {selectedBooking && (
               <>
                 <div className="chat-header">
@@ -224,13 +235,24 @@ const uniqueBookings = [
                       .toUpperCase()}
                   </div>
 
-                  <div>
-                    <h3>{getOtherPersonName(selectedBooking)}</h3>
+                  <div className="chat-header-info">
+                    <strong>
+                      {getOtherPersonName(selectedBooking)}
+                    </strong>
                     <span>
                       {selectedBooking.subject || "Online tutoring"} ·
                       {" "}Online Tutoring
                     </span>
                   </div>
+
+                  <button
+                    className="video-chat-button"
+                    type="button"
+                    onClick={() => setActiveVideoBooking(selectedBooking)}
+                  >
+                    <span>📹</span>
+                    Video Call
+                  </button>
                 </div>
 
                 <div className="chat-messages">
@@ -264,9 +286,9 @@ const uniqueBookings = [
                             }`}
                           >
                             <p>{message.text}</p>
-                            <span>
+                            <small>
                               {formatTime(message.createdAt)}
-                            </span>
+                            </small>
                           </div>
                         </div>
                       );
@@ -303,6 +325,14 @@ const uniqueBookings = [
             )}
           </section>
         </div>
+      )}
+
+      {activeVideoBooking && (
+        <VideoCall
+          booking={activeVideoBooking}
+          currentUser={currentUser}
+          onClose={() => setActiveVideoBooking(null)}
+        />
       )}
     </div>
   );
