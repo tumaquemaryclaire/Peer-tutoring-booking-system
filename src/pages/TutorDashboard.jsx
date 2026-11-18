@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { logoutUser } from "../services/auth";
@@ -87,6 +86,62 @@ function getSessionDateTime(session) {
   return date;
 }
 
+
+// COMPRESS PROFILE PHOTO BEFORE SAVING IT TO FIRESTORE
+async function compressProfileImage(file) {
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Please choose a valid image file.");
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    throw new Error("Please choose an image smaller than 5 MB.");
+  }
+
+  const imageBitmap = await createImageBitmap(file);
+  const canvas = document.createElement("canvas");
+  const maxDimension = 400;
+  const scale = Math.min(
+    1,
+    maxDimension / Math.max(imageBitmap.width, imageBitmap.height)
+  );
+
+  canvas.width = Math.round(imageBitmap.width * scale);
+  canvas.height = Math.round(imageBitmap.height * scale);
+
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    imageBitmap.close?.();
+    throw new Error("Your browser could not process this image.");
+  }
+
+  context.drawImage(
+    imageBitmap,
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+  imageBitmap.close?.();
+
+  let quality = 0.75;
+  let imageData = canvas.toDataURL("image/jpeg", quality);
+
+  while (imageData.length > 350000 && quality > 0.35) {
+    quality -= 0.1;
+    imageData = canvas.toDataURL("image/jpeg", quality);
+  }
+
+  if (imageData.length > 350000) {
+    throw new Error(
+      "This image is too large after compression. Please choose another photo."
+    );
+  }
+
+  return imageData;
+}
+
 function TutorDashboard() {
   const navigate = useNavigate();
 
@@ -106,6 +161,8 @@ function TutorDashboard() {
 
   const [profileLoading, setProfileLoading] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
+  const [profilePicture, setProfilePicture] = useState("");
+  const [uploadingPicture, setUploadingPicture] = useState(false);
 
   // BOOKING STATES
   const [bookingRequests, setBookingRequests] = useState([]);
@@ -163,6 +220,8 @@ function TutorDashboard() {
             teachingMode: data.teachingMode || "",
             gender: data.gender || ""
           });
+
+          setProfilePicture(data.profilePicture || "");
         }
       } catch (error) {
         console.error("Error loading tutor profile:", error);
@@ -262,6 +321,85 @@ function TutorDashboard() {
     } catch (error) {
       console.error("Error logging out:", error);
       alert("Unable to log out. Please try again.");
+    }
+  };
+
+  // UPLOAD PROFILE PICTURE
+  const handleProfilePictureUpload = async (e) => {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    if (
+      !auth.currentUser ||
+      auth.currentUser.uid !== currentUser?.uid
+    ) {
+      alert("Please log in again before changing your profile picture.");
+      e.target.value = "";
+      return;
+    }
+
+    setUploadingPicture(true);
+
+    try {
+      const compressedImage = await compressProfileImage(file);
+
+      const profileRef = doc(
+        db,
+        "tutorProfiles",
+        currentUser.uid
+      );
+
+      await updateDoc(profileRef, {
+        profilePicture: compressedImage
+      });
+
+      setProfilePicture(compressedImage);
+      alert("Profile picture updated successfully!");
+    } catch (error) {
+      console.error("PROFILE PICTURE ERROR:", error);
+      alert(error.message || "Unable to upload your profile picture.");
+    } finally {
+      setUploadingPicture(false);
+      e.target.value = "";
+    }
+  };
+
+  // REMOVE PROFILE PICTURE
+  const handleRemoveProfilePicture = async () => {
+    if (!profilePicture) return;
+
+    if (
+      !auth.currentUser ||
+      auth.currentUser.uid !== currentUser?.uid
+    ) {
+      alert("Please log in again before changing your profile picture.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Are you sure you want to remove your profile picture?"
+    );
+
+    if (!confirmed) return;
+
+    setUploadingPicture(true);
+
+    try {
+      await updateDoc(
+        doc(db, "tutorProfiles", currentUser.uid),
+        {
+          profilePicture: ""
+        }
+      );
+
+      setProfilePicture("");
+      alert("Profile picture removed.");
+    } catch (error) {
+      console.error("REMOVE PROFILE PICTURE ERROR:", error);
+      alert("Unable to remove your profile picture. Please try again.");
+    } finally {
+      setUploadingPicture(false);
     }
   };
 
@@ -505,8 +643,47 @@ function TutorDashboard() {
             ) : (
               <>
                 <div className="profile-information">
-                  <div className="profile-avatar">
-                    {tutorName.charAt(0).toUpperCase()}
+                  <div className="tutor-profile-photo-area">
+                    <div className="profile-avatar">
+                      {profilePicture ? (
+                        <img src={profilePicture} alt="Tutor profile" />
+                      ) : (
+                        tutorName.charAt(0).toUpperCase()
+                      )}
+                    </div>
+
+                    <div className="profile-photo-controls">
+                      <label className="profile-photo-upload-button">
+                        {uploadingPicture
+                          ? "Please wait..."
+                          : profilePicture
+                          ? "Change Photo"
+                          : "Upload Photo"}
+
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleProfilePictureUpload}
+                          disabled={uploadingPicture}
+                        />
+                      </label>
+
+                      {profilePicture && (
+                        <button
+                          type="button"
+                          className="profile-photo-remove-button"
+                          onClick={handleRemoveProfilePicture}
+                          disabled={uploadingPicture}
+                        >
+                          Remove Photo
+                        </button>
+                      )}
+
+                      <small>
+                        JPG, PNG, or other image formats. Maximum 5 MB
+                        before compression.
+                      </small>
+                    </div>
                   </div>
 
                   <div className="profile-details">
@@ -1193,7 +1370,11 @@ function TutorDashboard() {
 
         <div className="sidebar-user">
           <div className="sidebar-avatar">
-            {tutorName.charAt(0).toUpperCase()}
+            {profilePicture ? (
+              <img src={profilePicture} alt="Tutor profile" />
+            ) : (
+              tutorName.charAt(0).toUpperCase()
+            )}
           </div>
 
           <div>
@@ -1255,7 +1436,11 @@ function TutorDashboard() {
 
           <div className="topbar-user">
             <span className="topbar-avatar">
-              {tutorName.charAt(0).toUpperCase()}
+              {profilePicture ? (
+                <img src={profilePicture} alt="Tutor profile" />
+              ) : (
+                tutorName.charAt(0).toUpperCase()
+              )}
             </span>
 
             <span>{tutorName}</span>
