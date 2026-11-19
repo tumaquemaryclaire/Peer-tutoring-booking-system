@@ -391,6 +391,7 @@ function AdminDashboard({ admin }) {
 
   const [students, setStudents] = useState([]);
   const [tutors, setTutors] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -431,18 +432,23 @@ function AdminDashboard({ admin }) {
       setLoadingTutors(false);
     };
 
+    // USERS COLLECTION
+    // Stores account information, including email.
+
     const unsubscribeUsers = onSnapshot(
       collection(db, "users"),
       (snapshot) => {
-        const allStudents = snapshot.docs
-          .map((item) => ({
-            id: item.id,
-            ...item.data(),
-          }))
-          .filter(
-            (student) =>
-              String(student.role || "").toLowerCase() === "student"
-          );
+        const allUserRecords = snapshot.docs.map((item) => ({
+          id: item.id,
+          ...item.data(),
+        }));
+
+        setAllUsers(allUserRecords);
+
+        const allStudents = allUserRecords.filter(
+          (user) =>
+            String(user.role || "").toLowerCase() === "student"
+        );
 
         setStudents(allStudents);
 
@@ -457,6 +463,8 @@ function AdminDashboard({ admin }) {
       },
       handleError
     );
+
+    // TUTOR PROFILES COLLECTION
 
     const unsubscribeTutors = onSnapshot(
       collection(db, "tutorProfiles"),
@@ -479,6 +487,8 @@ function AdminDashboard({ admin }) {
       },
       handleError
     );
+
+    // BOOKINGS COLLECTION
 
     const unsubscribeBookings = onSnapshot(
       collection(db, "bookings"),
@@ -532,15 +542,40 @@ function AdminDashboard({ admin }) {
   }, [students, searchTerm]);
 
   /* =====================================
+     CONNECT TUTOR PROFILES WITH USER ACCOUNTS
+  ===================================== */
+
+  const tutorsWithAccount = useMemo(() => {
+    const userMap = new Map(
+      allUsers.map((user) => [
+        user.uid || user.id,
+        user,
+      ])
+    );
+
+    return tutors.map((tutor) => {
+      const tutorUid = tutor.uid || tutor.id;
+      const account = userMap.get(tutorUid) || {};
+
+      return {
+        ...account,
+        ...tutor,
+        uid: tutorUid,
+        email: tutor.email || account.email || "",
+      };
+    });
+  }, [tutors, allUsers]);
+
+  /* =====================================
      SEARCH TUTORS
   ===================================== */
 
   const filteredTutors = useMemo(() => {
     const search = searchTerm.trim().toLowerCase();
 
-    if (!search) return tutors;
+    if (!search) return tutorsWithAccount;
 
-    return tutors.filter((tutor) => {
+    return tutorsWithAccount.filter((tutor) => {
       const searchableValues = [
         getTutorName(tutor),
         tutor.email,
@@ -555,7 +590,7 @@ function AdminDashboard({ admin }) {
         String(value || "").toLowerCase().includes(search)
       );
     });
-  }, [tutors, searchTerm]);
+  }, [tutorsWithAccount, searchTerm]);
 
   /* =====================================
      ACTIONS
@@ -693,8 +728,6 @@ function AdminDashboard({ admin }) {
             <CalendarCheck size={19} />
             <span>Booking Management</span>
           </button>
-
-          {/* REPORTS & ANALYTICS NAVIGATION */}
 
           <button
             className={`sidebar-nav-item ${
@@ -1138,7 +1171,7 @@ function AdminDashboard({ admin }) {
                   <span>Total Registered Tutors</span>
 
                   <strong>
-                    {loadingTutors ? "..." : tutors.length}
+                    {loadingTutors ? "..." : tutorsWithAccount.length}
                   </strong>
                 </div>
               </div>
@@ -1282,7 +1315,7 @@ function AdminDashboard({ admin }) {
                 <div className="student-table-footer">
                   <span>
                     Showing {filteredTutors.length} of{" "}
-                    {tutors.length} tutors
+                    {tutorsWithAccount.length} tutors
                   </span>
 
                   <span className="student-readonly-label">
