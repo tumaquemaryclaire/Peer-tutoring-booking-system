@@ -1,3 +1,4 @@
+
 import { useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import {
@@ -35,6 +36,7 @@ import {
 import { auth, db } from "./services/firebase";
 import AdminLogin from "./pages/AdminLogin";
 import BookingManagement from "./components/BookingManagement";
+import ReportsAnalytics from "./components/ReportsAnalytics";
 import "./App.css";
 
 /* =====================================
@@ -99,7 +101,8 @@ function formatRegistrationDate(person) {
 }
 
 function getTutorSubjects(tutor) {
-  const subjects = tutor.subjects || tutor.subject || tutor.specialization;
+  const subjects =
+    tutor.subjects || tutor.subject || tutor.specialization;
 
   if (Array.isArray(subjects)) {
     return subjects.join(", ");
@@ -153,14 +156,19 @@ function StudentProfileModal({ student, onClose }) {
   ];
 
   return (
-    <div className="student-modal-overlay" onClick={onClose}>
+    <div
+      className="student-modal-overlay"
+      onClick={onClose}
+    >
       <div
         className="student-profile-modal"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="student-modal-header">
           <div>
-            <span className="modal-eyebrow">STUDENT INFORMATION</span>
+            <span className="modal-eyebrow">
+              STUDENT INFORMATION
+            </span>
             <h2>Student Profile</h2>
             <p>View the student's account details.</p>
           </div>
@@ -184,7 +192,9 @@ function StudentProfileModal({ student, onClose }) {
             <p>{student.email || "No email address"}</p>
           </div>
 
-          <span className="student-status-badge">Student</span>
+          <span className="student-status-badge">
+            Student
+          </span>
         </div>
 
         <div className="student-detail-grid">
@@ -192,7 +202,10 @@ function StudentProfileModal({ student, onClose }) {
             const Icon = detail.icon;
 
             return (
-              <div className="student-detail-item" key={detail.label}>
+              <div
+                className="student-detail-item"
+                key={detail.label}
+              >
                 <div className="student-detail-icon">
                   <Icon size={17} />
                 </div>
@@ -254,7 +267,10 @@ function TutorProfileModal({ tutor, onClose }) {
     },
     {
       label: "Experience",
-      value: tutor.experience || tutor.yearsOfExperience || "Not provided",
+      value:
+        tutor.experience ||
+        tutor.yearsOfExperience ||
+        "Not provided",
       icon: BriefcaseBusiness,
     },
     {
@@ -267,7 +283,10 @@ function TutorProfileModal({ tutor, onClose }) {
     },
     {
       label: "Qualification",
-      value: tutor.qualification || tutor.education || "Not provided",
+      value:
+        tutor.qualification ||
+        tutor.education ||
+        "Not provided",
       icon: Award,
     },
     {
@@ -278,16 +297,23 @@ function TutorProfileModal({ tutor, onClose }) {
   ];
 
   return (
-    <div className="student-modal-overlay" onClick={onClose}>
+    <div
+      className="student-modal-overlay"
+      onClick={onClose}
+    >
       <div
         className="student-profile-modal"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="student-modal-header">
           <div>
-            <span className="modal-eyebrow">TUTOR INFORMATION</span>
+            <span className="modal-eyebrow">
+              TUTOR INFORMATION
+            </span>
             <h2>Tutor Profile</h2>
-            <p>View the tutor's profile and teaching information.</p>
+            <p>
+              View the tutor's profile and teaching information.
+            </p>
           </div>
 
           <button
@@ -309,7 +335,9 @@ function TutorProfileModal({ tutor, onClose }) {
             <p>{tutor.email || "No email address"}</p>
           </div>
 
-          <span className="student-status-badge">Tutor</span>
+          <span className="student-status-badge">
+            Tutor
+          </span>
         </div>
 
         <div className="student-detail-grid">
@@ -317,7 +345,10 @@ function TutorProfileModal({ tutor, onClose }) {
             const Icon = detail.icon;
 
             return (
-              <div className="student-detail-item" key={detail.label}>
+              <div
+                className="student-detail-item"
+                key={detail.label}
+              >
                 <div className="student-detail-icon">
                   <Icon size={17} />
                 </div>
@@ -596,7 +627,9 @@ function AdminDashboard({ admin }) {
 
       {/* SIDEBAR */}
 
-      <aside className={`admin-sidebar ${sidebarOpen ? "open" : ""}`}>
+      <aside
+        className={`admin-sidebar ${sidebarOpen ? "open" : ""}`}
+      >
         <div className="sidebar-brand">
           <div className="sidebar-brand-icon">
             <GraduationCap size={25} />
@@ -616,7 +649,9 @@ function AdminDashboard({ admin }) {
           </button>
         </div>
 
-        <div className="sidebar-section-label">MAIN MENU</div>
+        <div className="sidebar-section-label">
+          MAIN MENU
+        </div>
 
         <nav className="sidebar-navigation">
           <button
@@ -657,6 +692,18 @@ function AdminDashboard({ admin }) {
           >
             <CalendarCheck size={19} />
             <span>Booking Management</span>
+          </button>
+
+          {/* REPORTS & ANALYTICS NAVIGATION */}
+
+          <button
+            className={`sidebar-nav-item ${
+              activePage === "reports" ? "active" : ""
+            }`}
+            onClick={() => openPage("reports")}
+          >
+            <Activity size={19} />
+            <span>Reports & Analytics</span>
           </button>
         </nav>
 
@@ -712,7 +759,9 @@ function AdminDashboard({ admin }) {
                   ? "Student Management"
                   : activePage === "tutors"
                   ? "Tutor Management"
-                  : "Booking Management"}
+                  : activePage === "bookings"
+                  ? "Booking Management"
+                  : "Reports & Analytics"}
               </strong>
             </div>
           </div>
@@ -754,7 +803,8 @@ function AdminDashboard({ admin }) {
                   <h1>Dashboard Overview</h1>
 
                   <p>
-                    Welcome back! Here's an overview of your PeerTutor platform.
+                    Welcome back! Here's an overview of your PeerTutor
+                    platform.
                   </p>
                 </div>
 
@@ -784,7 +834,9 @@ function AdminDashboard({ admin }) {
                 <div className="section-heading">
                   <div>
                     <h2>Platform Statistics</h2>
-                    <p>Monitor your platform activity and records.</p>
+                    <p>
+                      Monitor your platform activity and records.
+                    </p>
                   </div>
 
                   <div className="section-live-label">
@@ -794,7 +846,9 @@ function AdminDashboard({ admin }) {
                 </div>
 
                 {dataError && (
-                  <div className="admin-data-error">{dataError}</div>
+                  <div className="admin-data-error">
+                    {dataError}
+                  </div>
                 )}
 
                 <div className="admin-stats">
@@ -802,9 +856,14 @@ function AdminDashboard({ admin }) {
                     const Icon = card.icon;
 
                     return (
-                      <article className="admin-stat-card" key={card.title}>
+                      <article
+                        className="admin-stat-card"
+                        key={card.title}
+                      >
                         <div className="stat-card-top">
-                          <div className={`admin-stat-icon ${card.color}`}>
+                          <div
+                            className={`admin-stat-icon ${card.color}`}
+                          >
                             <Icon size={23} />
                           </div>
 
@@ -839,12 +898,15 @@ function AdminDashboard({ admin }) {
                 <div>
                   <strong>Live Dashboard Updates</strong>
                   <p>
-                    Your statistics are connected to the PeerTutor Firestore
-                    database. Changes to records are reflected automatically.
+                    Your statistics are connected to the PeerTutor
+                    Firestore database. Changes to records are reflected
+                    automatically.
                   </p>
                 </div>
 
-                <span className="notice-status">Connected</span>
+                <span className="notice-status">
+                  Connected
+                </span>
               </section>
             </>
           )}
@@ -910,7 +972,9 @@ function AdminDashboard({ admin }) {
                     type="text"
                     placeholder="Search by name, email, ID, or gender..."
                     value={searchTerm}
-                    onChange={(event) => setSearchTerm(event.target.value)}
+                    onChange={(event) =>
+                      setSearchTerm(event.target.value)
+                    }
                   />
 
                   {searchTerm && (
@@ -924,7 +988,9 @@ function AdminDashboard({ admin }) {
                 </div>
 
                 {dataError && (
-                  <div className="admin-data-error">{dataError}</div>
+                  <div className="admin-data-error">
+                    {dataError}
+                  </div>
                 )}
 
                 <div className="student-table-scroll">
@@ -942,13 +1008,19 @@ function AdminDashboard({ admin }) {
                     <tbody>
                       {loadingStudents ? (
                         <tr>
-                          <td colSpan="5" className="student-table-message">
+                          <td
+                            colSpan="5"
+                            className="student-table-message"
+                          >
                             Loading student records...
                           </td>
                         </tr>
                       ) : filteredStudents.length === 0 ? (
                         <tr>
-                          <td colSpan="5" className="student-table-message">
+                          <td
+                            colSpan="5"
+                            className="student-table-message"
+                          >
                             {searchTerm
                               ? "No students match your search."
                               : "No student records found."}
@@ -964,9 +1036,12 @@ function AdminDashboard({ admin }) {
                                 </div>
 
                                 <div>
-                                  <strong>{getStudentName(student)}</strong>
+                                  <strong>
+                                    {getStudentName(student)}
+                                  </strong>
                                   <span>
-                                    {student.email || "No email provided"}
+                                    {student.email ||
+                                      "No email provided"}
                                   </span>
                                 </div>
                               </div>
@@ -974,7 +1049,11 @@ function AdminDashboard({ admin }) {
 
                             <td>
                               <span className="student-id-text">
-                                {(student.uid || student.id).slice(0, 12)}...
+                                {(student.uid || student.id).slice(
+                                  0,
+                                  12
+                                )}
+                                ...
                               </span>
                             </td>
 
@@ -993,7 +1072,9 @@ function AdminDashboard({ admin }) {
                             <td>
                               <button
                                 className="student-view-button"
-                                onClick={() => setSelectedStudent(student)}
+                                onClick={() =>
+                                  setSelectedStudent(student)
+                                }
                               >
                                 <Eye size={15} />
                                 View Profile
@@ -1008,7 +1089,8 @@ function AdminDashboard({ admin }) {
 
                 <div className="student-table-footer">
                   <span>
-                    Showing {filteredStudents.length} of {students.length} students
+                    Showing {filteredStudents.length} of{" "}
+                    {students.length} students
                   </span>
 
                   <span className="student-readonly-label">
@@ -1033,7 +1115,8 @@ function AdminDashboard({ admin }) {
                   <h1>Tutor Management</h1>
 
                   <p>
-                    View registered tutors and their teaching profile information.
+                    View registered tutors and their teaching profile
+                    information.
                   </p>
                 </div>
 
@@ -1081,7 +1164,9 @@ function AdminDashboard({ admin }) {
                     type="text"
                     placeholder="Search by name, email, ID, or subject..."
                     value={searchTerm}
-                    onChange={(event) => setSearchTerm(event.target.value)}
+                    onChange={(event) =>
+                      setSearchTerm(event.target.value)
+                    }
                   />
 
                   {searchTerm && (
@@ -1095,7 +1180,9 @@ function AdminDashboard({ admin }) {
                 </div>
 
                 {dataError && (
-                  <div className="admin-data-error">{dataError}</div>
+                  <div className="admin-data-error">
+                    {dataError}
+                  </div>
                 )}
 
                 <div className="student-table-scroll">
@@ -1113,13 +1200,19 @@ function AdminDashboard({ admin }) {
                     <tbody>
                       {loadingTutors ? (
                         <tr>
-                          <td colSpan="5" className="student-table-message">
+                          <td
+                            colSpan="5"
+                            className="student-table-message"
+                          >
                             Loading tutor records...
                           </td>
                         </tr>
                       ) : filteredTutors.length === 0 ? (
                         <tr>
-                          <td colSpan="5" className="student-table-message">
+                          <td
+                            colSpan="5"
+                            className="student-table-message"
+                          >
                             {searchTerm
                               ? "No tutors match your search."
                               : "No tutor profiles found."}
@@ -1135,9 +1228,12 @@ function AdminDashboard({ admin }) {
                                 </div>
 
                                 <div>
-                                  <strong>{getTutorName(tutor)}</strong>
+                                  <strong>
+                                    {getTutorName(tutor)}
+                                  </strong>
                                   <span>
-                                    {tutor.email || "No email provided"}
+                                    {tutor.email ||
+                                      "No email provided"}
                                   </span>
                                 </div>
                               </div>
@@ -1145,7 +1241,11 @@ function AdminDashboard({ admin }) {
 
                             <td>
                               <span className="student-id-text">
-                                {(tutor.uid || tutor.id).slice(0, 12)}...
+                                {(tutor.uid || tutor.id).slice(
+                                  0,
+                                  12
+                                )}
+                                ...
                               </span>
                             </td>
 
@@ -1164,7 +1264,9 @@ function AdminDashboard({ admin }) {
                             <td>
                               <button
                                 className="student-view-button"
-                                onClick={() => setSelectedTutor(tutor)}
+                                onClick={() =>
+                                  setSelectedTutor(tutor)
+                                }
                               >
                                 <Eye size={15} />
                                 View Profile
@@ -1179,7 +1281,8 @@ function AdminDashboard({ admin }) {
 
                 <div className="student-table-footer">
                   <span>
-                    Showing {filteredTutors.length} of {tutors.length} tutors
+                    Showing {filteredTutors.length} of{" "}
+                    {tutors.length} tutors
                   </span>
 
                   <span className="student-readonly-label">
@@ -1192,7 +1295,16 @@ function AdminDashboard({ admin }) {
           )}
 
           {/* BOOKING MANAGEMENT */}
-          {activePage === "bookings" && <BookingManagement />}
+
+          {activePage === "bookings" && (
+            <BookingManagement />
+          )}
+
+          {/* REPORTS & ANALYTICS */}
+
+          {activePage === "reports" && (
+            <ReportsAnalytics />
+          )}
         </main>
 
         {/* FOOTER */}
@@ -1231,35 +1343,45 @@ function App() {
   const [checkingAuth, setCheckingAuth] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        setAdmin(null);
-        setCheckingAuth(false);
-        return;
-      }
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      async (user) => {
+        if (!user) {
+          setAdmin(null);
+          setCheckingAuth(false);
+          return;
+        }
 
-      try {
-        const userRef = doc(db, "users", user.uid);
-        const userSnap = await getDoc(userRef);
+        try {
+          const userRef = doc(db, "users", user.uid);
+          const userSnap = await getDoc(userRef);
 
-        if (userSnap.exists() && userSnap.data().role === "admin") {
-          setAdmin({
-            uid: user.uid,
-            email: user.email,
-            role: "admin",
-          });
-        } else {
+          if (
+            userSnap.exists() &&
+            userSnap.data().role === "admin"
+          ) {
+            setAdmin({
+              uid: user.uid,
+              email: user.email,
+              role: "admin",
+            });
+          } else {
+            setAdmin(null);
+            await signOut(auth);
+          }
+        } catch (error) {
+          console.error(
+            "Admin verification failed:",
+            error
+          );
+
           setAdmin(null);
           await signOut(auth);
+        } finally {
+          setCheckingAuth(false);
         }
-      } catch (error) {
-        console.error("Admin verification failed:", error);
-        setAdmin(null);
-        await signOut(auth);
-      } finally {
-        setCheckingAuth(false);
       }
-    });
+    );
 
     return () => unsubscribe();
   }, []);
