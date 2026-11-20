@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { logoutUser } from "../services/auth";
@@ -21,7 +22,12 @@ import {
   CalendarDays,
   MessagesSquare,
   Bell,
-  LogOut
+  LogOut,
+  Pencil,
+  Save,
+  X,
+  User,
+  GraduationCap
 } from "lucide-react";
 
 import { auth, db } from "../services/firebase";
@@ -34,7 +40,6 @@ function getSessionDateTime(session) {
   if (!session.preferredDate) return null;
 
   const dateParts = session.preferredDate.split("-");
-
   if (dateParts.length !== 3) return null;
 
   const year = Number(dateParts[0]);
@@ -42,7 +47,6 @@ function getSessionDateTime(session) {
   const day = Number(dateParts[2]);
 
   const date = new Date(year, month - 1, day);
-
   if (Number.isNaN(date.getTime())) return null;
 
   const time = (session.preferredTime || "12:00 AM").trim();
@@ -53,10 +57,7 @@ function getSessionDateTime(session) {
   if (/^\d{2}:\d{2}$/.test(time)) {
     [hours, minutes] = time.split(":").map(Number);
   } else {
-    const match = time.match(
-      /^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i
-    );
-
+    const match = time.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
     if (!match) return null;
 
     hours = Number(match[1]);
@@ -64,31 +65,19 @@ function getSessionDateTime(session) {
 
     const period = match[3]?.toUpperCase();
 
-    if (period === "PM" && hours !== 12) {
-      hours += 12;
-    }
-
-    if (period === "AM" && hours === 12) {
-      hours = 0;
-    }
+    if (period === "PM" && hours !== 12) hours += 12;
+    if (period === "AM" && hours === 12) hours = 0;
   }
 
-  if (
-    hours < 0 ||
-    hours > 23 ||
-    minutes < 0 ||
-    minutes > 59
-  ) {
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
     return null;
   }
 
   date.setHours(hours, minutes, 0, 0);
-
   return date;
 }
 
-
-// COMPRESS PROFILE PHOTO BEFORE SAVING IT TO FIRESTORE
+// COMPRESS PROFILE PHOTO BEFORE SAVING TO FIRESTORE
 async function compressProfileImage(file) {
   if (!file.type.startsWith("image/")) {
     throw new Error("Please choose a valid image file.");
@@ -101,6 +90,7 @@ async function compressProfileImage(file) {
   const imageBitmap = await createImageBitmap(file);
   const canvas = document.createElement("canvas");
   const maxDimension = 400;
+
   const scale = Math.min(
     1,
     maxDimension / Math.max(imageBitmap.width, imageBitmap.height)
@@ -116,14 +106,7 @@ async function compressProfileImage(file) {
     throw new Error("Your browser could not process this image.");
   }
 
-  context.drawImage(
-    imageBitmap,
-    0,
-    0,
-    canvas.width,
-    canvas.height
-  );
-
+  context.drawImage(imageBitmap, 0, 0, canvas.width, canvas.height);
   imageBitmap.close?.();
 
   let quality = 0.75;
@@ -155,13 +138,11 @@ function calculateAge(birthday) {
   }
 
   let age = today.getFullYear() - birthDate.getFullYear();
-
   const monthDifference = today.getMonth() - birthDate.getMonth();
 
   if (
     monthDifference < 0 ||
-    (monthDifference === 0 &&
-      today.getDate() < birthDate.getDate())
+    (monthDifference === 0 && today.getDate() < birthDate.getDate())
   ) {
     age--;
   }
@@ -169,7 +150,7 @@ function calculateAge(birthday) {
   return age;
 }
 
-// GET TODAY'S DATE FOR THE BIRTHDAY INPUT
+// GET TODAY'S DATE
 function getTodayDate() {
   const today = new Date();
   const year = today.getFullYear();
@@ -184,10 +165,8 @@ function TutorDashboard() {
 
   const [currentUser, setCurrentUser] = useState(null);
   const [activePage, setActivePage] = useState("Dashboard");
-  // VIDEO CALL STATE
-const [activeVideoBooking, setActiveVideoBooking] = useState(null);
 
-  // LOGOUT CONFIRMATION
+  const [activeVideoBooking, setActiveVideoBooking] = useState(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // PROFILE STATES
@@ -199,8 +178,17 @@ const [activeVideoBooking, setActiveVideoBooking] = useState(null);
     birthday: ""
   });
 
+  const [originalProfileData, setOriginalProfileData] = useState({
+    subjects: "",
+    bio: "",
+    teachingMode: "",
+    gender: "",
+    birthday: ""
+  });
+
   const [profileLoading, setProfileLoading] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profilePicture, setProfilePicture] = useState("");
   const [uploadingPicture, setUploadingPicture] = useState(false);
 
@@ -241,43 +229,31 @@ const [activeVideoBooking, setActiveVideoBooking] = useState(null);
       setProfileLoading(true);
 
       try {
-        // LOAD PERSONAL INFORMATION
-const userRef = doc(db, "users", currentUser.uid);
-const userSnap = await getDoc(userRef);
+        const userRef = doc(db, "users", currentUser.uid);
+        const profileRef = doc(db, "tutorProfiles", currentUser.uid);
 
-if (userSnap.exists()) {
-  const userData = userSnap.data();
+        const [userSnap, profileSnap] = await Promise.all([
+          getDoc(userRef),
+          getDoc(profileRef)
+        ]);
 
-  setProfileData((previous) => ({
-    ...previous,
-    birthday: userData.birthday || ""
-  }));
-}
+        const userData = userSnap.exists() ? userSnap.data() : {};
+        const tutorData = profileSnap.exists() ? profileSnap.data() : {};
 
-// LOAD TUTORING INFORMATION
-const profileRef = doc(
-  db,
-  "tutorProfiles",
-  currentUser.uid
-);
+        const loadedProfile = {
+          birthday: userData.birthday || "",
+          subjects: Array.isArray(tutorData.subjects)
+            ? tutorData.subjects.join(", ")
+            : "",
+          bio: tutorData.bio || "",
+          teachingMode: tutorData.teachingMode || "",
+          gender: tutorData.gender || ""
+        };
 
-const profileSnap = await getDoc(profileRef);
-
-        if (profileSnap.exists()) {
-          const data = profileSnap.data();
-
-          setProfileData((previous) => ({
-  ...previous,
-  subjects: Array.isArray(data.subjects)
-    ? data.subjects.join(", ")
-    : "",
-  bio: data.bio || "",
-  teachingMode: data.teachingMode || "",
-  gender: data.gender || ""
-}));
-
-          setProfilePicture(data.profilePicture || "");
-        }
+        setProfileData(loadedProfile);
+        setOriginalProfileData(loadedProfile);
+        setProfilePicture(tutorData.profilePicture || "");
+        setIsEditingProfile(false);
       } catch (error) {
         console.error("Error loading tutor profile:", error);
         alert("Unable to load your tutor profile.");
@@ -357,9 +333,7 @@ const profileSnap = await getDoc(profileRef);
       },
       (error) => {
         console.error("Error fetching tutor notifications:", error);
-        alert(
-          `Unable to load notifications.\n${error.message}`
-        );
+        alert(`Unable to load notifications.\n${error.message}`);
         setNotificationLoading(false);
       }
     );
@@ -382,7 +356,6 @@ const profileSnap = await getDoc(profileRef);
   // UPLOAD PROFILE PICTURE
   const handleProfilePictureUpload = async (e) => {
     const file = e.target.files?.[0];
-
     if (!file) return;
 
     if (
@@ -399,13 +372,7 @@ const profileSnap = await getDoc(profileRef);
     try {
       const compressedImage = await compressProfileImage(file);
 
-      const profileRef = doc(
-        db,
-        "tutorProfiles",
-        currentUser.uid
-      );
-
-      await updateDoc(profileRef, {
+      await updateDoc(doc(db, "tutorProfiles", currentUser.uid), {
         profilePicture: compressedImage
       });
 
@@ -441,12 +408,9 @@ const profileSnap = await getDoc(profileRef);
     setUploadingPicture(true);
 
     try {
-      await updateDoc(
-        doc(db, "tutorProfiles", currentUser.uid),
-        {
-          profilePicture: ""
-        }
-      );
+      await updateDoc(doc(db, "tutorProfiles", currentUser.uid), {
+        profilePicture: ""
+      });
 
       setProfilePicture("");
       alert("Profile picture removed.");
@@ -456,6 +420,18 @@ const profileSnap = await getDoc(profileRef);
     } finally {
       setUploadingPicture(false);
     }
+  };
+
+  // EDIT PROFILE
+  const handleEditProfile = () => {
+    setOriginalProfileData({ ...profileData });
+    setIsEditingProfile(true);
+  };
+
+  // CANCEL PROFILE EDIT
+  const handleCancelProfileEdit = () => {
+    setProfileData({ ...originalProfileData });
+    setIsEditingProfile(false);
   };
 
   // SAVE TUTOR PROFILE
@@ -474,85 +450,85 @@ const profileSnap = await getDoc(profileRef);
       return;
     }
 
+    if (!profileData.birthday) {
+      alert("Please enter your birthday.");
+      return;
+    }
+
+    const age = calculateAge(profileData.birthday);
+
+    if (age === "") {
+      alert("Please enter a valid birthday.");
+      return;
+    }
+
+    if (age < 13) {
+      alert("You must be at least 13 years old.");
+      return;
+    }
+
     setSavingProfile(true);
 
     try {
-  const profileRef = doc(
-    db,
-    "tutorProfiles",
-    authenticatedUser.uid
-  );
+      const profileRef = doc(
+        db,
+        "tutorProfiles",
+        authenticatedUser.uid
+      );
 
-  const userRef = doc(
-    db,
-    "users",
-    authenticatedUser.uid
-  );
+      const userRef = doc(
+        db,
+        "users",
+        authenticatedUser.uid
+      );
 
-  const subjectsArray = profileData.subjects
-    .split(",")
-    .map((subject) => subject.trim())
-    .filter(Boolean);
+      const subjectsArray = profileData.subjects
+        .split(",")
+        .map((subject) => subject.trim())
+        .filter(Boolean);
 
-  // VALIDATE BIRTHDAY
-  if (!profileData.birthday) {
-    alert("Please enter your birthday.");
-    return;
-  }
+      await updateDoc(userRef, {
+        birthday: profileData.birthday
+      });
 
-  const age = calculateAge(profileData.birthday);
+      await updateDoc(profileRef, {
+        subjects: subjectsArray,
+        bio: profileData.bio.trim(),
+        teachingMode: profileData.teachingMode,
+        gender: profileData.gender
+      });
 
-  if (age === "") {
-    alert("Please enter a valid birthday.");
-    return;
-  }
+      const savedProfile = {
+        ...profileData,
+        subjects: subjectsArray.join(", ")
+      };
 
-  if (age < 13) {
-    alert("You must be at least 13 years old.");
-    return;
-  }
+      setProfileData(savedProfile);
+      setOriginalProfileData(savedProfile);
+      setIsEditingProfile(false);
 
-  // SAVE PERSONAL INFORMATION
-  await updateDoc(userRef, {
-    birthday: profileData.birthday
-  });
+      const updatedUser = {
+        ...currentUser,
+        birthday: profileData.birthday
+      };
 
-  // SAVE TUTOR PROFILE INFORMATION
-  await updateDoc(profileRef, {
-    subjects: subjectsArray,
-    bio: profileData.bio.trim(),
-    teachingMode: profileData.teachingMode,
-    gender: profileData.gender
-  });
+      setCurrentUser(updatedUser);
 
-  setProfileData((previous) => ({
-    ...previous,
-    subjects: subjectsArray.join(", ")
-  }));
+      sessionStorage.setItem(
+        "pt_current_user",
+        JSON.stringify(updatedUser)
+      );
 
-  // UPDATE SESSION DATA
-  const updatedUser = {
-    ...currentUser,
-    birthday: profileData.birthday
-  };
+      alert("Tutor profile updated successfully!");
+    } catch (error) {
+      console.error("PROFILE UPDATE ERROR:", error);
 
-  setCurrentUser(updatedUser);
-
-  sessionStorage.setItem(
-    "pt_current_user",
-    JSON.stringify(updatedUser)
-  );
-
-  alert("Tutor profile updated successfully!");
-} catch (error) {
-  console.error("PROFILE UPDATE ERROR:", error);
-
-  alert(
-    `Unable to update profile.\nError: ${error.code || "Unknown"}\nMessage: ${error.message}`
-  );
-} finally {
-  setSavingProfile(false);
-}
+      alert(
+        `Unable to update profile.\nError: ${error.code || "Unknown"}\nMessage: ${error.message}`
+      );
+    } finally {
+      setSavingProfile(false);
+    }
   };
 
   // ACCEPT OR REJECT BOOKING AND NOTIFY STUDENT
@@ -621,10 +597,9 @@ const profileSnap = await getDoc(profileRef);
   // MARK ONE NOTIFICATION AS READ
   const markNotificationAsRead = async (notificationId) => {
     try {
-      await updateDoc(
-        doc(db, "notifications", notificationId),
-        { read: true }
-      );
+      await updateDoc(doc(db, "notifications", notificationId), {
+        read: true
+      });
     } catch (error) {
       console.error("Error marking notification as read:", error);
       alert("Unable to update notification.");
@@ -642,10 +617,9 @@ const profileSnap = await getDoc(profileRef);
     try {
       await Promise.all(
         unreadNotifications.map((notification) =>
-          updateDoc(
-            doc(db, "notifications", notification.id),
-            { read: true }
-          )
+          updateDoc(doc(db, "notifications", notification.id), {
+            read: true
+          })
         )
       );
     } catch (error) {
@@ -655,20 +629,20 @@ const profileSnap = await getDoc(profileRef);
   };
 
   if (!currentUser) {
-    return (
-      <div className="dashboard-loading">
-        Loading dashboard...
-      </div>
-    );
+    return <div className="dashboard-loading">Loading dashboard...</div>;
   }
 
+  // SIDEBAR MENU
   const menuItems = [
     { name: "Dashboard", icon: LayoutDashboard },
-    { name: "My Profile", icon: UserRound },
     { name: "Booking Requests", icon: Inbox },
     { name: "My Sessions", icon: CalendarDays },
     { name: "Messages", icon: MessagesSquare },
     { name: "Notifications", icon: Bell }
+  ];
+
+  const accountItems = [
+    { name: "My Profile", icon: UserRound }
   ];
 
   const pendingBookings = bookingRequests.filter(
@@ -726,23 +700,19 @@ const profileSnap = await getDoc(profileRef);
   // PAGE CONTENT
   const renderContent = () => {
     switch (activePage) {
-
       // MY PROFILE
       case "My Profile":
         return (
           <section className="tutor-content-section">
-            <h2>My Profile</h2>
-            <p>Manage your personal and tutoring information.</p>
-
-            {profileLoading ? (
-              <div className="empty-state">
-                <p>Loading your profile...</p>
-              </div>
-            ) : (
-              <>
-                <div className="profile-information">
-                  <div className="tutor-profile-photo-area">
-                    <div className="profile-avatar">
+            <div className="tutor-profile-panel">
+              {profileLoading ? (
+                <div className="empty-state">
+                  <p>Loading your profile...</p>
+                </div>
+              ) : (
+                <>
+                  <div className="tutor-profile-header">
+                    <div className="tutor-profile-avatar">
                       {profilePicture ? (
                         <img src={profilePicture} alt="Tutor profile" />
                       ) : (
@@ -750,242 +720,279 @@ const profileSnap = await getDoc(profileRef);
                       )}
                     </div>
 
-                    <div className="profile-photo-controls">
-                      <label className="profile-photo-upload-button">
-                        {uploadingPicture
-                          ? "Please wait..."
-                          : profilePicture
-                          ? "Change Photo"
-                          : "Upload Photo"}
-
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleProfilePictureUpload}
-                          disabled={uploadingPicture}
-                        />
-                      </label>
-
-                      {profilePicture && (
-                        <button
-                          type="button"
-                          className="profile-photo-remove-button"
-                          onClick={handleRemoveProfilePicture}
-                          disabled={uploadingPicture}
-                        >
-                          Remove Photo
-                        </button>
-                      )}
-
-                      <small>
-                        JPG, PNG, or other image formats. Maximum 5 MB
-                        before compression.
-                      </small>
-                    </div>
-                  </div>
-
-                  <div className="profile-details">
-                    <h3>{tutorName}</h3>
-                    <p>{currentUser.email}</p>
-                    <span className="profile-role">Peer Tutor</span>
-                  </div>
-                </div>
-
-                <form
-                  className="tutor-profile-form"
-                  onSubmit={handleSaveProfile}
-                >
-                  <div className="profile-info-card">
-                    <div>
-                      <span>First Name</span>
-                      <strong>
-                        {currentUser.firstName || "Not provided"}
-                      </strong>
+                    <div className="tutor-profile-heading">
+                      <h2>{tutorName}</h2>
+                      <p>{currentUser.email}</p>
+                      <span className="profile-role">Peer Tutor</span>
                     </div>
 
-                    <div>
-                      <span>Middle Name</span>
-                      <strong>
-                        {currentUser.middleName || "Not provided"}
-                      </strong>
-                    </div>
-
-                    <div>
-                      <span>Last Name</span>
-                      <strong>
-                        {currentUser.lastName || "Not provided"}
-                      </strong>
-                    </div>
-
-                    <div>
-                      <span>Suffix</span>
-                      <strong>{currentUser.suffix || "None"}</strong>
-                    </div>
-
-                    <div>
-                      <span>Email Address</span>
-                      <strong>{currentUser.email}</strong>
-                    </div>
-
-                    <div>
-                      <span>Contact Number</span>
-                      <strong>
-                        {currentUser.contactNumber || "Not provided"}
-                      </strong>
-                    </div>
-                  </div>
-
-                  <div className="profile-edit-fields">
-
-                    {/* BIRTHDAY */}
-<div className="profile-field">
-  <label htmlFor="tutorBirthday">
-    Birthday
-  </label>
-
-  <input
-    id="tutorBirthday"
-    type="date"
-    value={profileData.birthday}
-    max={getTodayDate()}
-    min="1900-01-01"
-    onChange={(e) =>
-      setProfileData({
-        ...profileData,
-        birthday: e.target.value
-      })
-    }
-    required
-  />
-</div>
-
-{/* AUTOMATIC AGE */}
-<div className="profile-field">
-  <label htmlFor="tutorAge">
-    Age
-  </label>
-
-  <input
-    id="tutorAge"
-    type="text"
-    value={
-      profileData.birthday
-        ? calculateAge(profileData.birthday) !== ""
-          ? `${calculateAge(profileData.birthday)} years old`
-          : ""
-        : ""
-    }
-    placeholder="Automatically calculated from birthday"
-    readOnly
-  />
-</div>
-                    {/* GENDER */}
-                    <div className="profile-field">
-                      <label htmlFor="tutorGender">
-                        Gender
-                      </label>
-
-                      <select
-                        id="tutorGender"
-                        value={profileData.gender}
-                        onChange={(e) =>
-                          setProfileData({
-                            ...profileData,
-                            gender: e.target.value
-                          })
-                        }
-                        required
+                    {!isEditingProfile && (
+                      <button
+                        type="button"
+                        className="tutor-edit-profile-button"
+                        onClick={handleEditProfile}
                       >
-                        <option value="">Select gender</option>
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                        <option value="Prefer not to say">
-                          Prefer not to say
-                        </option>
-                      </select>
-                    </div>
+                        <Pencil size={16} />
+                        Edit Profile
+                      </button>
+                    )}
+                  </div>
 
-                    {/* SUBJECTS */}
-                    <div className="profile-field">
-                      <label htmlFor="subjects">
-                        Subjects You Teach
-                      </label>
+                  {/* PROFILE PHOTO */}
+                  <div className="tutor-profile-photo-controls">
+                    <label className="tutor-photo-upload-button">
+                      {uploadingPicture
+                        ? "Please wait..."
+                        : profilePicture
+                        ? "Change Photo"
+                        : "Upload Photo"}
 
                       <input
-                        id="subjects"
-                        type="text"
-                        placeholder="Example: Java, HTML, Database"
-                        value={profileData.subjects}
-                        onChange={(e) =>
-                          setProfileData({
-                            ...profileData,
-                            subjects: e.target.value
-                          })
-                        }
+                        type="file"
+                        accept="image/*"
+                        onChange={handleProfilePictureUpload}
+                        disabled={uploadingPicture}
                       />
+                    </label>
 
-                      <small>
-                        Separate each subject with a comma.
-                      </small>
-                    </div>
-
-                    {/* TEACHING MODE */}
-                    <div className="profile-field">
-                      <label htmlFor="teachingMode">
-                        Teaching Mode
-                      </label>
-
-                      <select
-                        id="teachingMode"
-                        value={profileData.teachingMode}
-                        onChange={(e) =>
-                          setProfileData({
-                            ...profileData,
-                            teachingMode: e.target.value
-                          })
-                        }
-                        required
+                    {profilePicture && (
+                      <button
+                        type="button"
+                        className="tutor-photo-remove-button"
+                        onClick={handleRemoveProfilePicture}
+                        disabled={uploadingPicture}
                       >
-                        <option value="">Select teaching mode</option>
-                        <option value="Online">Online</option>
-                        <option value="Face-to-Face">Face-to-Face</option>
-                        <option value="Both">
-                          Both Online and Face-to-Face
-                        </option>
-                      </select>
-                    </div>
+                        Remove Photo
+                      </button>
+                    )}
 
-                    {/* TUTOR BIO */}
-                    <div className="profile-field">
-                      <label htmlFor="bio">
-                        About Me / Tutor Bio
-                      </label>
-
-                      <textarea
-                        id="bio"
-                        rows="5"
-                        placeholder="Tell students about your skills, experience, and how you can help them learn."
-                        value={profileData.bio}
-                        onChange={(e) =>
-                          setProfileData({
-                            ...profileData,
-                            bio: e.target.value
-                          })
-                        }
-                      />
-                    </div>
+                    <small>
+                      JPG, PNG, or other image formats. Maximum 5 MB before
+                      compression.
+                    </small>
                   </div>
 
-                  <button
-                    type="submit"
-                    className="save-profile-button"
-                    disabled={savingProfile}
-                  >
-                    {savingProfile ? "Saving..." : "Save Changes"}
-                  </button>
-                </form>
-              </>
-            )}
+                  <form onSubmit={handleSaveProfile}>
+                    {/* PERSONAL INFORMATION */}
+                    <div className="tutor-profile-section-title">
+                      <User size={19} />
+                      <h3>Personal Information</h3>
+                    </div>
+
+                    <div className="tutor-profile-grid">
+                      <div className="tutor-profile-field">
+                        <label>First Name</label>
+                        <input
+                          type="text"
+                          value={currentUser.firstName || ""}
+                          placeholder="Not provided"
+                          disabled
+                        />
+                      </div>
+
+                      <div className="tutor-profile-field">
+                        <label>Middle Name</label>
+                        <input
+                          type="text"
+                          value={currentUser.middleName || ""}
+                          placeholder="Not provided"
+                          disabled
+                        />
+                      </div>
+
+                      <div className="tutor-profile-field">
+                        <label>Last Name</label>
+                        <input
+                          type="text"
+                          value={currentUser.lastName || ""}
+                          placeholder="Not provided"
+                          disabled
+                        />
+                      </div>
+
+                      <div className="tutor-profile-field">
+                        <label>Suffix</label>
+                        <input
+                          type="text"
+                          value={currentUser.suffix || ""}
+                          placeholder="None"
+                          disabled
+                        />
+                      </div>
+
+                      <div className="tutor-profile-field">
+                        <label>Email Address</label>
+                        <input
+                          type="email"
+                          value={currentUser.email || ""}
+                          disabled
+                        />
+                      </div>
+
+                      <div className="tutor-profile-field">
+                        <label>Contact Number</label>
+                        <input
+                          type="text"
+                          value={currentUser.contactNumber || ""}
+                          placeholder="Not provided"
+                          disabled
+                        />
+                      </div>
+
+                      <div className="tutor-profile-field">
+                        <label htmlFor="tutorBirthday">Birthday</label>
+                        <input
+                          id="tutorBirthday"
+                          type="date"
+                          value={profileData.birthday}
+                          max={getTodayDate()}
+                          min="1900-01-01"
+                          onChange={(e) =>
+                            setProfileData({
+                              ...profileData,
+                              birthday: e.target.value
+                            })
+                          }
+                          disabled={!isEditingProfile}
+                          required
+                        />
+                      </div>
+
+                      <div className="tutor-profile-field">
+                        <label htmlFor="tutorAge">Age</label>
+                        <input
+                          id="tutorAge"
+                          type="text"
+                          value={
+                            profileData.birthday &&
+                            calculateAge(profileData.birthday) !== ""
+                              ? `${calculateAge(profileData.birthday)} years old`
+                              : ""
+                          }
+                          placeholder="Automatically calculated from birthday"
+                          readOnly
+                        />
+                      </div>
+                    </div>
+
+                    {/* TUTORING INFORMATION */}
+                    <div className="tutor-profile-section-title">
+                      <GraduationCap size={20} />
+                      <h3>Tutoring Information</h3>
+                    </div>
+
+                    <div className="tutor-profile-grid">
+                      <div className="tutor-profile-field">
+                        <label htmlFor="tutorGender">Gender</label>
+                        <select
+                          id="tutorGender"
+                          value={profileData.gender}
+                          onChange={(e) =>
+                            setProfileData({
+                              ...profileData,
+                              gender: e.target.value
+                            })
+                          }
+                          disabled={!isEditingProfile}
+                          required
+                        >
+                          <option value="">Select gender</option>
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                          <option value="Prefer not to say">
+                            Prefer not to say
+                          </option>
+                        </select>
+                      </div>
+
+                      <div className="tutor-profile-field">
+                        <label htmlFor="tutorSubjects">
+                          Subjects You Teach
+                        </label>
+                        <input
+                          id="tutorSubjects"
+                          type="text"
+                          placeholder="Example: Java, HTML, Database"
+                          value={profileData.subjects}
+                          onChange={(e) =>
+                            setProfileData({
+                              ...profileData,
+                              subjects: e.target.value
+                            })
+                          }
+                          disabled={!isEditingProfile}
+                        />
+                        <small>Separate each subject with a comma.</small>
+                      </div>
+
+                      <div className="tutor-profile-field">
+                        <label htmlFor="teachingMode">Teaching Mode</label>
+                        <select
+                          id="teachingMode"
+                          value={profileData.teachingMode}
+                          onChange={(e) =>
+                            setProfileData({
+                              ...profileData,
+                              teachingMode: e.target.value
+                            })
+                          }
+                          disabled={!isEditingProfile}
+                          required
+                        >
+                          <option value="">Select teaching mode</option>
+                          <option value="Online">Online</option>
+                          <option value="Face-to-Face">Face-to-Face</option>
+                          <option value="Both">
+                            Both Online and Face-to-Face
+                          </option>
+                        </select>
+                      </div>
+
+                      <div className="tutor-profile-field tutor-profile-bio">
+                        <label htmlFor="tutorBio">About Me / Tutor Bio</label>
+                        <textarea
+                          id="tutorBio"
+                          rows="5"
+                          placeholder="Tell students about your skills, experience, and how you can help them learn."
+                          value={profileData.bio}
+                          onChange={(e) =>
+                            setProfileData({
+                              ...profileData,
+                              bio: e.target.value
+                            })
+                          }
+                          disabled={!isEditingProfile}
+                        />
+                      </div>
+                    </div>
+
+                    {/* EDIT ACTIONS */}
+                    {isEditingProfile && (
+                      <div className="tutor-profile-actions">
+                        <button
+                          type="button"
+                          className="tutor-cancel-profile-button"
+                          onClick={handleCancelProfileEdit}
+                          disabled={savingProfile}
+                        >
+                          <X size={16} />
+                          Cancel
+                        </button>
+
+                        <button
+                          type="submit"
+                          className="tutor-save-profile-button"
+                          disabled={savingProfile}
+                        >
+                          <Save size={16} />
+                          {savingProfile ? "Saving..." : "Save Changes"}
+                        </button>
+                      </div>
+                    )}
+                  </form>
+                </>
+              )}
+            </div>
           </section>
         );
 
@@ -1009,10 +1016,7 @@ const profileSnap = await getDoc(profileRef);
             ) : (
               <div className="booking-request-list">
                 {bookingRequests.map((booking) => (
-                  <div
-                    className="booking-request-card"
-                    key={booking.id}
-                  >
+                  <div className="booking-request-card" key={booking.id}>
                     <div className="booking-request-header">
                       <div>
                         <h3>{booking.studentName || "Student"}</h3>
@@ -1031,22 +1035,18 @@ const profileSnap = await getDoc(profileRef);
                         <strong>Subject:</strong>{" "}
                         {booking.subject || "Not specified"}
                       </p>
-
                       <p>
                         <strong>Teaching Mode:</strong>{" "}
                         {booking.teachingMode || "Not specified"}
                       </p>
-
                       <p>
                         <strong>Preferred Date:</strong>{" "}
                         {booking.preferredDate || "Not specified"}
                       </p>
-
                       <p>
                         <strong>Preferred Time:</strong>{" "}
                         {booking.preferredTime || "Not specified"}
                       </p>
-
                       <p>
                         <strong>Message:</strong>{" "}
                         {booking.message || "No message"}
@@ -1102,17 +1102,12 @@ const profileSnap = await getDoc(profileRef);
               <div className="empty-state">
                 <span>📅</span>
                 <h3>No sessions scheduled</h3>
-                <p>
-                  Your accepted tutoring bookings will appear here.
-                </p>
+                <p>Your accepted tutoring bookings will appear here.</p>
               </div>
             ) : (
               <div className="booking-request-list">
                 {acceptedSessions.map((session) => (
-                  <div
-                    className="booking-request-card"
-                    key={session.id}
-                  >
+                  <div className="booking-request-card" key={session.id}>
                     <div className="booking-request-header">
                       <div>
                         <h3>{session.studentName || "Student"}</h3>
@@ -1129,37 +1124,34 @@ const profileSnap = await getDoc(profileRef);
                         <strong>Subject:</strong>{" "}
                         {session.subject || "Not specified"}
                       </p>
-
                       <p>
                         <strong>Teaching Mode:</strong>{" "}
                         {session.teachingMode || "Not specified"}
                       </p>
-
                       <p>
                         <strong>Session Date:</strong>{" "}
                         {session.preferredDate || "Not specified"}
                       </p>
-
                       <p>
                         <strong>Session Time:</strong>{" "}
                         {session.preferredTime || "Not specified"}
                       </p>
-
                       <p>
                         <strong>Student Message:</strong>{" "}
                         {session.message || "No message"}
                       </p>
                     </div>
+
                     {session.teachingMode === "Online" && (
-  <div className="booking-request-actions">
-    <button
-      type="button"
-      onClick={() => setActiveVideoBooking(session)}
-    >
-      Join Video Call
-    </button>
-  </div>
-)}
+                      <div className="booking-request-actions">
+                        <button
+                          type="button"
+                          onClick={() => setActiveVideoBooking(session)}
+                        >
+                          Join Video Call
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -1210,8 +1202,8 @@ const profileSnap = await getDoc(profileRef);
                 <span>🔔</span>
                 <h3>No Notifications Yet</h3>
                 <p>
-                  New booking requests and upcoming session reminders
-                  will appear here.
+                  New booking requests and upcoming session reminders will
+                  appear here.
                 </p>
               </div>
             ) : (
@@ -1308,8 +1300,7 @@ const profileSnap = await getDoc(profileRef);
                         tomorrow.setDate(today.getDate() + 1);
 
                         const isToday =
-                          sessionDate.toDateString() ===
-                          today.toDateString();
+                          sessionDate.toDateString() === today.toDateString();
 
                         const isTomorrow =
                           sessionDate.toDateString() ===
@@ -1317,9 +1308,8 @@ const profileSnap = await getDoc(profileRef);
 
                         let reminderLabel = "Upcoming Session";
 
-                        if (isToday) {
-                          reminderLabel = "Session Today";
-                        } else if (isTomorrow) {
+                        if (isToday) reminderLabel = "Session Today";
+                        else if (isTomorrow) {
                           reminderLabel = "Session Tomorrow";
                         }
 
@@ -1331,9 +1321,7 @@ const profileSnap = await getDoc(profileRef);
                             <div className="booking-request-header">
                               <div>
                                 <h3>🔔 {reminderLabel}</h3>
-                                <p>
-                                  Your tutoring session is approaching.
-                                </p>
+                                <p>Your tutoring session is approaching.</p>
                               </div>
 
                               <span className="booking-status accepted">
@@ -1346,22 +1334,18 @@ const profileSnap = await getDoc(profileRef);
                                 <strong>Student:</strong>{" "}
                                 {session.studentName || "Student"}
                               </p>
-
                               <p>
                                 <strong>Subject:</strong>{" "}
                                 {session.subject || "Not specified"}
                               </p>
-
                               <p>
                                 <strong>Teaching Mode:</strong>{" "}
                                 {session.teachingMode || "Not specified"}
                               </p>
-
                               <p>
                                 <strong>Session Date:</strong>{" "}
                                 {sessionDate.toLocaleDateString()}
                               </p>
-
                               <p>
                                 <strong>Session Time:</strong>{" "}
                                 {sessionDate.toLocaleTimeString([], {
@@ -1372,8 +1356,8 @@ const profileSnap = await getDoc(profileRef);
                             </div>
 
                             <small>
-                              Reminder: This session is scheduled within
-                              the next seven days.
+                              Reminder: This session is scheduled within the
+                              next seven days.
                             </small>
                           </div>
                         );
@@ -1392,17 +1376,15 @@ const profileSnap = await getDoc(profileRef);
           <>
             <div className="tutor-welcome-banner">
               <div>
-                <span className="welcome-label">
-                  TUTOR WORKSPACE
-                </span>
+                <span className="welcome-label">TUTOR WORKSPACE</span>
 
                 <h2>
                   Welcome, {currentUser.firstName || "Tutor"}!
                 </h2>
 
                 <p>
-                  Manage your tutoring activities and help students
-                  achieve their learning goals.
+                  Manage your tutoring activities and help students achieve
+                  their learning goals.
                 </p>
               </div>
 
@@ -1441,33 +1423,23 @@ const profileSnap = await getDoc(profileRef);
                 <p>Manage your tutoring activities.</p>
 
                 <div className="quick-action-list">
-                  <button
-                    onClick={() => setActivePage("My Profile")}
-                  >
+                  <button onClick={() => setActivePage("My Profile")}>
                     👤 View My Profile
                   </button>
 
-                  <button
-                    onClick={() => setActivePage("Booking Requests")}
-                  >
+                  <button onClick={() => setActivePage("Booking Requests")}>
                     📩 Check Booking Requests
                   </button>
 
-                  <button
-                    onClick={() => setActivePage("My Sessions")}
-                  >
+                  <button onClick={() => setActivePage("My Sessions")}>
                     📅 View My Sessions
                   </button>
 
-                  <button
-                    onClick={() => setActivePage("Messages")}
-                  >
+                  <button onClick={() => setActivePage("Messages")}>
                     💬 Open Messages
                   </button>
 
-                  <button
-                    onClick={() => setActivePage("Notifications")}
-                  >
+                  <button onClick={() => setActivePage("Notifications")}>
                     🔔 View Notifications
                   </button>
                 </div>
@@ -1494,9 +1466,7 @@ const profileSnap = await getDoc(profileRef);
 
                   <p>
                     <span>Status</span>
-                    <strong className="active-status">
-                      Active
-                    </strong>
+                    <strong className="active-status">Active</strong>
                   </p>
                 </div>
               </div>
@@ -1508,7 +1478,6 @@ const profileSnap = await getDoc(profileRef);
 
   return (
     <div className="tutor-dashboard">
-
       {/* SIDEBAR */}
       <aside className="tutor-sidebar">
         <div className="tutor-brand">
@@ -1534,46 +1503,68 @@ const profileSnap = await getDoc(profileRef);
         </div>
 
         <nav className="tutor-navigation">
-          <p className="sidebar-heading">MENU</p>
+          <div className="tutor-nav-group">
+            <p className="sidebar-heading">MENU</p>
 
-          {menuItems.map((item) => (
-            <button
-              key={item.name}
-              className={
-                activePage === item.name
-                  ? "sidebar-link active"
-                  : "sidebar-link"
-              }
-              onClick={() => setActivePage(item.name)}
-            >
-              <item.icon size={20} strokeWidth={1.8} />
-              {item.name}
+            {menuItems.map((item) => (
+              <button
+                key={item.name}
+                className={
+                  activePage === item.name
+                    ? "sidebar-link active"
+                    : "sidebar-link"
+                }
+                onClick={() => setActivePage(item.name)}
+              >
+                <item.icon size={20} strokeWidth={1.8} />
+                {item.name}
 
-              {item.name === "Booking Requests" &&
-                pendingBookings > 0 && (
-                  <span className="notification-count">
-                    {pendingBookings}
-                  </span>
-                )}
+                {item.name === "Booking Requests" &&
+                  pendingBookings > 0 && (
+                    <span className="notification-count">
+                      {pendingBookings}
+                    </span>
+                  )}
 
-              {item.name === "Notifications" &&
-                unreadNotificationCount > 0 && (
-                  <span className="notification-count">
-                    {unreadNotificationCount}
-                  </span>
-                )}
-            </button>
-          ))}
+                {item.name === "Notifications" &&
+                  unreadNotificationCount > 0 && (
+                    <span className="notification-count">
+                      {unreadNotificationCount}
+                    </span>
+                  )}
+              </button>
+            ))}
+          </div>
+
+          
+<div className="tutor-nav-group tutor-account-group">
+  <p className="sidebar-heading">ACCOUNT</p>
+
+  {accountItems.map((item) => (
+    <button
+      key={item.name}
+      className={
+        activePage === item.name
+          ? "sidebar-link active"
+          : "sidebar-link"
+      }
+      onClick={() => setActivePage(item.name)}
+    >
+      <item.icon size={20} strokeWidth={1.8} />
+      {item.name}
+    </button>
+  ))}
+
+  <button
+    className="sidebar-link tutor-sidebar-logout"
+    onClick={() => setShowLogoutConfirm(true)}
+  >
+    <LogOut size={20} strokeWidth={1.8} />
+    Logout
+  </button>
+</div>
         </nav>
 
-        {/* LOGOUT BUTTON */}
-        <button
-          className="tutor-logout-button"
-          onClick={() => setShowLogoutConfirm(true)}
-        >
-          <LogOut size={20} strokeWidth={1.8} />
-          Logout
-        </button>
       </aside>
 
       {/* MAIN CONTENT */}
@@ -1617,7 +1608,6 @@ const profileSnap = await getDoc(profileRef);
             </div>
 
             <h2>Confirm Logout</h2>
-
             <p>Are you sure you want to logout?</p>
 
             <div className="logout-modal-actions">
@@ -1640,15 +1630,15 @@ const profileSnap = await getDoc(profileRef);
           </div>
         </div>
       )}
-      {/* VIDEO CALL MODAL */}
-{activeVideoBooking && (
-  <VideoCall
-    booking={activeVideoBooking}
-    currentUser={currentUser}
-    onClose={() => setActiveVideoBooking(null)}
-  />
-)}
 
+      {/* VIDEO CALL MODAL */}
+      {activeVideoBooking && (
+        <VideoCall
+          booking={activeVideoBooking}
+          currentUser={currentUser}
+          onClose={() => setActiveVideoBooking(null)}
+        />
+      )}
     </div>
   );
 }
