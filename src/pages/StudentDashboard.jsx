@@ -95,6 +95,32 @@ async function compressProfileImage(file) {
   }
 }
 
+// AUTOMATICALLY CALCULATE AGE FROM BIRTHDAY
+function calculateAge(birthday) {
+  if (!birthday) return "";
+
+  const birthDate = new Date(`${birthday}T00:00:00`);
+  const today = new Date();
+
+  if (Number.isNaN(birthDate.getTime()) || birthDate > today) {
+    return "";
+  }
+
+  let age = today.getFullYear() - birthDate.getFullYear();
+
+  const monthDifference = today.getMonth() - birthDate.getMonth();
+
+  if (
+    monthDifference < 0 ||
+    (monthDifference === 0 &&
+      today.getDate() < birthDate.getDate())
+  ) {
+    age--;
+  }
+
+  return age;
+}
+
 function StudentDashboard() {
   const navigate = useNavigate();
 
@@ -117,13 +143,14 @@ function StudentDashboard() {
 
   // STUDENT PROFILE STATES
   const [profileForm, setProfileForm] = useState({
-    firstName: "",
-    middleName: "",
-    lastName: "",
-    suffix: "",
-    contactNumber: "",
-    gender: ""
-  });
+  firstName: "",
+  middleName: "",
+  lastName: "",
+  suffix: "",
+  birthday: "",
+  contactNumber: "",
+  gender: ""
+});
 
   const [editingProfile, setEditingProfile] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
@@ -185,13 +212,14 @@ function StudentDashboard() {
           const userData = snapshot.data();
 
           setProfileForm({
-            firstName: userData.firstName || "",
-            middleName: userData.middleName || "",
-            lastName: userData.lastName || "",
-            suffix: userData.suffix || "",
-            contactNumber: userData.contactNumber || "",
-            gender: userData.gender || ""
-          });
+  firstName: userData.firstName || "",
+  middleName: userData.middleName || "",
+  lastName: userData.lastName || "",
+  suffix: userData.suffix || "",
+  birthday: userData.birthday || "",
+  contactNumber: userData.contactNumber || "",
+  gender: userData.gender || ""
+});
 
           setProfilePicture(userData.profilePicture || "");
 
@@ -452,27 +480,29 @@ function StudentDashboard() {
 
   // ENABLE PROFILE EDITING
   function handleEditProfile() {
-    setProfileForm({
-      firstName: currentUser.firstName || "",
-      middleName: currentUser.middleName || "",
-      lastName: currentUser.lastName || "",
-      suffix: currentUser.suffix || "",
-      contactNumber: currentUser.contactNumber || "",
-      gender: currentUser.gender || ""
-    });
+  setProfileForm({
+    firstName: currentUser.firstName || "",
+    middleName: currentUser.middleName || "",
+    lastName: currentUser.lastName || "",
+    suffix: currentUser.suffix || "",
+    birthday: currentUser.birthday || "",
+    contactNumber: currentUser.contactNumber || "",
+    gender: currentUser.gender || ""
+  });
 
-    setEditingProfile(true);
-  }
+  setEditingProfile(true);
+}
 
   // CANCEL PROFILE EDITING
   function handleCancelProfile() {
     setProfileForm({
       firstName: currentUser.firstName || "",
-      middleName: currentUser.middleName || "",
-      lastName: currentUser.lastName || "",
-      suffix: currentUser.suffix || "",
-      contactNumber: currentUser.contactNumber || "",
-      gender: currentUser.gender || ""
+    middleName: currentUser.middleName || "",
+    lastName: currentUser.lastName || "",
+    suffix: currentUser.suffix || "",
+    birthday: currentUser.birthday || "",
+    contactNumber: currentUser.contactNumber || "",
+    gender: currentUser.gender || ""
     });
 
     setEditingProfile(false);
@@ -511,14 +541,15 @@ function StudentDashboard() {
       const userRef = doc(db, "users", currentUser.uid);
 
       await updateDoc(userRef, {
-        firstName,
-        middleName: profileForm.middleName.trim(),
-        lastName,
-        suffix: profileForm.suffix.trim(),
-        fullName,
-        contactNumber,
-        gender: profileForm.gender
-      });
+  firstName,
+  middleName: profileForm.middleName.trim(),
+  lastName,
+  suffix: profileForm.suffix.trim(),
+  birthday: profileForm.birthday,
+  fullName,
+  contactNumber,
+  gender: profileForm.gender
+});
 
       const updatedUser = {
         ...currentUser,
@@ -526,6 +557,7 @@ function StudentDashboard() {
         middleName: profileForm.middleName.trim(),
         lastName,
         suffix: profileForm.suffix.trim(),
+        birthday: profileForm.birthday,
         fullName,
         contactNumber,
         gender: profileForm.gender
@@ -951,6 +983,43 @@ function StudentDashboard() {
                         />
                       </div>
                     </div>
+
+                    <div className="student-profile-grid">
+  <div className="student-profile-field">
+    <label htmlFor="profileBirthday">
+      Birthday
+    </label>
+
+    <input
+      id="profileBirthday"
+      type="date"
+      name="birthday"
+      value={profileForm.birthday}
+      onChange={handleProfileChange}
+      disabled={!editingProfile}
+      max={new Date().toLocaleDateString("en-CA")}
+    />
+  </div>
+
+  <div className="student-profile-field">
+    <label htmlFor="profileAge">
+      Age
+    </label>
+
+    <input
+      id="profileAge"
+      type="text"
+      value={
+        profileForm.birthday
+          ? `${calculateAge(profileForm.birthday)} years old`
+          : ""
+      }
+      placeholder="Automatically calculated from birthday"
+      disabled
+      readOnly
+    />
+  </div>
+</div>
 
                     <div className="student-profile-grid">
                       <div className="student-profile-field">

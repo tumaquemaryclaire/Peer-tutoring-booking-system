@@ -41,6 +41,7 @@ export async function registerUser(userData) {
     lastName: userData.lastName,
     suffix,
     fullName,
+    birthday: userData.birthday || "",
     contactNumber: userData.contactNumber,
     email: userData.email,
     role: userData.role,

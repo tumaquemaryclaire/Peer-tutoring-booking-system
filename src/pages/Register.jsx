@@ -3,14 +3,42 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { registerUser } from "../services/auth";
 
+// Calculate age automatically using birthday
+function calculateAge(birthday) {
+  if (!birthday) return "";
+
+  const birthDate = new Date(`${birthday}T00:00:00`);
+  const today = new Date();
+
+  if (Number.isNaN(birthDate.getTime()) || birthDate > today) {
+    return "";
+  }
+
+  let age = today.getFullYear() - birthDate.getFullYear();
+
+  const monthDifference = today.getMonth() - birthDate.getMonth();
+
+  if (
+    monthDifference < 0 ||
+    (monthDifference === 0 && today.getDate() < birthDate.getDate())
+  ) {
+    age--;
+  }
+
+  return age;
+}
+
 function Register() {
   const navigate = useNavigate();
+
+  const today = new Date().toISOString().split("T")[0];
 
   const [formData, setFormData] = useState({
     firstName: "",
     middleName: "",
     lastName: "",
     suffix: "",
+    birthday: "",
     contactNumber: "",
     email: "",
     password: "",
@@ -54,6 +82,23 @@ function Register() {
     e.preventDefault();
     setError("");
 
+    if (!formData.birthday) {
+      setError("Please select your birthday.");
+      return;
+    }
+
+    const age = calculateAge(formData.birthday);
+
+    if (age === "" || age < 0) {
+      setError("Please enter a valid birthday.");
+      return;
+    }
+
+    if (age < 13) {
+      setError("You must be at least 13 years old to register.");
+      return;
+    }
+
     if (formData.password.length < 8) {
       setError("Password must contain at least 8 characters.");
       return;
@@ -91,6 +136,7 @@ function Register() {
         middleName: formData.middleName.trim(),
         lastName: formData.lastName.trim(),
         suffix: formData.suffix.trim(),
+        birthday: formData.birthday,
         contactNumber: formData.contactNumber,
         email: formData.email.trim(),
         password: formData.password,
@@ -214,6 +260,43 @@ function Register() {
                   <option value="V">V</option>
                 </select>
               </div>
+            </div>
+
+            {/* BIRTHDAY */}
+            <div className="form-group">
+              <label htmlFor="birthday">Birthday</label>
+              <input
+                id="birthday"
+                type="date"
+                name="birthday"
+                value={formData.birthday}
+                onChange={handleChange}
+                min="1900-01-01"
+                max={today}
+                required
+              />
+              <small className="register-hint">
+                Select your date of birth.
+              </small>
+            </div>
+
+            {/* AUTOMATIC AGE */}
+            <div className="form-group">
+              <label htmlFor="age">Age</label>
+              <input
+                id="age"
+                type="text"
+                value={
+                  formData.birthday
+                    ? `${calculateAge(formData.birthday)} years old`
+                    : ""
+                }
+                placeholder="Automatically calculated from birthday"
+                readOnly
+              />
+              <small className="register-hint">
+                Your age will be calculated automatically after selecting your birthday.
+              </small>
             </div>
 
             {/* CONTACT NUMBER */}
