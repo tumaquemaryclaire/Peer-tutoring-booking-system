@@ -143,6 +143,42 @@ async function compressProfileImage(file) {
   return imageData;
 }
 
+// AUTOMATIC AGE CALCULATOR
+function calculateAge(birthday) {
+  if (!birthday) return "";
+
+  const birthDate = new Date(`${birthday}T00:00:00`);
+  const today = new Date();
+
+  if (Number.isNaN(birthDate.getTime()) || birthDate > today) {
+    return "";
+  }
+
+  let age = today.getFullYear() - birthDate.getFullYear();
+
+  const monthDifference = today.getMonth() - birthDate.getMonth();
+
+  if (
+    monthDifference < 0 ||
+    (monthDifference === 0 &&
+      today.getDate() < birthDate.getDate())
+  ) {
+    age--;
+  }
+
+  return age;
+}
+
+// GET TODAY'S DATE FOR THE BIRTHDAY INPUT
+function getTodayDate() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
 function TutorDashboard() {
   const navigate = useNavigate();
 
@@ -159,7 +195,8 @@ const [activeVideoBooking, setActiveVideoBooking] = useState(null);
     subjects: "",
     bio: "",
     teachingMode: "",
-    gender: ""
+    gender: "",
+    birthday: ""
   });
 
   const [profileLoading, setProfileLoading] = useState(false);
@@ -204,25 +241,40 @@ const [activeVideoBooking, setActiveVideoBooking] = useState(null);
       setProfileLoading(true);
 
       try {
-        const profileRef = doc(
-          db,
-          "tutorProfiles",
-          currentUser.uid
-        );
+        // LOAD PERSONAL INFORMATION
+const userRef = doc(db, "users", currentUser.uid);
+const userSnap = await getDoc(userRef);
 
-        const profileSnap = await getDoc(profileRef);
+if (userSnap.exists()) {
+  const userData = userSnap.data();
+
+  setProfileData((previous) => ({
+    ...previous,
+    birthday: userData.birthday || ""
+  }));
+}
+
+// LOAD TUTORING INFORMATION
+const profileRef = doc(
+  db,
+  "tutorProfiles",
+  currentUser.uid
+);
+
+const profileSnap = await getDoc(profileRef);
 
         if (profileSnap.exists()) {
           const data = profileSnap.data();
 
-          setProfileData({
-            subjects: Array.isArray(data.subjects)
-              ? data.subjects.join(", ")
-              : "",
-            bio: data.bio || "",
-            teachingMode: data.teachingMode || "",
-            gender: data.gender || ""
-          });
+          setProfileData((previous) => ({
+  ...previous,
+  subjects: Array.isArray(data.subjects)
+    ? data.subjects.join(", ")
+    : "",
+  bio: data.bio || "",
+  teachingMode: data.teachingMode || "",
+  gender: data.gender || ""
+}));
 
           setProfilePicture(data.profilePicture || "");
         }
@@ -425,39 +477,82 @@ const [activeVideoBooking, setActiveVideoBooking] = useState(null);
     setSavingProfile(true);
 
     try {
-      const profileRef = doc(
-        db,
-        "tutorProfiles",
-        authenticatedUser.uid
-      );
+  const profileRef = doc(
+    db,
+    "tutorProfiles",
+    authenticatedUser.uid
+  );
 
-      const subjectsArray = profileData.subjects
-        .split(",")
-        .map((subject) => subject.trim())
-        .filter(Boolean);
+  const userRef = doc(
+    db,
+    "users",
+    authenticatedUser.uid
+  );
 
-      await updateDoc(profileRef, {
-        subjects: subjectsArray,
-        bio: profileData.bio.trim(),
-        teachingMode: profileData.teachingMode,
-        gender: profileData.gender
-      });
+  const subjectsArray = profileData.subjects
+    .split(",")
+    .map((subject) => subject.trim())
+    .filter(Boolean);
 
-      setProfileData((previous) => ({
-        ...previous,
-        subjects: subjectsArray.join(", ")
-      }));
+  // VALIDATE BIRTHDAY
+  if (!profileData.birthday) {
+    alert("Please enter your birthday.");
+    return;
+  }
 
-      alert("Tutor profile updated successfully!");
-    } catch (error) {
-      console.error("PROFILE UPDATE ERROR:", error);
+  const age = calculateAge(profileData.birthday);
 
-      alert(
-        `Unable to update profile.\nError: ${error.code || "Unknown"}\nMessage: ${error.message}`
-      );
-    } finally {
-      setSavingProfile(false);
-    }
+  if (age === "") {
+    alert("Please enter a valid birthday.");
+    return;
+  }
+
+  if (age < 13) {
+    alert("You must be at least 13 years old.");
+    return;
+  }
+
+  // SAVE PERSONAL INFORMATION
+  await updateDoc(userRef, {
+    birthday: profileData.birthday
+  });
+
+  // SAVE TUTOR PROFILE INFORMATION
+  await updateDoc(profileRef, {
+    subjects: subjectsArray,
+    bio: profileData.bio.trim(),
+    teachingMode: profileData.teachingMode,
+    gender: profileData.gender
+  });
+
+  setProfileData((previous) => ({
+    ...previous,
+    subjects: subjectsArray.join(", ")
+  }));
+
+  // UPDATE SESSION DATA
+  const updatedUser = {
+    ...currentUser,
+    birthday: profileData.birthday
+  };
+
+  setCurrentUser(updatedUser);
+
+  sessionStorage.setItem(
+    "pt_current_user",
+    JSON.stringify(updatedUser)
+  );
+
+  alert("Tutor profile updated successfully!");
+} catch (error) {
+  console.error("PROFILE UPDATE ERROR:", error);
+
+  alert(
+    `Unable to update profile.\nError: ${error.code || "Unknown"}\nMessage: ${error.message}`
+  );
+} finally {
+  setSavingProfile(false);
+}
   };
 
   // ACCEPT OR REJECT BOOKING AND NOTIFY STUDENT
@@ -742,6 +837,48 @@ const [activeVideoBooking, setActiveVideoBooking] = useState(null);
 
                   <div className="profile-edit-fields">
 
+                    {/* BIRTHDAY */}
+<div className="profile-field">
+  <label htmlFor="tutorBirthday">
+    Birthday
+  </label>
+
+  <input
+    id="tutorBirthday"
+    type="date"
+    value={profileData.birthday}
+    max={getTodayDate()}
+    min="1900-01-01"
+    onChange={(e) =>
+      setProfileData({
+        ...profileData,
+        birthday: e.target.value
+      })
+    }
+    required
+  />
+</div>
+
+{/* AUTOMATIC AGE */}
+<div className="profile-field">
+  <label htmlFor="tutorAge">
+    Age
+  </label>
+
+  <input
+    id="tutorAge"
+    type="text"
+    value={
+      profileData.birthday
+        ? calculateAge(profileData.birthday) !== ""
+          ? `${calculateAge(profileData.birthday)} years old`
+          : ""
+        : ""
+    }
+    placeholder="Automatically calculated from birthday"
+    readOnly
+  />
+</div>
                     {/* GENDER */}
                     <div className="profile-field">
                       <label htmlFor="tutorGender">
