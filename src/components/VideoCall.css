@@ -8,15 +8,18 @@
   align-items: center;
   padding: 20px;
   background: rgba(10, 15, 30, 0.85);
+  overflow-y: auto;
 }
 
 .video-call-container {
   width: 100%;
-  max-width: 1000px;
+  max-width: 1100px;
+  max-height: 95vh;
   padding: 25px;
   border-radius: 18px;
   background: #ffffff;
   box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+  overflow-y: auto;
 }
 
 .video-call-header {
@@ -73,6 +76,8 @@
   color: #b91c1c;
   font-size: 14px;
 }
+
+/* VIDEO AREA */
 
 .video-screen-area {
   position: relative;
@@ -132,6 +137,8 @@
   font-size: 11px;
 }
 
+/* VIDEO CONTROLS */
+
 .video-call-controls {
   display: flex;
   flex-wrap: wrap;
@@ -156,6 +163,12 @@
   transform: translateY(-1px);
 }
 
+.video-call-controls button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .start-call-button {
   background: #2563eb;
   color: #ffffff;
@@ -176,9 +189,135 @@
   color: #ffffff;
 }
 
+/* =====================================
+   LESSON PRESENTATION
+===================================== */
+
+.presentation-container {
+  width: 100%;
+  margin: 20px 0;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.presentation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.presentation-header h3 {
+  margin: 0;
+  color: #172554;
+  font-size: 17px;
+}
+
+.presentation-header p {
+  margin: 5px 0 0;
+  color: #64748b;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.presentation-viewer {
+  width: 100%;
+  height: 550px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #1e293b;
+}
+
+.presentation-viewer iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #ffffff;
+}
+
+.presentation-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.presentation-navigation button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.presentation-navigation button:hover {
+  background: #1d4ed8;
+}
+
+.presentation-navigation button:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.presentation-navigation span {
+  color: #334155;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.presentation-close-button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #dc2626;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.presentation-close-button:hover {
+  background: #b91c1c;
+}
+
+.student-presentation-note {
+  margin: 12px 0 0;
+  color: #64748b;
+  text-align: center;
+  font-size: 12px;
+}
+
+.share-lesson-button {
+  background: #7c3aed;
+  color: #ffffff;
+}
+
+.upload-progress-text {
+  margin-top: 12px;
+  color: #64748b;
+  text-align: center;
+  font-size: 13px;
+}
+
+/* MOBILE RESPONSIVE */
+
 @media (max-width: 600px) {
+  .video-call-overlay {
+    padding: 8px;
+  }
+
   .video-call-container {
     padding: 15px;
+    max-height: 98vh;
   }
 
   .video-call-header h2 {
@@ -204,6 +343,27 @@
 
   .video-call-controls button {
     padding: 0 12px;
+    font-size: 12px;
+  }
+
+  .presentation-container {
+    padding: 10px;
+  }
+
+  .presentation-viewer {
+    height: 350px;
+  }
+
+  .presentation-header {
+    align-items: flex-start;
+  }
+
+  .presentation-navigation {
+    gap: 8px;
+  }
+
+  .presentation-navigation button {
+    padding: 9px 11px;
     font-size: 12px;
   }
 }

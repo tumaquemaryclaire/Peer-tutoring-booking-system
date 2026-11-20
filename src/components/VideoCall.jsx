@@ -12,8 +12,14 @@ import {
   updateDoc,
 } from "firebase/firestore";
 
+import * as pdfjsLib from "pdfjs-dist";
+import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+
 import { db } from "../services/firebase";
 import "./VideoCall.css";
+
 
 const ICE_SERVERS = {
   iceServers: [
@@ -23,6 +29,9 @@ const ICE_SERVERS = {
   ],
 };
 
+const MAX_PDF_SIZE = 8 * 1024 * 1024;
+const CHUNK_SIZE = 16 * 1024;
+
 function VideoCall({ booking, currentUser, onClose }) {
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
@@ -31,12 +40,16 @@ function VideoCall({ booking, currentUser, onClose }) {
   const localStreamRef = useRef(null);
   const remoteStreamRef = useRef(null);
 
+  const presentationChannelRef = useRef(null);
+  const incomingFileRef = useRef(null);
+  const pdfUrlRef = useRef(null);
+  const fileInputRef = useRef(null);
+
   const isCallerRef = useRef(false);
   const answeringRef = useRef(false);
   const startingRef = useRef(false);
   const endingRef = useRef(false);
 
-  // Unique ID for every call, even when the same booking is reused.
   const callIdRef = useRef(null);
   const activeCallIdRef = useRef(null);
   const pendingCandidatesRef = useRef([]);
@@ -48,7 +61,16 @@ function VideoCall({ booking, currentUser, onClose }) {
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState("");
 
+  // PRESENTATION STATES
+  const [pdfUrl, setPdfUrl] = useState("");
+  const [pdfName, setPdfName] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
   const bookingId = booking.id;
+  const isTutor = currentUser.uid === booking.tutorUid;
 
   const sessionRef = doc(
     db,
@@ -71,7 +93,7 @@ function VideoCall({ booking, currentUser, onClose }) {
       : booking.studentUid;
   };
 
-  // ADD CALL EVENTS TO THE EXISTING CHAT
+  // ADD CALL EVENTS TO EXISTING CHAT
   const addCallMessage = async (message) => {
     try {
       await addDoc(messagesRef, {
@@ -114,21 +136,315 @@ function VideoCall({ booking, currentUser, onClose }) {
     return stream;
   };
 
+  // =====================================
+  // PRESENTATION FUNCTIONS
+  // =====================================
+
+  // RECEIVE PRESENTATION DATA
+  const handlePresentationMessage = (event) => {
+    if (typeof event.data === "string") {
+      let message;
+
+      try {
+        message = JSON.parse(event.data);
+      } catch (err) {
+        console.error("Invalid presentation message:", err);
+        return;
+      }
+
+      if (message.type === "file-start") {
+        incomingFileRef.current = {
+          name: message.name,
+          size: message.size,
+          totalPages: message.totalPages,
+          chunks: [],
+        };
+      }
+
+      if (message.type === "file-end") {
+        const incoming = incomingFileRef.current;
+
+        if (!incoming) return;
+
+        const blob = new Blob(incoming.chunks, {
+          type: "application/pdf",
+        });
+
+        if (pdfUrlRef.current) {
+          URL.revokeObjectURL(pdfUrlRef.current);
+        }
+
+        const newUrl = URL.createObjectURL(blob);
+
+        pdfUrlRef.current = newUrl;
+
+        setPdfUrl(newUrl);
+        setPdfName(incoming.name);
+        setCurrentPage(1);
+        setTotalPages(incoming.totalPages || 1);
+
+        incomingFileRef.current = null;
+      }
+
+      if (message.type === "page-change") {
+        setCurrentPage(message.page);
+        setTotalPages(message.totalPages);
+      }
+
+      if (message.type === "presentation-close") {
+        if (pdfUrlRef.current) {
+          URL.revokeObjectURL(pdfUrlRef.current);
+          pdfUrlRef.current = null;
+        }
+
+        setPdfUrl("");
+        setPdfName("");
+        setCurrentPage(1);
+        setTotalPages(1);
+      }
+
+      return;
+    }
+
+    // RECEIVE PDF BINARY CHUNKS
+    if (event.data instanceof ArrayBuffer) {
+      if (incomingFileRef.current) {
+        incomingFileRef.current.chunks.push(event.data);
+      }
+    }
+  };
+
+  // SET UP WEBRTC PRESENTATION CHANNEL
+  const setupPresentationChannel = (channel) => {
+    presentationChannelRef.current = channel;
+    channel.binaryType = "arraybuffer";
+
+    channel.onmessage = handlePresentationMessage;
+
+    channel.onopen = () => {
+      console.log("Presentation channel connected.");
+    };
+
+    channel.onclose = () => {
+      console.log("Presentation channel closed.");
+    };
+
+    channel.onerror = (event) => {
+      console.error("Presentation channel error:", event);
+    };
+  };
+
+  // SEND PRESENTATION MESSAGE
+  const sendPresentationMessage = (message) => {
+    const channel = presentationChannelRef.current;
+
+    if (!channel || channel.readyState !== "open") {
+      throw new Error(
+        "Presentation connection is not ready. Please wait until both participants are connected."
+      );
+    }
+
+    channel.send(JSON.stringify(message));
+  };
+
+  // UPLOAD PDF LESSON
+  const handlePdfUpload = async (event) => {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    event.target.value = "";
+
+    if (
+      file.type !== "application/pdf" &&
+      !file.name.toLowerCase().endsWith(".pdf")
+    ) {
+      setError("Please upload a PDF file.");
+      return;
+    }
+
+    if (file.size > MAX_PDF_SIZE) {
+      setError("The PDF must not exceed 8 MB.");
+      return;
+    }
+
+    try {
+      setError("");
+      setIsUploading(true);
+      setUploadProgress(0);
+
+      const channel = presentationChannelRef.current;
+
+      if (!channel || channel.readyState !== "open") {
+        throw new Error(
+          "Please wait until the other participant is connected before sharing your lesson."
+        );
+      }
+
+      const buffer = await file.arrayBuffer();
+
+      // DETECT PDF PAGE COUNT
+      const pdfDocument = await pdfjsLib
+        .getDocument({
+          data: buffer.slice(0),
+        })
+        .promise;
+
+      const pageCount = pdfDocument.numPages;
+
+      const totalChunks = Math.ceil(
+        buffer.byteLength / CHUNK_SIZE
+      );
+
+      // SEND FILE INFORMATION FIRST
+      sendPresentationMessage({
+        type: "file-start",
+        name: file.name,
+        size: file.size,
+        totalPages: pageCount,
+      });
+
+      // SEND PDF IN SMALL CHUNKS
+      for (let i = 0; i < totalChunks; i++) {
+        while (
+          channel.readyState === "open" &&
+          channel.bufferedAmount > 256 * 1024
+        ) {
+          await new Promise((resolve) =>
+            setTimeout(resolve, 30)
+          );
+        }
+
+        if (channel.readyState !== "open") {
+          throw new Error(
+            "Presentation connection was interrupted."
+          );
+        }
+
+        const start = i * CHUNK_SIZE;
+        const end = Math.min(
+          start + CHUNK_SIZE,
+          buffer.byteLength
+        );
+
+        channel.send(buffer.slice(start, end));
+
+        setUploadProgress(
+          Math.round(((i + 1) / totalChunks) * 100)
+        );
+      }
+
+      // TELL STUDENT THAT THE FILE IS COMPLETE
+      sendPresentationMessage({
+        type: "file-end",
+      });
+
+      // DISPLAY PDF ON TUTOR'S SCREEN
+      if (pdfUrlRef.current) {
+        URL.revokeObjectURL(pdfUrlRef.current);
+      }
+
+      const localUrl = URL.createObjectURL(
+        new Blob([buffer], {
+          type: "application/pdf",
+        })
+      );
+
+      pdfUrlRef.current = localUrl;
+
+      setPdfUrl(localUrl);
+      setPdfName(file.name);
+      setCurrentPage(1);
+      setTotalPages(pageCount);
+
+    } catch (err) {
+      console.error("PDF upload error:", err);
+      setError(
+        err.message || "Unable to share the PDF lesson."
+      );
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // CHANGE PRESENTATION PAGE
+  const changePresentationPage = (page) => {
+    const newPage = Math.max(
+      1,
+      Math.min(page, totalPages)
+    );
+
+    setCurrentPage(newPage);
+
+    if (isTutor) {
+      try {
+        sendPresentationMessage({
+          type: "page-change",
+          page: newPage,
+          totalPages,
+        });
+      } catch (err) {
+        console.error("Page synchronization error:", err);
+      }
+    }
+  };
+
+  // CLOSE PRESENTATION
+  const closePresentation = () => {
+    if (!isTutor) return;
+
+    try {
+      sendPresentationMessage({
+        type: "presentation-close",
+      });
+    } catch (err) {
+      console.error("Close presentation error:", err);
+    }
+
+    if (pdfUrlRef.current) {
+      URL.revokeObjectURL(pdfUrlRef.current);
+      pdfUrlRef.current = null;
+    }
+
+    setPdfUrl("");
+    setPdfName("");
+    setCurrentPage(1);
+    setTotalPages(1);
+  };
+
+  // =====================================
+  // WEBRTC CONNECTION
+  // =====================================
+
   // CREATE WEBRTC CONNECTION
   const createPeerConnection = (isCaller) => {
     if (peerConnectionRef.current) {
       return peerConnectionRef.current;
     }
 
-    const peerConnection = new RTCPeerConnection(ICE_SERVERS);
+    const peerConnection = new RTCPeerConnection(
+      ICE_SERVERS
+    );
 
     peerConnectionRef.current = peerConnection;
     isCallerRef.current = isCaller;
 
+    // BOTH USERS CREATE THE SAME PRESENTATION CHANNEL
+const presentationChannel = peerConnection.createDataChannel(
+  "presentation",
+  {
+    negotiated: true,
+    id: 0,
+  }
+);
+
+setupPresentationChannel(presentationChannel);
+
     remoteStreamRef.current = new MediaStream();
 
     if (remoteVideoRef.current) {
-      remoteVideoRef.current.srcObject = remoteStreamRef.current;
+      remoteVideoRef.current.srcObject =
+        remoteStreamRef.current;
     }
 
     peerConnection.ontrack = (event) => {
@@ -138,7 +454,10 @@ function VideoCall({ booking, currentUser, onClose }) {
         incomingTracks.forEach((track) => {
           const alreadyExists = remoteStreamRef.current
             ?.getTracks()
-            .some((existingTrack) => existingTrack.id === track.id);
+            .some(
+              (existingTrack) =>
+                existingTrack.id === track.id
+            );
 
           if (!alreadyExists) {
             remoteStreamRef.current?.addTrack(track);
@@ -147,7 +466,9 @@ function VideoCall({ booking, currentUser, onClose }) {
       } else if (event.track) {
         const alreadyExists = remoteStreamRef.current
           ?.getTracks()
-          .some((track) => track.id === event.track.id);
+          .some(
+            (track) => track.id === event.track.id
+          );
 
         if (!alreadyExists) {
           remoteStreamRef.current?.addTrack(event.track);
@@ -155,7 +476,8 @@ function VideoCall({ booking, currentUser, onClose }) {
       }
 
       if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = remoteStreamRef.current;
+        remoteVideoRef.current.srcObject =
+          remoteStreamRef.current;
       }
     };
 
@@ -183,7 +505,8 @@ function VideoCall({ booking, currentUser, onClose }) {
           candidate: event.candidate.candidate,
           sdpMid: event.candidate.sdpMid,
           sdpMLineIndex: event.candidate.sdpMLineIndex,
-          usernameFragment: event.candidate.usernameFragment || null,
+          usernameFragment:
+            event.candidate.usernameFragment || null,
           senderUid: currentUser.uid,
         });
       } catch (err) {
@@ -201,7 +524,9 @@ function VideoCall({ booking, currentUser, onClose }) {
     stream.getTracks().forEach((track) => {
       const alreadyAdded = peerConnection
         .getSenders()
-        .some((sender) => sender.track?.id === track.id);
+        .some(
+          (sender) => sender.track?.id === track.id
+        );
 
       if (!alreadyAdded) {
         peerConnection.addTrack(track, stream);
@@ -213,14 +538,14 @@ function VideoCall({ booking, currentUser, onClose }) {
   const addRemoteCandidate = async (data) => {
     if (data.senderUid === currentUser.uid) return;
 
-    // Ignore candidates from previous calls.
     if (data.callId !== activeCallIdRef.current) return;
 
     const candidate = new RTCIceCandidate({
       candidate: data.candidate,
       sdpMid: data.sdpMid,
       sdpMLineIndex: data.sdpMLineIndex,
-      usernameFragment: data.usernameFragment || undefined,
+      usernameFragment:
+        data.usernameFragment || undefined,
     });
 
     const peerConnection = peerConnectionRef.current;
@@ -229,26 +554,33 @@ function VideoCall({ booking, currentUser, onClose }) {
       try {
         await peerConnection.addIceCandidate(candidate);
       } catch (err) {
-        console.error("Could not add ICE candidate:", err);
+        console.error(
+          "Could not add ICE candidate:",
+          err
+        );
       }
     } else {
       pendingCandidatesRef.current.push(candidate);
     }
   };
 
-  // PROCESS CANDIDATES RECEIVED BEFORE REMOTE DESCRIPTION
+  // PROCESS QUEUED REMOTE ICE CANDIDATES
   const processRemoteCandidates = async () => {
     const peerConnection = peerConnectionRef.current;
 
     if (!peerConnection?.remoteDescription) return;
 
     while (pendingCandidatesRef.current.length > 0) {
-      const candidate = pendingCandidatesRef.current.shift();
+      const candidate =
+        pendingCandidatesRef.current.shift();
 
       try {
         await peerConnection.addIceCandidate(candidate);
       } catch (err) {
-        console.error("Could not add queued ICE candidate:", err);
+        console.error(
+          "Could not add queued ICE candidate:",
+          err
+        );
       }
     }
   };
@@ -258,26 +590,40 @@ function VideoCall({ booking, currentUser, onClose }) {
     if (peerConnectionRef.current) {
       peerConnectionRef.current.ontrack = null;
       peerConnectionRef.current.onicecandidate = null;
+      peerConnectionRef.current.ondatachannel = null;
+
       peerConnectionRef.current.close();
       peerConnectionRef.current = null;
     }
 
+    if (presentationChannelRef.current) {
+      presentationChannelRef.current.onmessage = null;
+      presentationChannelRef.current.close();
+      presentationChannelRef.current = null;
+    }
+
     if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach((track) => {
-        track.stop();
-      });
+      localStreamRef.current
+        .getTracks()
+        .forEach((track) => track.stop());
 
       localStreamRef.current = null;
     }
 
     if (remoteStreamRef.current) {
-      remoteStreamRef.current.getTracks().forEach((track) => {
-        track.stop();
-      });
+      remoteStreamRef.current
+        .getTracks()
+        .forEach((track) => track.stop());
 
       remoteStreamRef.current = null;
     }
 
+    if (pdfUrlRef.current) {
+      URL.revokeObjectURL(pdfUrlRef.current);
+      pdfUrlRef.current = null;
+    }
+
+    incomingFileRef.current = null;
     pendingCandidatesRef.current = [];
 
     if (localVideoRef.current) {
@@ -287,9 +633,18 @@ function VideoCall({ booking, currentUser, onClose }) {
     if (remoteVideoRef.current) {
       remoteVideoRef.current.srcObject = null;
     }
+
+    setPdfUrl("");
+    setPdfName("");
+    setCurrentPage(1);
+    setTotalPages(1);
+    setUploadProgress(0);
   };
 
+  // =====================================
   // START VIDEO CALL
+  // =====================================
+
   const startCall = async () => {
     if (startingRef.current || endingRef.current) return;
 
@@ -303,10 +658,11 @@ function VideoCall({ booking, currentUser, onClose }) {
       const otherUid = getOtherParticipantUid();
 
       if (!otherUid) {
-        throw new Error("The other participant could not be found.");
+        throw new Error(
+          "The other participant could not be found."
+        );
       }
 
-      // Check the previous call.
       const existingSnapshot = await getDoc(sessionRef);
 
       if (existingSnapshot.exists()) {
@@ -318,28 +674,31 @@ function VideoCall({ booking, currentUser, onClose }) {
           );
         }
 
-        // Delete only the ended session document.
-        // Old ICE candidates are ignored using the new callId.
         await deleteDoc(sessionRef);
       }
 
-      // Reset old connection data before creating a new call.
       cleanupMedia();
 
       const newCallId =
-        `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        `${Date.now()}_${Math.random()
+          .toString(36)
+          .slice(2)}`;
 
       callIdRef.current = newCallId;
       activeCallIdRef.current = newCallId;
       pendingCandidatesRef.current = [];
 
-      setCallStatus("Starting camera and microphone...");
+      setCallStatus(
+        "Starting camera and microphone..."
+      );
 
-      const peerConnection = createPeerConnection(true);
+      const peerConnection =
+        createPeerConnection(true);
 
       await addLocalTracks(peerConnection);
 
-      const offer = await peerConnection.createOffer();
+      const offer =
+        await peerConnection.createOffer();
 
       await peerConnection.setLocalDescription(offer);
 
@@ -359,11 +718,17 @@ function VideoCall({ booking, currentUser, onClose }) {
       await addCallMessage("📹 Video call started");
 
       setIsCalling(true);
-      setCallStatus("Calling the other participant...");
+      setCallStatus(
+        "Calling the other participant..."
+      );
+
     } catch (err) {
       console.error("Start call error:", err);
 
-      setError(err.message || "Unable to start the video call.");
+      setError(
+        err.message || "Unable to start the video call."
+      );
+
       setCallStatus("Call could not start.");
 
       cleanupMedia();
@@ -372,13 +737,17 @@ function VideoCall({ booking, currentUser, onClose }) {
       activeCallIdRef.current = null;
 
       setIsCalling(false);
+
     } finally {
       startingRef.current = false;
       setIsStarting(false);
     }
   };
 
+  // =====================================
   // ANSWER INCOMING CALL
+  // =====================================
+
   const answerCall = async (sessionData) => {
     if (answeringRef.current || endingRef.current) return;
 
@@ -391,7 +760,8 @@ function VideoCall({ booking, currentUser, onClose }) {
       callIdRef.current = sessionData.callId;
       activeCallIdRef.current = sessionData.callId;
 
-      const peerConnection = createPeerConnection(false);
+      const peerConnection =
+        createPeerConnection(false);
 
       await addLocalTracks(peerConnection);
 
@@ -401,7 +771,8 @@ function VideoCall({ booking, currentUser, onClose }) {
 
       await processRemoteCandidates();
 
-      const answer = await peerConnection.createAnswer();
+      const answer =
+        await peerConnection.createAnswer();
 
       await peerConnection.setLocalDescription(answer);
 
@@ -416,19 +787,28 @@ function VideoCall({ booking, currentUser, onClose }) {
 
       setIsCalling(true);
       setCallStatus("Connected");
+
     } catch (err) {
       console.error("Answer call error:", err);
 
-      setError(err.message || "Unable to join the video call.");
+      setError(
+        err.message || "Unable to join the video call."
+      );
+
       setCallStatus("Could not join call.");
 
       cleanupMedia();
       setIsCalling(false);
+
+    } finally {
       answeringRef.current = false;
     }
   };
 
+  // =====================================
   // LISTEN FOR CALL AND ICE CANDIDATES
+  // =====================================
+
   useEffect(() => {
     const offerCandidatesRef = collection(
       db,
@@ -456,11 +836,11 @@ function VideoCall({ booking, currentUser, onClose }) {
 
         if (data.senderUid === currentUser.uid) return;
 
-        // If the session has not loaded yet, temporarily queue the document.
         if (!activeCallIdRef.current) {
           pendingCandidatesRef.current.push({
             firestoreCandidateData: data,
           });
+
           return;
         }
 
@@ -471,13 +851,21 @@ function VideoCall({ booking, currentUser, onClose }) {
     const unsubscribeOfferCandidates = onSnapshot(
       offerCandidatesRef,
       handleCandidateSnapshot,
-      (err) => console.error("Offer candidates listener:", err)
+      (err) =>
+        console.error(
+          "Offer candidates listener:",
+          err
+        )
     );
 
     const unsubscribeAnswerCandidates = onSnapshot(
       answerCandidatesRef,
       handleCandidateSnapshot,
-      (err) => console.error("Answer candidates listener:", err)
+      (err) =>
+        console.error(
+          "Answer candidates listener:",
+          err
+        )
     );
 
     const unsubscribeSession = onSnapshot(
@@ -486,32 +874,38 @@ function VideoCall({ booking, currentUser, onClose }) {
         if (!snapshot.exists()) {
           activeCallIdRef.current = null;
           pendingCandidatesRef.current = [];
-          setCallStatus("Waiting for the other participant...");
+
+          setCallStatus(
+            "Waiting for the other participant..."
+          );
+
           return;
         }
 
         const data = snapshot.data();
 
-        // Set the active call ID before processing candidates.
         if (data.callId) {
           activeCallIdRef.current = data.callId;
           callIdRef.current = data.callId;
         }
 
-        // Process candidate documents that arrived before the session.
-        const queuedDocuments = pendingCandidatesRef.current.filter(
-          (item) => item.firestoreCandidateData
-        );
+        const queuedDocuments =
+          pendingCandidatesRef.current.filter(
+            (item) => item.firestoreCandidateData
+          );
 
-        pendingCandidatesRef.current = pendingCandidatesRef.current.filter(
-          (item) => !item.firestoreCandidateData
-        );
+        pendingCandidatesRef.current =
+          pendingCandidatesRef.current.filter(
+            (item) => !item.firestoreCandidateData
+          );
 
         for (const item of queuedDocuments) {
-          await addRemoteCandidate(item.firestoreCandidateData);
+          await addRemoteCandidate(
+            item.firestoreCandidateData
+          );
         }
 
-        // Automatically answer when the other participant starts a call.
+        // AUTOMATICALLY ANSWER INCOMING CALL
         if (
           data.callerUid !== currentUser.uid &&
           data.calleeUid === currentUser.uid &&
@@ -521,7 +915,7 @@ function VideoCall({ booking, currentUser, onClose }) {
           await answerCall(data);
         }
 
-        // Receive the answer on the caller's side.
+        // RECEIVE ANSWER ON CALLER SIDE
         if (
           data.callerUid === currentUser.uid &&
           data.answer &&
@@ -536,9 +930,16 @@ function VideoCall({ booking, currentUser, onClose }) {
             await processRemoteCandidates();
 
             setCallStatus("Connected");
+
           } catch (err) {
-            console.error("Set remote answer error:", err);
-            setError("Could not establish the connection.");
+            console.error(
+              "Set remote answer error:",
+              err
+            );
+
+            setError(
+              "Could not establish the connection."
+            );
           }
         }
 
@@ -554,8 +955,14 @@ function VideoCall({ booking, currentUser, onClose }) {
         }
       },
       (err) => {
-        console.error("Video call listener error:", err);
-        setError("Unable to connect to the video call. Check Firestore permissions.");
+        console.error(
+          "Video call listener error:",
+          err
+        );
+
+        setError(
+          "Unable to connect to the video call. Check Firestore permissions."
+        );
       }
     );
 
@@ -567,7 +974,10 @@ function VideoCall({ booking, currentUser, onClose }) {
     };
   }, [bookingId, currentUser.uid]);
 
-  // TOGGLE MICROPHONE
+  // =====================================
+  // MICROPHONE
+  // =====================================
+
   const toggleMicrophone = () => {
     const stream = localStreamRef.current;
 
@@ -581,7 +991,10 @@ function VideoCall({ booking, currentUser, onClose }) {
     }
   };
 
-  // TOGGLE CAMERA
+  // =====================================
+  // CAMERA
+  // =====================================
+
   const toggleCamera = () => {
     const stream = localStreamRef.current;
 
@@ -595,7 +1008,10 @@ function VideoCall({ booking, currentUser, onClose }) {
     }
   };
 
+  // =====================================
   // END VIDEO CALL
+  // =====================================
+
   const endCall = async () => {
     if (endingRef.current) return;
 
@@ -615,9 +1031,13 @@ function VideoCall({ booking, currentUser, onClose }) {
 
         await addCallMessage("📞 Video call ended");
       }
+
     } catch (err) {
       console.error("End call error:", err);
-      setError(err.message || "Unable to end the call properly.");
+
+      setError(
+        err.message || "Unable to end the call properly."
+      );
     }
 
     cleanupMedia();
@@ -637,13 +1057,20 @@ function VideoCall({ booking, currentUser, onClose }) {
     }
   };
 
+  // =====================================
+  // USER INTERFACE
+  // =====================================
+
   return (
     <div className="video-call-overlay">
       <div className="video-call-container">
+
         <div className="video-call-header">
           <div>
             <h2>PeerTutor Video Call</h2>
-            <p>{booking.subject || "Tutoring Session"}</p>
+            <p>
+              {booking.subject || "Tutoring Session"}
+            </p>
           </div>
 
           <button
@@ -667,6 +1094,7 @@ function VideoCall({ booking, currentUser, onClose }) {
           </div>
         )}
 
+        {/* VIDEO SCREEN */}
         <div className="video-screen-area">
           <div className="remote-video-wrapper">
             <video
@@ -696,6 +1124,69 @@ function VideoCall({ booking, currentUser, onClose }) {
           </div>
         </div>
 
+        {/* LESSON PRESENTATION */}
+        {pdfUrl && (
+          <div className="presentation-container">
+            <div className="presentation-header">
+              <div>
+                <h3>Lesson Presentation</h3>
+                <p>{pdfName}</p>
+              </div>
+
+              {isTutor && (
+                <button
+                  type="button"
+                  className="presentation-close-button"
+                  onClick={closePresentation}
+                >
+                  Close Lesson
+                </button>
+              )}
+            </div>
+
+            <div className="presentation-viewer">
+              <iframe
+                key={`${pdfUrl}-${currentPage}`}
+                src={`${pdfUrl}#page=${currentPage}&toolbar=0&navpanes=0`}
+                title="Lesson Presentation"
+              />
+            </div>
+
+            <div className="presentation-navigation">
+              <button
+                type="button"
+                disabled={currentPage <= 1}
+                onClick={() =>
+                  changePresentationPage(currentPage - 1)
+                }
+              >
+                Previous Slide
+              </button>
+
+              <span>
+                Page {currentPage} of {totalPages}
+              </span>
+
+              <button
+                type="button"
+                disabled={currentPage >= totalPages}
+                onClick={() =>
+                  changePresentationPage(currentPage + 1)
+                }
+              >
+                Next Slide
+              </button>
+            </div>
+
+            {!isTutor && (
+              <p className="student-presentation-note">
+                The tutor controls the lesson slides.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* VIDEO CALL CONTROLS */}
         <div className="video-call-controls">
           {!isCalling && (
             <button
@@ -704,12 +1195,40 @@ function VideoCall({ booking, currentUser, onClose }) {
               disabled={isStarting}
               type="button"
             >
-              {isStarting ? "Starting..." : "📹 Start Video Call"}
+              {isStarting
+                ? "Starting..."
+                : "📹 Start Video Call"}
             </button>
           )}
 
           {isCalling && (
             <>
+              {/* TUTOR PDF UPLOAD */}
+              {isTutor && (
+                <>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    hidden
+                    onChange={handlePdfUpload}
+                  />
+
+                  <button
+                    type="button"
+                    className="share-lesson-button"
+                    onClick={() =>
+                      fileInputRef.current?.click()
+                    }
+                    disabled={isUploading}
+                  >
+                    {isUploading
+                      ? `Uploading ${uploadProgress}%`
+                      : "📚 Share Lesson"}
+                  </button>
+                </>
+              )}
+
               <button
                 className={`call-control-button ${
                   !isMicOn ? "control-off" : ""
@@ -727,7 +1246,9 @@ function VideoCall({ booking, currentUser, onClose }) {
                 onClick={toggleCamera}
                 type="button"
               >
-                {isCameraOn ? "📷 Camera On" : "🚫 Camera Off"}
+                {isCameraOn
+                  ? "📷 Camera On"
+                  : "🚫 Camera Off"}
               </button>
 
               <button
@@ -740,6 +1261,13 @@ function VideoCall({ booking, currentUser, onClose }) {
             </>
           )}
         </div>
+
+        {isUploading && (
+          <p className="upload-progress-text">
+            Sending lesson to student: {uploadProgress}%
+          </p>
+        )}
+
       </div>
     </div>
   );
