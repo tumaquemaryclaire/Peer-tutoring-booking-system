@@ -1655,3 +1655,560 @@
   background: #15803d;
   transform: translateY(-1px);
 }
+
+/* COMPLETION CONFIRMATION AND RATING */
+
+.student-completion-actions,
+.student-rating-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.student-confirm-completion-button,
+.student-rate-tutor-button {
+  border: none;
+  border-radius: 8px;
+  padding: 11px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.student-confirm-completion-button {
+  background: #198754;
+  color: white;
+}
+
+.student-confirm-completion-button:hover {
+  background: #146c43;
+}
+
+.student-rate-tutor-button {
+  background: #f4b942;
+  color: #252525;
+}
+
+.student-rate-tutor-button:hover {
+  background: #e5a82e;
+}
+
+.student-confirm-completion-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.student-rated-label {
+  color: #198754;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* RATING MODAL */
+
+.student-rating-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 3000;
+}
+
+.student-rating-modal {
+  position: relative;
+  background: #ffffff;
+  width: 100%;
+  max-width: 460px;
+  border-radius: 16px;
+  padding: 30px;
+  text-align: center;
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
+}
+
+.student-rating-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  border: none;
+  background: transparent;
+  font-size: 28px;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.student-rating-icon {
+  font-size: 38px;
+  margin-bottom: 10px;
+}
+
+.student-rating-modal h2 {
+  margin: 0 0 10px;
+  color: #1e293b;
+}
+
+.student-rating-modal > p {
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.student-rating-stars {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 20px 0 8px;
+}
+
+.student-star {
+  border: none;
+  background: transparent;
+  color: #d1d5db;
+  font-size: 36px;
+  cursor: pointer;
+  padding: 2px;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.student-star.active {
+  color: #f4b942;
+}
+
+.student-star:hover {
+  transform: scale(1.15);
+}
+
+.student-rating-description {
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 22px;
+}
+
+.student-rating-review-field {
+  text-align: left;
+  margin-top: 20px;
+}
+
+.student-rating-review-field label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.student-rating-review-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.student-rating-review-field textarea:focus {
+  border-color: #6366f1;
+}
+
+.student-rating-review-field small {
+  display: block;
+  text-align: right;
+  color: #94a3b8;
+  margin-top: 5px;
+}
+
+.student-rating-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.student-rating-cancel,
+.student-rating-submit {
+  border: none;
+  border-radius: 8px;
+  padding: 11px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.student-rating-cancel {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.student-rating-submit {
+  background: #4f46e5;
+  color: white;
+}
+
+.student-rating-submit:hover {
+  background: #4338ca;
+}
+
+.student-rating-modal button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+  .student-rating-modal {
+    padding: 25px 18px;
+  }
+
+  .student-rating-stars {
+    gap: 3px;
+  }
+
+  .student-star {
+    font-size: 31px;
+  }
+}
+/* TUTOR SEARCH BAR */
+.tutor-search-container {
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.tutor-search-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 550px;
+  min-height: 48px;
+  padding: 0 15px;
+  background: #ffffff;
+  border: 1px solid #dfe5ef;
+  border-radius: 10px;
+  color: #64748b;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tutor-search-input-wrapper:focus-within {
+  border-color: #4169e1;
+  box-shadow: 0 0 0 3px rgba(65, 105, 225, 0.10);
+}
+
+.tutor-search-input-wrapper input {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #1e293b;
+  font-size: 14px;
+}
+
+.tutor-search-input-wrapper input::placeholder {
+  color: #94a3b8;
+}
+
+.tutor-search-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.tutor-search-clear:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.tutor-search-results {
+  margin: 10px 0 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+@media (max-width: 600px) {
+  .tutor-search-input-wrapper {
+    max-width: 100%;
+  }
+}
+
+/* =========================================
+   STUDENT PAYMENT MODAL
+========================================= */
+
+.student-payment-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.58);
+  backdrop-filter: blur(4px);
+}
+
+.student-payment-modal {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 32px;
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.22);
+  animation: paymentModalIn 0.2s ease;
+  color: #1e293b;
+}
+
+@keyframes paymentModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.student-payment-close {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.student-payment-close:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.student-payment-modal h2 {
+  margin: 0 35px 8px 0;
+  color: #172554;
+  font-size: 25px;
+  font-weight: 750;
+}
+
+.student-payment-modal > p {
+  margin: 0 0 22px;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.student-payment-summary {
+  margin: 20px 0;
+  padding: 18px;
+  background: #f8faff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.student-payment-summary p {
+  margin: 8px 0;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.student-payment-summary strong {
+  color: #1e293b;
+}
+
+.student-payment-summary p:last-child {
+  margin-bottom: 0;
+}
+
+.student-payment-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 18px 0;
+}
+
+.student-payment-field label {
+  color: #334155;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.student-payment-field select,
+.student-payment-field input {
+  width: 100%;
+  min-height: 46px;
+  padding: 11px 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  outline: none;
+  background: #ffffff;
+  color: #1e293b;
+  font-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.student-payment-field select:focus,
+.student-payment-field input:focus {
+  border-color: #4169e1;
+  box-shadow: 0 0 0 3px rgba(65, 105, 225, 0.12);
+}
+
+.student-payment-tutor-details {
+  margin: 12px 0;
+  padding: 16px;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #1e40af;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.student-payment-warning {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border-radius: 9px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.student-payment-note {
+  margin: 14px 0 20px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.student-payment-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.student-payment-actions button {
+  min-height: 43px;
+  padding: 11px 20px;
+  border: none;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.student-payment-actions button:first-child {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.student-payment-actions button:first-child:hover {
+  background: #e2e8f0;
+}
+
+.student-payment-actions button:last-child {
+  background: #4169e1;
+  color: #ffffff;
+}
+
+.student-payment-actions button:last-child:hover {
+  background: #3155c7;
+}
+
+.student-payment-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  .student-payment-overlay {
+    padding: 12px;
+  }
+
+  .student-payment-modal {
+    padding: 24px 20px;
+    border-radius: 14px;
+  }
+
+  .student-payment-modal h2 {
+    font-size: 22px;
+  }
+
+  .student-payment-actions {
+    flex-direction: column-reverse;
+  }
+
+  .student-payment-actions button {
+    width: 100%;
+  }
+}
+
+/* PAY TUTOR BUTTON */
+
+.student-pay-tutor-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 11px 20px;
+  min-height: 42px;
+  border: none;
+  border-radius: 8px;
+  background: #4169e1;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 3px 8px rgba(65, 105, 225, 0.18);
+}
+
+.student-pay-tutor-button:hover {
+  background: #3155c7;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 12px rgba(65, 105, 225, 0.25);
+}
+
+.student-pay-tutor-button:active {
+  transform: translateY(0);
+}
+
+.student-pay-tutor-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.student-pay-tutor-button svg {
+  width: 17px;
+  height: 17px;
+}

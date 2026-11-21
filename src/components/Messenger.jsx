@@ -20,12 +20,14 @@ function Messenger({ currentUser, bookings = [] }) {
   const [error, setError] = useState("");
   const [activeVideoBooking, setActiveVideoBooking] = useState(null);
 
-  // Only accepted online bookings
-  const eligibleBookings = bookings.filter(
-    (booking) =>
-      booking.status === "Accepted" &&
-      booking.teachingMode === "Online"
-  );
+  // Accepted, awaiting confirmation, and completed online bookings
+const eligibleBookings = bookings.filter(
+  (booking) =>
+    ["Accepted", "Awaiting Confirmation", "Completed"].includes(
+      booking.status
+    ) &&
+    booking.teachingMode === "Online"
+);
 
   // Get the other participant's UID
   const getConversationKey = (booking) => {
@@ -34,15 +36,9 @@ function Messenger({ currentUser, bookings = [] }) {
       : booking.tutorUid;
   };
 
-  // Show only one conversation per person
-  const uniqueBookings = [
-    ...new Map(
-      eligibleBookings.map((booking) => [
-        getConversationKey(booking) || booking.id,
-        booking
-      ])
-    ).values()
-  ];
+  // Keep every booking conversation separate.
+// Each booking has its own messages subcollection.
+const uniqueBookings = eligibleBookings;
 
   // Automatically select the first conversation
   useEffect(() => {
@@ -194,7 +190,7 @@ function Messenger({ currentUser, bookings = [] }) {
             <div className="conversation-list">
               {uniqueBookings.map((booking) => (
                 <button
-                  key={getConversationKey(booking) || booking.id}
+                  key={booking.id}
                   className={`conversation-item ${
                     selectedBooking?.id === booking.id ? "selected" : ""
                   }`}

@@ -131,6 +131,7 @@ function StudentDashboard() {
 
   const [tutors, setTutors] = useState([]);
   const [loadingTutors, setLoadingTutors] = useState(true);
+  const [tutorSearch, setTutorSearch] = useState("");
 
   const [myBookings, setMyBookings] = useState([]);
   const [loadingBookings, setLoadingBookings] = useState(true);
@@ -182,6 +183,11 @@ const [selectedRatingBooking, setSelectedRatingBooking] = useState(null);
 const [ratingValue, setRatingValue] = useState(5);
 const [reviewText, setReviewText] = useState("");
 const [submittingRating, setSubmittingRating] = useState(false);
+// PAYMENT STATES
+const [selectedPaymentBooking, setSelectedPaymentBooking] = useState(null);
+const [paymentMethod, setPaymentMethod] = useState("gcash");
+const [paymentReference, setPaymentReference] = useState("");
+const [submittingPayment, setSubmittingPayment] = useState(false);
   // SIDEBAR MENU
   const menuItems = [
     { name: "Dashboard", icon: LayoutDashboard },
@@ -549,6 +555,111 @@ async function handleSubmitRating(e) {
   }
 }
 
+// OPEN PAYMENT FORM
+function handleOpenPayment(booking) {
+  if (
+    booking.status !== "Completed" ||
+    booking.teachingMode !== "Online"
+  ) {
+    alert("Payment is only available for completed online sessions.");
+    return;
+  }
+
+  if (
+    booking.paymentStatus === "Paid" ||
+    booking.paymentStatus === "Pending Verification"
+  ) {
+    alert("This payment has already been submitted or verified.");
+    return;
+  }
+
+  setSelectedPaymentBooking(booking);
+  setPaymentMethod("gcash");
+  setPaymentReference("");
+}
+
+// CLOSE PAYMENT FORM
+function handleClosePayment() {
+  if (submittingPayment) return;
+
+  setSelectedPaymentBooking(null);
+  setPaymentMethod("gcash");
+  setPaymentReference("");
+}
+
+// SUBMIT PAYMENT DETAILS
+async function handleSubmitPayment(e) {
+  e.preventDefault();
+
+  const booking = selectedPaymentBooking;
+
+  if (!currentUser?.uid || !booking) {
+    alert("Unable to identify your account or booking.");
+    return;
+  }
+
+  if (
+    booking.studentUid !== currentUser.uid ||
+    booking.status !== "Completed" ||
+    booking.teachingMode !== "Online"
+  ) {
+    alert("This payment request is not valid.");
+    return;
+  }
+
+  if (
+    !["Unpaid", "Rejected"].includes(
+      booking.paymentStatus || "Unpaid"
+    )
+  ) {
+    alert("This payment cannot be submitted again.");
+    return;
+  }
+
+  const reference = paymentReference.trim();
+
+  if (reference.length < 3 || reference.length > 100) {
+    alert("Please enter a valid payment reference number.");
+    return;
+  }
+
+  const paymentDetails = booking.paymentDetails || {};
+  const selectedDetails = paymentDetails[paymentMethod];
+
+  if (
+    !selectedDetails?.accountName ||
+    !selectedDetails?.accountNumber ||
+    (paymentMethod === "bankTransfer" && !selectedDetails?.bankName)
+  ) {
+    alert("The tutor has not provided complete payment details for this method.");
+    return;
+  }
+
+  setSubmittingPayment(true);
+
+  try {
+    await updateDoc(doc(db, "bookings", booking.id), {
+      paymentStatus: "Pending Verification",
+      paymentMethod,
+      paymentReference: reference,
+      paymentSubmittedAt: serverTimestamp()
+    });
+
+    alert("Payment details submitted! Please wait for your tutor to verify your payment.");
+
+    handleClosePayment();
+  } catch (error) {
+    console.error("Payment submission error:", error);
+
+    alert(
+      "Unable to submit payment details. Please try again.\n" +
+      error.message
+    );
+  } finally {
+    setSubmittingPayment(false);
+  }
+}
+
   // CLOSE VIDEO CALL WINDOW
   function handleCloseVideoCall() {
     setActiveVideoCall(null);
@@ -801,6 +912,17 @@ async function handleSubmitRating(e) {
   return;
 }
 
+// VALIDATE TUTOR SESSION RATE FOR ONLINE BOOKINGS
+const tutorRate = Number(selectedTutor.sessionRate);
+
+if (
+  bookingForm.teachingMode === "Online" &&
+  (!Number.isFinite(tutorRate) || tutorRate <= 0)
+) {
+  alert("This tutor has not set a valid session rate yet. Please choose another tutor.");
+  return;
+}
+
     setSubmittingBooking(true);
 
     try {
@@ -842,6 +964,25 @@ preferredLocation:
 preferredDate: bookingForm.preferredDate,
 preferredTime: bookingForm.preferredTime,
 message: bookingForm.message.trim(),
+sessionRate:
+  bookingForm.teachingMode === "Online"
+    ? tutorRate
+    : 0,
+
+paymentDetails:
+  bookingForm.teachingMode === "Online"
+    ? selectedTutor.paymentDetails || {}
+    : {},
+
+paymentStatus:
+  bookingForm.teachingMode === "Online"
+    ? "Unpaid"
+    : "Not Required",
+
+paymentMethod: "",
+paymentReference: "",
+paymentSubmittedAt: null,
+paidAt: null,
 
         status: "Pending",
         createdAt: serverTimestamp()
@@ -944,72 +1085,110 @@ message: bookingForm.message.trim(),
       booking.teachingMode === "Online"
   );
 
-  // TUTOR CARD
-  const renderTutorCards = () => {
-    if (loadingTutors) {
-      return (
-        <div className="tutor-empty-message">
-          Loading registered tutors...
-        </div>
-      );
-    }
+  // FILTER TUTORS BY NAME OR SUBJECT
+const filteredTutors = tutors.filter((tutor) => {
+  const searchValue = tutorSearch.trim().toLowerCase();
 
-    if (tutors.length === 0) {
-      return (
-        <div className="tutor-empty-message">
-          <div className="empty-icon">👨‍🏫</div>
-          <h3>No tutors available yet</h3>
-          <p>
-            Registered tutors will appear here once they
-            create their tutor profiles.
-          </p>
-        </div>
-      );
-    }
+  if (!searchValue) return true;
 
-    return tutors.map((tutor) => (
-      <div className="recommended-tutor-card" key={tutor.id}>
-        <div className="tutor-avatar">
-          {tutor.profilePicture ? (
-            <img
-              src={tutor.profilePicture}
-              alt={`${tutor.firstName || "Tutor"} profile`}
-            />
-          ) : (
-            (tutor.firstName || "T").charAt(0).toUpperCase()
-          )}
-        </div>
+  const tutorName = (
+    tutor.fullName ||
+    [
+      tutor.firstName || "",
+      tutor.middleName || "",
+      tutor.lastName || "",
+      tutor.suffix || ""
+    ].filter(Boolean).join(" ")
+  ).toLowerCase();
 
-        <div className="tutor-details">
-          <h3>
-            {tutor.fullName ||
-              [
-                tutor.firstName || "",
-                tutor.middleName || "",
-                tutor.lastName || ""
-              ].filter(Boolean).join(" ") +
-              (tutor.suffix ? `, ${tutor.suffix}` : "")}
-          </h3>
+  const tutorSubjects = Array.isArray(tutor.subjects)
+    ? tutor.subjects.join(" ").toLowerCase()
+    : String(tutor.subjects || "").toLowerCase();
 
-          <p>
-            {tutor.subjects?.length
-              ? tutor.subjects.join(", ")
-              : "Subjects not added yet"}
-          </p>
+  return (
+    tutorName.includes(searchValue) ||
+    tutorSubjects.includes(searchValue)
+  );
+});
 
-          <span>
-            {tutor.teachingMode || "Teaching mode not added yet"}
-          </span>
-        </div>
-
-        <div className="tutor-rating">
-          <button onClick={() => openBookingForm(tutor)}>
-            Book Tutor
-          </button>
-        </div>
+// TUTOR CARD
+  const renderTutorCards = (tutorList = tutors) => {
+  if (loadingTutors) {
+    return (
+      <div className="tutor-empty-message">
+        Loading registered tutors...
       </div>
-    ));
-  };
+    );
+  }
+
+  if (tutors.length === 0) {
+    return (
+      <div className="tutor-empty-message">
+        <div className="empty-icon">👨‍🏫</div>
+        <h3>No tutors available yet</h3>
+        <p>
+          Registered tutors will appear here once they
+          create their tutor profiles.
+        </p>
+      </div>
+    );
+  }
+
+  if (tutorList.length === 0) {
+    return (
+      <div className="tutor-empty-message">
+        <div className="empty-icon">🔎</div>
+        <h3>No matching tutors found</h3>
+        <p>
+          Try searching using another tutor name or subject.
+        </p>
+      </div>
+    );
+  }
+
+  return tutorList.map((tutor) => (
+    <div className="recommended-tutor-card" key={tutor.id}>
+      <div className="tutor-avatar">
+        {tutor.profilePicture ? (
+          <img
+            src={tutor.profilePicture}
+            alt={`${tutor.firstName || "Tutor"} profile`}
+          />
+        ) : (
+          (tutor.firstName || "T").charAt(0).toUpperCase()
+        )}
+      </div>
+
+      <div className="tutor-details">
+        <h3>
+          {tutor.fullName ||
+            [
+              tutor.firstName || "",
+              tutor.middleName || "",
+              tutor.lastName || ""
+            ].filter(Boolean).join(" ") +
+            (tutor.suffix ? `, ${tutor.suffix}` : "")}
+        </h3>
+
+        <p>
+          {tutor.subjects?.length
+            ? tutor.subjects.join(", ")
+            : "Subjects not added yet"}
+        </p>
+
+        <span>
+          {tutor.teachingMode || "Teaching mode not added yet"}
+        </span>
+      </div>
+
+      <div className="tutor-rating">
+        <button onClick={() => openBookingForm(tutor)}>
+          Book Tutor
+        </button>
+      </div>
+    </div>
+  ));
+};
 
   // RENDER PAGE CONTENT
   const renderContent = () => {
@@ -1481,6 +1660,63 @@ message: bookingForm.message.trim(),
                           )}
                         </div>
                       )}
+                      {/* ONLINE SESSION PAYMENT */}
+{booking.status === "Completed" &&
+  booking.teachingMode === "Online" && (
+    <div className="student-payment-section">
+      <div className="student-payment-info">
+        <p>
+          <strong>Session Fee:</strong>{" "}
+          ₱{Number(booking.sessionRate || 0).toLocaleString("en-PH")}
+        </p>
+
+        <p>
+          <strong>Payment Status:</strong>{" "}
+          <span
+            className={`student-payment-status ${
+              (booking.paymentStatus || "Unpaid")
+                .toLowerCase()
+                .replace(/\s+/g, "-")
+            }`}
+          >
+            {booking.paymentStatus || "Unpaid"}
+          </span>
+        </p>
+
+        {booking.paymentStatus === "Pending Verification" && (
+          <p>
+            Your payment details have been submitted.
+            Please wait for your tutor to verify them.
+          </p>
+        )}
+
+        {booking.paymentStatus === "Paid" && (
+          <p>Your tutor has verified your payment. Thank you!</p>
+        )}
+
+        {booking.paymentStatus === "Rejected" && (
+          <p>
+            Your payment was rejected. Please check your reference
+            number and submit again.
+          </p>
+        )}
+      </div>
+
+      {["Unpaid", "Rejected"].includes(
+        booking.paymentStatus || "Unpaid"
+      ) && (
+        <button
+          type="button"
+          className="student-pay-tutor-button"
+          onClick={() => handleOpenPayment(booking)}
+        >
+          {booking.paymentStatus === "Rejected"
+            ? "Resubmit Payment"
+            : "Pay Tutor"}
+        </button>
+      )}
+    </div>
+  )}
                     </div>
                   );
                 })}
@@ -1609,10 +1845,44 @@ message: bookingForm.message.trim(),
             </div>
 
             <div className="dashboard-panel tutors-panel">
-              <div className="recommended-tutors">
-                {renderTutorCards()}
-              </div>
-            </div>
+
+  {/* TUTOR SEARCH BAR */}
+  <div className="tutor-search-container">
+    <div className="tutor-search-input-wrapper">
+      <Search size={20} />
+
+      <input
+        type="text"
+        placeholder="Search tutor name or subject..."
+        value={tutorSearch}
+        onChange={(e) => setTutorSearch(e.target.value)}
+        aria-label="Search tutors by name or subject"
+      />
+
+      {tutorSearch && (
+        <button
+          type="button"
+          className="tutor-search-clear"
+          onClick={() => setTutorSearch("")}
+          aria-label="Clear search"
+        >
+          <X size={18} />
+        </button>
+      )}
+    </div>
+
+    <p className="tutor-search-results">
+      {loadingTutors
+        ? "Loading tutors..."
+        : `${filteredTutors.length} tutor${filteredTutors.length !== 1 ? "s" : ""} found`}
+    </p>
+  </div>
+
+  <div className="recommended-tutors">
+    {renderTutorCards(filteredTutors)}
+  </div>
+
+</div>
           </section>
         );
 
@@ -2008,6 +2278,162 @@ message: bookingForm.message.trim(),
         </div>
       )}
 
+      
+{/* STUDENT PAYMENT MODAL */}
+{selectedPaymentBooking && (
+  <div className="student-payment-overlay">
+    <div className="student-payment-modal">
+      <button
+        type="button"
+        className="student-payment-close"
+        onClick={handleClosePayment}
+        disabled={submittingPayment}
+      >
+        ×
+      </button>
+
+      <h2>Pay Your Tutor</h2>
+
+      <p>
+        Submit your payment details for your completed
+        online tutoring session.
+      </p>
+
+      <div className="student-payment-summary">
+        <p>
+          <strong>Tutor:</strong>{" "}
+          {selectedPaymentBooking.tutorName}
+        </p>
+
+        <p>
+          <strong>Subject:</strong>{" "}
+          {selectedPaymentBooking.subject}
+        </p>
+
+        <p>
+          <strong>Session Fee:</strong>{" "}
+          ₱{Number(
+            selectedPaymentBooking.sessionRate || 0
+          ).toLocaleString("en-PH")}
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmitPayment}>
+        <div className="student-payment-field">
+          <label htmlFor="paymentMethod">
+            Payment Method *
+          </label>
+
+          <select
+            id="paymentMethod"
+            value={paymentMethod}
+            onChange={(e) => setPaymentMethod(e.target.value)}
+            disabled={submittingPayment}
+            required
+          >
+            <option value="gcash">GCash</option>
+            <option value="maya">Maya</option>
+            <option value="bankTransfer">Bank Transfer</option>
+          </select>
+        </div>
+
+        {(() => {
+          const details =
+            selectedPaymentBooking.paymentDetails?.[paymentMethod];
+
+          if (
+            !details?.accountName ||
+            !details?.accountNumber ||
+            (paymentMethod === "bankTransfer" && !details?.bankName)
+          ) {
+            return (
+              <p className="student-payment-warning">
+                The tutor has not provided complete payment
+                details for this payment method yet.
+              </p>
+            );
+          }
+
+          return (
+            <div className="student-payment-tutor-details">
+              <h3>Send Payment To</h3>
+
+              {paymentMethod === "bankTransfer" && (
+                <p>
+                  <strong>Bank:</strong> {details.bankName}
+                </p>
+              )}
+
+              <p>
+                <strong>Account Name:</strong>{" "}
+                {details.accountName}
+              </p>
+
+              <p>
+                <strong>Account Number:</strong>{" "}
+                {details.accountNumber}
+              </p>
+            </div>
+          );
+        })()}
+
+        <div className="student-payment-field">
+          <label htmlFor="paymentReference">
+            Payment Reference Number *
+          </label>
+
+          <input
+            id="paymentReference"
+            type="text"
+            value={paymentReference}
+            onChange={(e) => setPaymentReference(e.target.value)}
+            placeholder="Enter your payment reference number"
+            minLength={3}
+            maxLength={100}
+            disabled={submittingPayment}
+            required
+          />
+        </div>
+
+        <p className="student-payment-note">
+          Please make sure that your payment details are
+          correct. Your tutor will manually verify your payment.
+        </p>
+
+        <div className="student-payment-actions">
+          <button
+            type="button"
+            onClick={handleClosePayment}
+            disabled={submittingPayment}
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            disabled={
+              submittingPayment ||
+              !selectedPaymentBooking.paymentDetails?.[paymentMethod]
+                ?.accountName ||
+              !selectedPaymentBooking.paymentDetails?.[paymentMethod]
+                ?.accountNumber ||
+              (
+                paymentMethod === "bankTransfer" &&
+                !selectedPaymentBooking.paymentDetails?.bankTransfer
+                  ?.bankName
+              )
+            }
+          >
+            {submittingPayment
+              ? "Submitting..."
+              : "Submit Payment"}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
+
 
       {/* BOOKING FORM MODAL */}
       {selectedTutor && (
@@ -2066,6 +2492,13 @@ message: bookingForm.message.trim(),
                     ? selectedTutor.subjects.join(", ")
                     : "No subjects listed"}
                 </p>
+                {Number(selectedTutor.sessionRate) > 0 && (
+  <p className="booking-tutor-rate">
+    Session Rate: ₱
+    {Number(selectedTutor.sessionRate).toLocaleString("en-PH")}
+    {" "}per session
+  </p>
+)}
               </div>
             </div>
 

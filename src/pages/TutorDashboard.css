@@ -1396,3 +1396,13 @@
   background: #fff0f0 !important;
   color: #c82333 !important;
 }
+.payment-profile-description {
+  color: #64748b;
+  font-size: 14px;
+  margin: -8px 0 20px;
+  line-height: 1.6;
+}
+
+.payment-profile-description + .tutor-profile-grid {
+  margin-bottom: 25px;
+}

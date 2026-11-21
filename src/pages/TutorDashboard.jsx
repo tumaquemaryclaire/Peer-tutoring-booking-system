@@ -174,21 +174,24 @@ const [totalRatings, setTotalRatings] = useState(0);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // PROFILE STATES
-  const [profileData, setProfileData] = useState({
-    subjects: "",
-    bio: "",
-    teachingMode: "",
-    gender: "",
-    birthday: ""
-  });
+const initialProfileData = {
+  subjects: "",
+  bio: "",
+  teachingMode: "",
+  gender: "",
+  birthday: "",
+  sessionRate: "",
+  gcashName: "",
+  gcashNumber: "",
+  mayaName: "",
+  mayaNumber: "",
+  bankName: "",
+  bankAccountName: "",
+  bankAccountNumber: ""
+};
 
-  const [originalProfileData, setOriginalProfileData] = useState({
-    subjects: "",
-    bio: "",
-    teachingMode: "",
-    gender: "",
-    birthday: ""
-  });
+const [profileData, setProfileData] = useState(initialProfileData);
+const [originalProfileData, setOriginalProfileData] = useState(initialProfileData);
 
   const [profileLoading, setProfileLoading] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
@@ -245,15 +248,29 @@ const [totalRatings, setTotalRatings] = useState(0);
         const tutorData = profileSnap.exists() ? profileSnap.data() : {};
 
         const loadedProfile = {
-          birthday: userData.birthday || "",
-          subjects: Array.isArray(tutorData.subjects)
-            ? tutorData.subjects.join(", ")
-            : "",
-          bio: tutorData.bio || "",
-          teachingMode: tutorData.teachingMode || "",
-          gender: tutorData.gender || ""
-        };
+  birthday: userData.birthday || "",
+  subjects: Array.isArray(tutorData.subjects)
+    ? tutorData.subjects.join(", ")
+    : "",
+  bio: tutorData.bio || "",
+  teachingMode: tutorData.teachingMode || "",
+  gender: tutorData.gender || "",
+  sessionRate:
+    tutorData.sessionRate !== undefined &&
+    tutorData.sessionRate !== null
+      ? String(tutorData.sessionRate)
+      : "",
 
+  gcashName: tutorData.paymentDetails?.gcash?.accountName || tutorData.gcashName || "",
+  gcashNumber: tutorData.paymentDetails?.gcash?.accountNumber || tutorData.gcashNumber || "",
+
+  mayaName: tutorData.paymentDetails?.maya?.accountName || tutorData.mayaName || "",
+  mayaNumber: tutorData.paymentDetails?.maya?.accountNumber || tutorData.mayaNumber || "",
+
+  bankName: tutorData.paymentDetails?.bankTransfer?.bankName || tutorData.bankName || "",
+  bankAccountName: tutorData.paymentDetails?.bankTransfer?.accountName || tutorData.bankAccountName || "",
+  bankAccountNumber: tutorData.paymentDetails?.bankTransfer?.accountNumber || tutorData.bankAccountNumber || ""
+};
         setProfileData(loadedProfile);
         setOriginalProfileData(loadedProfile);
         setProfilePicture(tutorData.profilePicture || "");
@@ -506,6 +523,17 @@ useEffect(() => {
       return;
     }
 
+    const sessionRate = Number(profileData.sessionRate);
+
+if (
+  profileData.sessionRate.trim() === "" ||
+  !Number.isFinite(sessionRate) ||
+  sessionRate <= 0
+) {
+  alert("Please enter a valid session rate greater than ₱0.");
+  return;
+}
+
     setSavingProfile(true);
 
     try {
@@ -531,15 +559,33 @@ useEffect(() => {
       });
 
       await updateDoc(profileRef, {
-        subjects: subjectsArray,
-        bio: profileData.bio.trim(),
-        teachingMode: profileData.teachingMode,
-        gender: profileData.gender
-      });
+  subjects: subjectsArray,
+  bio: profileData.bio.trim(),
+  teachingMode: profileData.teachingMode,
+  gender: profileData.gender,
+  sessionRate,
+
+  paymentDetails: {
+    gcash: {
+      accountName: profileData.gcashName.trim(),
+      accountNumber: profileData.gcashNumber.trim()
+    },
+    maya: {
+      accountName: profileData.mayaName.trim(),
+      accountNumber: profileData.mayaNumber.trim()
+    },
+    bankTransfer: {
+      bankName: profileData.bankName.trim(),
+      accountName: profileData.bankAccountName.trim(),
+      accountNumber: profileData.bankAccountNumber.trim()
+    }
+  }
+});
 
       const savedProfile = {
         ...profileData,
-        subjects: subjectsArray.join(", ")
+        subjects: subjectsArray.join(", "),
+        sessionRate: String(sessionRate)
       };
 
       setProfileData(savedProfile);
@@ -1049,6 +1095,33 @@ const handleRequestCompletion = async (session) => {
                         </select>
                       </div>
 
+                      <div className="tutor-profile-field">
+  <label htmlFor="tutorSessionRate">
+    Session Rate (₱)
+  </label>
+
+  <input
+    id="tutorSessionRate"
+    type="number"
+    min="1"
+    step="1"
+    placeholder="Example: 150"
+    value={profileData.sessionRate}
+    onChange={(e) =>
+      setProfileData({
+        ...profileData,
+        sessionRate: e.target.value
+      })
+    }
+    disabled={!isEditingProfile}
+    required
+  />
+
+  <small>
+    Enter your fixed price for one tutoring session.
+  </small>
+</div>
+
                       <div className="tutor-profile-field tutor-profile-bio">
                         <label htmlFor="tutorBio">About Me / Tutor Bio</label>
                         <textarea
@@ -1067,6 +1140,142 @@ const handleRequestCompletion = async (session) => {
                       </div>
                     </div>
 
+                    {/* PAYMENT INFORMATION */}
+<div className="tutor-profile-section-title">
+  <GraduationCap size={20} />
+  <h3>Payment Information</h3>
+</div>
+
+<p className="payment-profile-description">
+  Add your payment account details so students can send
+  their tutoring session payments directly to you.
+</p>
+
+<div className="tutor-profile-grid">
+
+  {/* GCASH */}
+  <div className="tutor-profile-field">
+    <label htmlFor="gcashName">GCash Account Name</label>
+    <input
+      id="gcashName"
+      type="text"
+      placeholder="Account holder name"
+      value={profileData.gcashName}
+      onChange={(e) =>
+        setProfileData({
+          ...profileData,
+          gcashName: e.target.value
+        })
+      }
+      disabled={!isEditingProfile}
+    />
+  </div>
+
+  <div className="tutor-profile-field">
+    <label htmlFor="gcashNumber">GCash Number</label>
+    <input
+      id="gcashNumber"
+      type="tel"
+      placeholder="09XXXXXXXXX"
+      value={profileData.gcashNumber}
+      onChange={(e) =>
+        setProfileData({
+          ...profileData,
+          gcashNumber: e.target.value
+        })
+      }
+      disabled={!isEditingProfile}
+    />
+  </div>
+
+  {/* MAYA */}
+  <div className="tutor-profile-field">
+    <label htmlFor="mayaName">Maya Account Name</label>
+    <input
+      id="mayaName"
+      type="text"
+      placeholder="Account holder name"
+      value={profileData.mayaName}
+      onChange={(e) =>
+        setProfileData({
+          ...profileData,
+          mayaName: e.target.value
+        })
+      }
+      disabled={!isEditingProfile}
+    />
+  </div>
+
+  <div className="tutor-profile-field">
+    <label htmlFor="mayaNumber">Maya Number</label>
+    <input
+      id="mayaNumber"
+      type="tel"
+      placeholder="09XXXXXXXXX"
+      value={profileData.mayaNumber}
+      onChange={(e) =>
+        setProfileData({
+          ...profileData,
+          mayaNumber: e.target.value
+        })
+      }
+      disabled={!isEditingProfile}
+    />
+  </div>
+
+  {/* BANK TRANSFER */}
+  <div className="tutor-profile-field">
+    <label htmlFor="bankName">Bank Name</label>
+    <input
+      id="bankName"
+      type="text"
+      placeholder="Example: BDO, BPI, Metrobank"
+      value={profileData.bankName}
+      onChange={(e) =>
+        setProfileData({
+          ...profileData,
+          bankName: e.target.value
+        })
+      }
+      disabled={!isEditingProfile}
+    />
+  </div>
+
+  <div className="tutor-profile-field">
+    <label htmlFor="bankAccountName">Bank Account Name</label>
+    <input
+      id="bankAccountName"
+      type="text"
+      placeholder="Account holder name"
+      value={profileData.bankAccountName}
+      onChange={(e) =>
+        setProfileData({
+          ...profileData,
+          bankAccountName: e.target.value
+        })
+      }
+      disabled={!isEditingProfile}
+    />
+  </div>
+
+  <div className="tutor-profile-field">
+    <label htmlFor="bankAccountNumber">Bank Account Number</label>
+    <input
+      id="bankAccountNumber"
+      type="text"
+      placeholder="Enter your bank account number"
+      value={profileData.bankAccountNumber}
+      onChange={(e) =>
+        setProfileData({
+          ...profileData,
+          bankAccountNumber: e.target.value
+        })
+      }
+      disabled={!isEditingProfile}
+    />
+  </div>
+
+</div>
                     {/* EDIT ACTIONS */}
                     {isEditingProfile && (
                       <div className="tutor-profile-actions">
@@ -1140,6 +1349,12 @@ const handleRequestCompletion = async (session) => {
                         <strong>Teaching Mode:</strong>{" "}
                         {booking.teachingMode || "Not specified"}
                       </p>
+                      {booking.teachingMode === "Face-to-Face" && (
+                        <p>
+                          <strong>Preferred Study Location:</strong>{" "}
+                          {booking.preferredLocation || "Not specified"}
+                        </p>
+                      )}
                       <p>
                         <strong>Preferred Date:</strong>{" "}
                         {booking.preferredDate || "Not specified"}
@@ -1217,12 +1432,12 @@ const handleRequestCompletion = async (session) => {
 
                       <span
   className={`booking-status ${
-    session.status === "Completion Requested"
+    session.status === "Awaiting Confirmation"
       ? "pending"
       : "accepted"
   }`}
 >
-  {session.status === "Completion Requested"
+  {session.status === "Awaiting Confirmation"
     ? "Awaiting Student Confirmation"
     : "Confirmed"}
 </span>
@@ -1237,6 +1452,12 @@ const handleRequestCompletion = async (session) => {
                         <strong>Teaching Mode:</strong>{" "}
                         {session.teachingMode || "Not specified"}
                       </p>
+                      {session.teachingMode === "Face-to-Face" && (
+                        <p>
+                          <strong>Preferred Study Location:</strong>{" "}
+                          {session.preferredLocation || "Not specified"}
+                        </p>
+                      )}
                       <p>
                         <strong>Session Date:</strong>{" "}
                         {session.preferredDate || "Not specified"}
@@ -1274,7 +1495,7 @@ const handleRequestCompletion = async (session) => {
     </button>
   )}
 
-  {session.status === "Completion Requested" && (
+  {session.status === "Awaiting Confirmation" && (
     <button type="button" disabled>
       Waiting for Student Confirmation
     </button>
