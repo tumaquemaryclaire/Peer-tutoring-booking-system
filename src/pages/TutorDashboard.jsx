@@ -166,6 +166,10 @@ function TutorDashboard() {
   const [currentUser, setCurrentUser] = useState(null);
   const [activePage, setActivePage] = useState("Dashboard");
 
+  // TUTOR RATINGS
+const [averageRating, setAverageRating] = useState(null);
+const [totalRatings, setTotalRatings] = useState(0);
+
   const [activeVideoBooking, setActiveVideoBooking] = useState(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
@@ -340,6 +344,41 @@ function TutorDashboard() {
 
     return () => unsubscribe();
   }, [currentUser]);
+
+  // LOAD TUTOR RATINGS
+useEffect(() => {
+  if (!currentUser?.uid) return;
+
+  const ratingsQuery = query(
+    collection(db, "tutorRatings"),
+    where("tutorUid", "==", currentUser.uid)
+  );
+
+  const unsubscribe = onSnapshot(
+    ratingsQuery,
+    (snapshot) => {
+      const ratings = snapshot.docs
+        .map((document) => document.data())
+        .filter((rating) => typeof rating.rating === "number");
+
+      const total = ratings.length;
+
+      const average = total > 0
+        ? ratings.reduce((sum, item) => sum + item.rating, 0) / total
+        : null;
+
+      setTotalRatings(total);
+      setAverageRating(
+        average !== null ? average.toFixed(1) : null
+      );
+    },
+    (error) => {
+      console.error("Error loading tutor ratings:", error);
+    }
+  );
+
+  return () => unsubscribe();
+}, [currentUser?.uid]);
 
   // LOGOUT
   const handleLogout = async () => {
@@ -594,6 +633,67 @@ function TutorDashboard() {
     }
   };
 
+ 
+// REQUEST SESSION COMPLETION AND NOTIFY STUDENT
+const handleRequestCompletion = async (session) => {
+  const authenticatedUser = auth.currentUser;
+
+  if (!authenticatedUser || authenticatedUser.uid !== currentUser?.uid) {
+    alert("Please log in again.");
+    return;
+  }
+
+  if (session.status !== "Accepted") {
+    alert("This session is not available for completion request.");
+    return;
+  }
+
+  if (!session.studentUid) {
+    alert("Student information is missing from this booking.");
+    return;
+  }
+
+  const confirmed = window.confirm(
+    "Are you sure you want to request completion for this tutoring session?"
+  );
+
+  if (!confirmed) return;
+
+  setUpdatingBooking(session.id);
+
+  try {
+    // UPDATE BOOKING STATUS
+    await updateDoc(doc(db, "bookings", session.id), {
+      status: "Awaiting Confirmation"
+    });
+
+    // NOTIFY STUDENT
+    await addDoc(collection(db, "notifications"), {
+      recipientUid: session.studentUid,
+      senderUid: authenticatedUser.uid,
+      title: "Session Completion Requested",
+      message: `${tutorName} has requested confirmation that your tutoring session for ${session.subject || "your subject"} is completed. Please review and confirm it in My Bookings.`,
+      type: "Awaiting Confirmation",
+      bookingId: session.id,
+      read: false,
+      createdAt: serverTimestamp()
+    });
+
+    alert("Completion request sent successfully!");
+
+  } catch (error) {
+    console.error("Error requesting session completion:", error);
+
+    alert(
+      `Unable to send completion request.\n${error.message}`
+    );
+
+  } finally {
+    setUpdatingBooking("");
+  }
+};
+
+
   // MARK ONE NOTIFICATION AS READ
   const markNotificationAsRead = async (notificationId) => {
     try {
@@ -659,8 +759,9 @@ function TutorDashboard() {
 
   // ACCEPTED SESSIONS
   const acceptedSessions = bookingRequests
-    .filter((booking) => booking.status === "Accepted")
-    .sort((a, b) => {
+  .filter((booking) =>
+    ["Accepted", "Awaiting Confirmation"].includes(booking.status)
+  ) .sort((a, b) => {
       const dateA = `${a.preferredDate || ""} ${a.preferredTime || ""}`;
       const dateB = `${b.preferredDate || ""} ${b.preferredTime || ""}`;
       return dateA.localeCompare(dateB);
@@ -1114,9 +1215,17 @@ function TutorDashboard() {
                         <p>{session.studentEmail || ""}</p>
                       </div>
 
-                      <span className="booking-status accepted">
-                        Confirmed
-                      </span>
+                      <span
+  className={`booking-status ${
+    session.status === "Completion Requested"
+      ? "pending"
+      : "accepted"
+  }`}
+>
+  {session.status === "Completion Requested"
+    ? "Awaiting Student Confirmation"
+    : "Confirmed"}
+</span>
                     </div>
 
                     <div className="booking-request-details">
@@ -1142,16 +1251,35 @@ function TutorDashboard() {
                       </p>
                     </div>
 
-                    {session.teachingMode === "Online" && (
-                      <div className="booking-request-actions">
-                        <button
-                          type="button"
-                          onClick={() => setActiveVideoBooking(session)}
-                        >
-                          Join Video Call
-                        </button>
-                      </div>
-                    )}
+                    <div className="booking-request-actions">
+  {session.teachingMode === "Online" &&
+    session.status === "Accepted" && (
+      <button
+        type="button"
+        onClick={() => setActiveVideoBooking(session)}
+      >
+        Join Video Call
+      </button>
+    )}
+
+  {session.status === "Accepted" && (
+    <button
+      type="button"
+      disabled={updatingBooking === session.id}
+      onClick={() => handleRequestCompletion(session)}
+    >
+      {updatingBooking === session.id
+        ? "Sending Request..."
+        : "Request Completion"}
+    </button>
+  )}
+
+  {session.status === "Completion Requested" && (
+    <button type="button" disabled>
+      Waiting for Student Confirmation
+    </button>
+  )}
+</div>
                   </div>
                 ))}
               </div>
@@ -1405,16 +1533,19 @@ function TutorDashboard() {
               </div>
 
               <div className="tutor-stat-card">
-                <span className="stat-icon">🔔</span>
-                <p>Unread Notifications</p>
-                <h3>{unreadNotificationCount}</h3>
-              </div>
+  <span className="stat-icon">⭐</span>
 
-              <div className="tutor-stat-card">
-                <span className="stat-icon">⭐</span>
-                <p>Average Rating</p>
-                <h3>—</h3>
-              </div>
+  <p>Average Rating</p>
+
+  <h3>
+    {averageRating !== null ? averageRating : "—"}
+  </h3>
+
+  <small>
+    Based on {totalRatings} student rating
+    {totalRatings !== 1 ? "s" : ""}
+  </small>
+</div>
             </div>
 
             <div className="tutor-dashboard-bottom">
