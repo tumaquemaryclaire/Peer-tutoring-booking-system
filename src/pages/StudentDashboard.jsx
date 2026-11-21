@@ -9,7 +9,9 @@ import {
   addDoc,
   serverTimestamp,
   doc,
-  updateDoc
+  updateDoc,
+  getDoc,
+  setDoc
 } from "firebase/firestore";
 
 import {
@@ -164,15 +166,22 @@ function StudentDashboard() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const [bookingForm, setBookingForm] = useState({
-    subject: "",
-    teachingMode: "",
-    preferredDate: "",
-    preferredTime: "",
-    message: ""
-  });
+  subject: "",
+  teachingMode: "",
+  preferredLocation: "",
+  preferredDate: "",
+  preferredTime: "",
+  message: ""
+});
 
   const [submittingBooking, setSubmittingBooking] = useState(false);
-
+// COMPLETION CONFIRMATION AND RATING STATES
+const [confirmingCompletion, setConfirmingCompletion] = useState("");
+const [ratedBookings, setRatedBookings] = useState([]);
+const [selectedRatingBooking, setSelectedRatingBooking] = useState(null);
+const [ratingValue, setRatingValue] = useState(5);
+const [reviewText, setReviewText] = useState("");
+const [submittingRating, setSubmittingRating] = useState(false);
   // SIDEBAR MENU
   const menuItems = [
     { name: "Dashboard", icon: LayoutDashboard },
@@ -314,6 +323,28 @@ function StudentDashboard() {
     return () => unsubscribe();
   }, [currentUser?.uid]);
 
+  // LOAD RATINGS ALREADY SUBMITTED BY THE STUDENT
+useEffect(() => {
+  if (!currentUser?.uid) return;
+
+  const ratingsQuery = query(
+    collection(db, "tutorRatings"),
+    where("studentUid", "==", currentUser.uid)
+  );
+
+  const unsubscribe = onSnapshot(
+    ratingsQuery,
+    (snapshot) => {
+      setRatedBookings(snapshot.docs.map((document) => document.id));
+    },
+    (error) => {
+      console.error("Error loading student ratings:", error);
+    }
+  );
+
+  return () => unsubscribe();
+}, [currentUser?.uid]);
+
   // LOAD STUDENT NOTIFICATIONS
   useEffect(() => {
     if (!currentUser?.uid) return;
@@ -381,6 +412,142 @@ function StudentDashboard() {
 
     setActiveVideoCall(booking);
   }
+
+  // CONFIRM TUTOR'S COMPLETION REQUEST
+async function handleConfirmCompletion(booking) {
+  if (
+    !currentUser?.uid ||
+    booking.studentUid !== currentUser.uid ||
+    booking.status !== "Awaiting Confirmation"
+  ) {
+    alert("This completion request is not available.");
+    return;
+  }
+
+  const confirmed = window.confirm(
+    "Are you sure you want to confirm that this tutoring session is completed?"
+  );
+
+  if (!confirmed) return;
+
+  setConfirmingCompletion(booking.id);
+
+  try {
+    await updateDoc(doc(db, "bookings", booking.id), {
+      status: "Completed"
+    });
+
+    await addDoc(collection(db, "notifications"), {
+      recipientUid: booking.tutorUid,
+      senderUid: currentUser.uid,
+      title: "Session Completed",
+      message: `${fullName || currentUser.name || "The student"} confirmed that the tutoring session for ${booking.subject || "your subject"} is completed.`,
+      type: "Completed",
+      bookingId: booking.id,
+      read: false,
+      createdAt: serverTimestamp()
+    });
+
+    alert("Session successfully marked as completed!");
+  } catch (error) {
+    console.error("Completion confirmation error:", error);
+    alert(
+      "Unable to confirm session completion. Please try again.\n" +
+      error.message
+    );
+  } finally {
+    setConfirmingCompletion("");
+  }
+}
+
+// OPEN RATING FORM
+function handleOpenRating(booking) {
+  setSelectedRatingBooking(booking);
+  setRatingValue(5);
+  setReviewText("");
+}
+
+// CLOSE RATING FORM
+function handleCloseRating() {
+  if (submittingRating) return;
+
+  setSelectedRatingBooking(null);
+  setRatingValue(5);
+  setReviewText("");
+}
+
+// SUBMIT TUTOR RATING
+async function handleSubmitRating(e) {
+  e.preventDefault();
+
+  if (!selectedRatingBooking || !currentUser?.uid) {
+    alert("Unable to identify the booking or student account.");
+    return;
+  }
+
+  const booking = selectedRatingBooking;
+
+  if (booking.status !== "Completed") {
+    alert("You can only rate a completed tutoring session.");
+    return;
+  }
+
+  if (ratedBookings.includes(booking.id)) {
+    alert("You have already submitted a rating for this session.");
+    setSelectedRatingBooking(null);
+    return;
+  }
+
+  if (ratingValue < 1 || ratingValue > 5) {
+    alert("Please select a rating from 1 to 5 stars.");
+    return;
+  }
+
+  setSubmittingRating(true);
+
+  try {
+    const ratingRef = doc(db, "tutorRatings", booking.id);
+
+    // CHECK IF THIS BOOKING ALREADY HAS A RATING
+    const existingRating = await getDoc(ratingRef);
+
+    if (existingRating.exists()) {
+      alert("You have already rated this tutoring session.");
+      setRatedBookings((previous) =>
+        previous.includes(booking.id)
+          ? previous
+          : [...previous, booking.id]
+      );
+      setSelectedRatingBooking(null);
+      return;
+    }
+
+    await setDoc(ratingRef, {
+      bookingId: booking.id,
+      studentUid: currentUser.uid,
+      tutorUid: booking.tutorUid,
+      rating: Number(ratingValue),
+      review: reviewText.trim(),
+      createdAt: serverTimestamp()
+    });
+
+    setRatedBookings((previous) => [...previous, booking.id]);
+
+    alert("Your rating has been submitted successfully!");
+
+    setSelectedRatingBooking(null);
+    setRatingValue(5);
+    setReviewText("");
+  } catch (error) {
+    console.error("Rating submission error:", error);
+    alert(
+      "Unable to submit your rating. Please try again.\n" +
+      error.message
+    );
+  } finally {
+    setSubmittingRating(false);
+  }
+}
 
   // CLOSE VIDEO CALL WINDOW
   function handleCloseVideoCall() {
@@ -583,16 +750,17 @@ function StudentDashboard() {
 
   // OPEN BOOKING FORM
   function openBookingForm(tutor) {
-    setSelectedTutor(tutor);
+  setSelectedTutor(tutor);
 
-    setBookingForm({
-      subject: tutor.subjects?.[0] || "",
-      teachingMode: "",
-      preferredDate: "",
-      preferredTime: "",
-      message: ""
-    });
-  }
+  setBookingForm({
+    subject: tutor.subjects?.[0] || "",
+    teachingMode: "",
+    preferredLocation: "",
+    preferredDate: "",
+    preferredTime: "",
+    message: ""
+  });
+}
 
   // CLOSE BOOKING FORM
   function closeBookingForm() {
@@ -620,14 +788,18 @@ function StudentDashboard() {
     }
 
     if (
-      !bookingForm.subject.trim() ||
-      !bookingForm.teachingMode ||
-      !bookingForm.preferredDate ||
-      !bookingForm.preferredTime
-    ) {
-      alert("Please complete all required fields.");
-      return;
-    }
+  !bookingForm.subject.trim() ||
+  !bookingForm.teachingMode ||
+  !bookingForm.preferredDate ||
+  !bookingForm.preferredTime ||
+  (
+    bookingForm.teachingMode === "Face-to-Face" &&
+    !bookingForm.preferredLocation.trim()
+  )
+) {
+  alert("Please complete all required fields.");
+  return;
+}
 
     setSubmittingBooking(true);
 
@@ -660,10 +832,16 @@ function StudentDashboard() {
         tutorName,
 
         subject: bookingForm.subject.trim(),
-        teachingMode: bookingForm.teachingMode,
-        preferredDate: bookingForm.preferredDate,
-        preferredTime: bookingForm.preferredTime,
-        message: bookingForm.message.trim(),
+teachingMode: bookingForm.teachingMode,
+
+preferredLocation:
+  bookingForm.teachingMode === "Face-to-Face"
+    ? bookingForm.preferredLocation.trim()
+    : "",
+
+preferredDate: bookingForm.preferredDate,
+preferredTime: bookingForm.preferredTime,
+message: bookingForm.message.trim(),
 
         status: "Pending",
         createdAt: serverTimestamp()
@@ -685,12 +863,13 @@ function StudentDashboard() {
       setSelectedTutor(null);
 
       setBookingForm({
-        subject: "",
-        teachingMode: "",
-        preferredDate: "",
-        preferredTime: "",
-        message: ""
-      });
+  subject: "",
+  teachingMode: "",
+  preferredLocation: "",
+  preferredDate: "",
+  preferredTime: "",
+  message: ""
+});
 
       setActivePage("My Bookings");
     } catch (error) {
@@ -1143,6 +1322,7 @@ function StudentDashboard() {
           </section>
         );
 
+      
       // MY BOOKINGS
       case "My Bookings":
         return (
@@ -1150,7 +1330,7 @@ function StudentDashboard() {
             <div className="dashboard-section-heading">
               <div>
                 <h2>My Bookings</h2>
-                <p>View and track your tutoring requests.</p>
+                <p>View your tutoring sessions and track their progress.</p>
               </div>
             </div>
 
@@ -1175,76 +1355,135 @@ function StudentDashboard() {
               </div>
             ) : (
               <div className="my-bookings-list">
-                {myBookings.map((booking) => (
-                  <div className="my-booking-card" key={booking.id}>
-                    <div className="my-booking-header">
-                      <div>
-                        <h3>{booking.tutorName || "Tutor"}</h3>
+                {myBookings.map((booking) => {
+                  const isRated = ratedBookings.includes(booking.id);
+
+                  return (
+                    <div className="my-booking-card" key={booking.id}>
+                      <div className="my-booking-header">
+                        <div>
+                          <h3>{booking.tutorName || "Tutor"}</h3>
+                          <p>
+                            {booking.subject || "No subject specified"}
+                          </p>
+                        </div>
+
+                        <span
+                          className={`my-booking-status ${
+                            (booking.status || "Pending")
+                              .toLowerCase()
+                              .replace(/\s+/g, "-")
+                          }`}
+                        >
+                          {booking.status === "Awaiting Confirmation"
+                            ? "Awaiting Confirmation"
+                            : booking.status || "Pending"}
+                        </span>
+                      </div>
+
+                      <div className="my-booking-details">
                         <p>
-                          {booking.subject || "No subject specified"}
+                          <strong>Teaching Mode:</strong>{" "}
+                          {booking.teachingMode || "Not specified"}
+                        </p>
+                        {booking.teachingMode === "Face-to-Face" && (
+  <p>
+    <strong>Preferred Study Location:</strong>{" "}
+    {booking.preferredLocation || "Not specified"}
+  </p>
+)}
+
+                        <p>
+                          <strong>Preferred Date:</strong>{" "}
+                          {booking.preferredDate || "Not specified"}
+                        </p>
+
+                        <p>
+                          <strong>Preferred Time:</strong>{" "}
+                          {booking.preferredTime || "Not specified"}
+                        </p>
+
+                        <p>
+                          <strong>Message:</strong>{" "}
+                          {booking.message || "No message"}
                         </p>
                       </div>
 
-                      <span
-                        className={`my-booking-status ${
-                          (booking.status || "Pending").toLowerCase()
-                        }`}
-                      >
-                        {booking.status || "Pending"}
-                      </span>
-                    </div>
+                      <p className="my-booking-note">
+                        {booking.status === "Accepted"
+                          ? "Your booking has been accepted by the tutor."
+                          : booking.status === "Rejected"
+                          ? "Your booking request was rejected."
+                          : booking.status === "Awaiting Confirmation"
+                          ? "Your tutor has requested session completion. Please confirm if the session is finished."
+                          : booking.status === "Completed"
+                          ? "This tutoring session has been completed."
+                          : booking.status === "Pending"
+                          ? "Waiting for the tutor to review your request."
+                          : ""}
+                      </p>
 
-                    <div className="my-booking-details">
-                      <p>
-                        <strong>Teaching Mode:</strong>{" "}
-                        {booking.teachingMode || "Not specified"}
-                      </p>
-                      <p>
-                        <strong>Preferred Date:</strong>{" "}
-                        {booking.preferredDate || "Not specified"}
-                      </p>
-                      <p>
-                        <strong>Preferred Time:</strong>{" "}
-                        {booking.preferredTime || "Not specified"}
-                      </p>
-                      <p>
-                        <strong>Message:</strong>{" "}
-                        {booking.message || "No message"}
-                      </p>
-                    </div>
+                      {/* ACCEPTED ONLINE BOOKING ACTIONS */}
+                      {booking.status === "Accepted" &&
+                        booking.teachingMode === "Online" && (
+                          <div className="student-online-booking-actions">
+                            <button
+                              type="button"
+                              className="primary-small-button"
+                              onClick={() => setActivePage("Messages")}
+                            >
+                              <MessagesSquare size={16} />
+                              Open Messages
+                            </button>
 
-                    <p className="my-booking-note">
-                      {booking.status === "Accepted"
-                        ? "Your booking has been accepted by the tutor."
-                        : booking.status === "Rejected"
-                        ? "Your booking request was rejected."
-                        : "Waiting for the tutor to review your request."}
-                    </p>
+                            <button
+                              type="button"
+                              className="student-video-call-button"
+                              onClick={() => handleOpenVideoCall(booking)}
+                            >
+                              <Video size={17} />
+                              Join Video Call
+                            </button>
+                          </div>
+                        )}
 
-                    {booking.status === "Accepted" &&
-                      booking.teachingMode === "Online" && (
-                        <div className="student-online-booking-actions">
+                      {/* CONFIRM COMPLETION */}
+                      {booking.status === "Awaiting Confirmation" && (
+                        <div className="student-completion-actions">
                           <button
                             type="button"
-                            className="primary-small-button"
-                            onClick={() => setActivePage("Messages")}
+                            className="student-confirm-completion-button"
+                            onClick={() => handleConfirmCompletion(booking)}
+                            disabled={confirmingCompletion === booking.id}
                           >
-                            <MessagesSquare size={16} />
-                            Open Messages
-                          </button>
-
-                          <button
-                            type="button"
-                            className="student-video-call-button"
-                            onClick={() => handleOpenVideoCall(booking)}
-                          >
-                            <Video size={17} />
-                            Join Video Call
+                            {confirmingCompletion === booking.id
+                              ? "Confirming..."
+                              : "Confirm Completion"}
                           </button>
                         </div>
                       )}
-                  </div>
-                ))}
+
+                      {/* RATE TUTOR */}
+                      {booking.status === "Completed" && (
+                        <div className="student-rating-actions">
+                          {isRated ? (
+                            <span className="student-rated-label">
+                              ✓ You already rated this tutor
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              className="student-rate-tutor-button"
+                              onClick={() => handleOpenRating(booking)}
+                            >
+                              ★ Rate Tutor
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
 
@@ -1253,6 +1492,7 @@ function StudentDashboard() {
             </footer>
           </section>
         );
+
 
       // MESSAGES
       case "Messages":
@@ -1672,6 +1912,103 @@ function StudentDashboard() {
         />
       )}
 
+
+      {/* TUTOR RATING MODAL */}
+      {selectedRatingBooking && (
+        <div className="student-rating-overlay">
+          <div className="student-rating-modal">
+            <button
+              type="button"
+              className="student-rating-close"
+              onClick={handleCloseRating}
+              disabled={submittingRating}
+            >
+              ×
+            </button>
+
+            <div className="student-rating-icon">⭐</div>
+
+            <h2>Rate Your Tutor</h2>
+
+            <p>
+              How was your tutoring session with{" "}
+              <strong>{selectedRatingBooking.tutorName || "your tutor"}</strong>?
+            </p>
+
+            <form onSubmit={handleSubmitRating}>
+              <div className="student-rating-stars">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    className={
+                      star <= ratingValue
+                        ? "student-star active"
+                        : "student-star"
+                    }
+                    onClick={() => setRatingValue(star)}
+                    disabled={submittingRating}
+                    aria-label={`${star} star${star > 1 ? "s" : ""}`}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+
+              <p className="student-rating-description">
+                {ratingValue === 5
+                  ? "Excellent!"
+                  : ratingValue === 4
+                  ? "Very Good!"
+                  : ratingValue === 3
+                  ? "Good"
+                  : ratingValue === 2
+                  ? "Fair"
+                  : "Needs Improvement"}
+              </p>
+
+              <div className="student-rating-review-field">
+                <label htmlFor="studentTutorReview">
+                  Write a Review (Optional)
+                </label>
+
+                <textarea
+                  id="studentTutorReview"
+                  value={reviewText}
+                  onChange={(e) => setReviewText(e.target.value)}
+                  placeholder="Share your experience with this tutor..."
+                  rows="4"
+                  maxLength={1000}
+                  disabled={submittingRating}
+                />
+
+                <small>{reviewText.length}/1000 characters</small>
+              </div>
+
+              <div className="student-rating-modal-actions">
+                <button
+                  type="button"
+                  className="student-rating-cancel"
+                  onClick={handleCloseRating}
+                  disabled={submittingRating}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  className="student-rating-submit"
+                  disabled={submittingRating}
+                >
+                  {submittingRating ? "Submitting..." : "Submit Rating"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+
       {/* BOOKING FORM MODAL */}
       {selectedTutor && (
         <div
@@ -1765,6 +2102,30 @@ function StudentDashboard() {
                   <option value="Face-to-Face">Face-to-Face</option>
                 </select>
               </div>
+
+              {/* PREFERRED STUDY LOCATION - FACE TO FACE ONLY */}
+{bookingForm.teachingMode === "Face-to-Face" && (
+  <div className="booking-form-field">
+    <label htmlFor="bookingLocation">
+      Preferred Study Location *
+    </label>
+
+    <input
+      id="bookingLocation"
+      type="text"
+      name="preferredLocation"
+      placeholder="e.g., School Library, Campus Library, or Study Area"
+      value={bookingForm.preferredLocation}
+      onChange={handleBookingChange}
+      maxLength={200}
+      required
+    />
+
+    <small>
+      Enter the place where you would like to meet your tutor.
+    </small>
+  </div>
+)}
 
               <div className="booking-form-row">
                 <div className="booking-form-field">
