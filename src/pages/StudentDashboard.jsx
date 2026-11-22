@@ -914,6 +914,10 @@ async function handleSubmitPayment(e) {
 
 // VALIDATE TUTOR SESSION RATE FOR ONLINE BOOKINGS
 const tutorRate = Number(selectedTutor.sessionRate);
+console.log("SELECTED TUTOR:", selectedTutor);
+console.log("SESSION RATE:", selectedTutor.sessionRate);
+
+console.log("CONVERTED TUTOR RATE:", tutorRate);
 
 if (
   bookingForm.teachingMode === "Online" &&
@@ -1078,12 +1082,16 @@ paidAt: null,
     (notification) => notification.read !== true
   ).length;
 
-  // ONLY ACCEPTED ONLINE BOOKINGS CAN USE MESSENGER AND VIDEO CALL
-  const onlineAcceptedBookings = myBookings.filter(
-    (booking) =>
-      booking.status === "Accepted" &&
-      booking.teachingMode === "Online"
-  );
+  
+// ONLINE BOOKINGS AVAILABLE IN MESSENGER
+const onlineAcceptedBookings = myBookings.filter(
+  (booking) =>
+    ["Accepted", "Awaiting Confirmation", "Completed"].includes(
+      booking.status
+    ) &&
+    booking.teachingMode === "Online"
+);
+
 
   // FILTER TUTORS BY NAME OR SUBJECT
 const filteredTutors = tutors.filter((tutor) => {

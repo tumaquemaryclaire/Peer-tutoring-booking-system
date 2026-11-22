@@ -12,6 +12,9 @@ import VideoCall from "./VideoCall";
 import "./Messenger.css";
 
 function Messenger({ currentUser, bookings = [] }) {
+  console.log("MESSENGER CURRENT USER:", currentUser?.uid);
+console.log("MESSENGER ROLE:", currentUser?.role);
+console.log("MESSENGER BOOKINGS:", bookings.length);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [messages, setMessages] = useState([]);
   const [messageText, setMessageText] = useState("");
@@ -28,6 +31,11 @@ const eligibleBookings = bookings.filter(
     ) &&
     booking.teachingMode === "Online"
 );
+
+console.log("CURRENT USER:", currentUser?.uid);
+console.log("TOTAL BOOKINGS:", bookings.length);
+console.log("BOOKING DATA:", bookings);
+console.log("ELIGIBLE BOOKINGS:", eligibleBookings);
 
   // Get the other participant's UID
   const getConversationKey = (booking) => {

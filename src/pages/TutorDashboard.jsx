@@ -27,10 +27,12 @@ import {
   Save,
   X,
   User,
-  GraduationCap
+  GraduationCap,
+  Wallet
 } from "lucide-react";
 
 import { auth, db } from "../services/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 import Messenger from "../components/Messenger";
 import VideoCall from "../components/VideoCall";
 import "./TutorDashboard.css";
@@ -214,19 +216,68 @@ const [originalProfileData, setOriginalProfileData] = useState(initialProfileDat
     currentUser?.firstName ||
     "Tutor";
 
-  // CHECK CURRENT USER
-  useEffect(() => {
-    const savedUser = JSON.parse(
-      sessionStorage.getItem("pt_current_user") || "null"
-    );
+  // CHECK AUTHENTICATED TUTOR
+useEffect(() => {
+  let isMounted = true;
 
-    if (!savedUser || savedUser.role !== "tutor") {
-      navigate("/login");
+  const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    if (!firebaseUser) {
+      if (isMounted) {
+        setCurrentUser(null);
+        sessionStorage.removeItem("pt_current_user");
+        navigate("/login");
+      }
       return;
     }
 
-    setCurrentUser(savedUser);
-  }, [navigate]);
+    try {
+      const userRef = doc(db, "users", firebaseUser.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (!userSnap.exists()) {
+        throw new Error("User profile does not exist.");
+      }
+
+      const userData = userSnap.data();
+
+      if (userData.role !== "tutor") {
+        if (isMounted) {
+          setCurrentUser(null);
+          navigate("/login");
+        }
+        return;
+      }
+
+      const authenticatedUser = {
+        ...userData,
+        uid: firebaseUser.uid,
+        email: firebaseUser.email || userData.email
+      };
+
+      if (isMounted) {
+        setCurrentUser(authenticatedUser);
+
+        sessionStorage.setItem(
+          "pt_current_user",
+          JSON.stringify(authenticatedUser)
+        );
+      }
+    } catch (error) {
+      console.error("AUTHENTICATION CHECK ERROR:", error);
+
+      if (isMounted) {
+        setCurrentUser(null);
+        alert("Unable to verify your tutor account. Please log in again.");
+        navigate("/login");
+      }
+    }
+  });
+
+  return () => {
+    isMounted = false;
+    unsubscribe();
+  };
+}, [navigate]);
 
   // LOAD TUTOR PROFILE
   useEffect(() => {
@@ -245,10 +296,27 @@ const [originalProfileData, setOriginalProfileData] = useState(initialProfileDat
         ]);
 
         const userData = userSnap.exists() ? userSnap.data() : {};
-        const tutorData = profileSnap.exists() ? profileSnap.data() : {};
+        console.log("CURRENT USER UID:", currentUser.uid);
+console.log("FIRESTORE USER EXISTS:", userSnap.exists());
+console.log("CONTACT NUMBER:", userData.contactNumber);
+const tutorData = profileSnap.exists() ? profileSnap.data() : {};
+
+const updatedUser = {
+  ...currentUser,
+  ...userData,
+  uid: currentUser.uid
+};
+
+setCurrentUser(updatedUser);
+
+sessionStorage.setItem(
+  "pt_current_user",
+  JSON.stringify(updatedUser)
+);
 
         const loadedProfile = {
   birthday: userData.birthday || "",
+  contactNumber: userData.contactNumber || "",
   subjects: Array.isArray(tutorData.subjects)
     ? tutorData.subjects.join(", ")
     : "",
@@ -284,7 +352,7 @@ const [originalProfileData, setOriginalProfileData] = useState(initialProfileDat
     };
 
     fetchTutorProfile();
-  }, [currentUser]);
+  }, [currentUser?.uid]);
 
   // REAL-TIME BOOKING REQUESTS
   useEffect(() => {
@@ -311,8 +379,21 @@ const [originalProfileData, setOriginalProfileData] = useState(initialProfileDat
           return dateB - dateA;
         });
 
-        setBookingRequests(requests);
-        setBookingLoading(false);
+        console.log("LOGGED-IN TUTOR UID:", currentUser.uid);
+
+console.table(
+  requests.map((booking) => ({
+    bookingId: booking.id,
+    tutorUid: booking.tutorUid,
+    studentUid: booking.studentUid,
+    status: booking.status,
+    teachingMode: booking.teachingMode,
+    paymentStatus: booking.paymentStatus
+  }))
+);
+
+setBookingRequests(requests);
+setBookingLoading(false);
       },
       (error) => {
         console.error("Error fetching booking requests:", error);
@@ -322,45 +403,54 @@ const [originalProfileData, setOriginalProfileData] = useState(initialProfileDat
     );
 
     return () => unsubscribe();
-  }, [currentUser]);
+  }, [currentUser?.uid]);
 
   // REAL-TIME TUTOR NOTIFICATIONS
-  useEffect(() => {
-    if (!currentUser?.uid) return;
+useEffect(() => {
+  const uid = currentUser?.uid;
 
-    setNotificationLoading(true);
+  // Do not start the listener until Firebase Auth is ready
+  // and matches the dashboard user.
+  if (!uid || auth.currentUser?.uid !== uid) {
+    setNotifications([]);
+    return;
+  }
 
-    const notificationsQuery = query(
-      collection(db, "notifications"),
-      where("recipientUid", "==", currentUser.uid)
-    );
+  setNotificationLoading(true);
 
-    const unsubscribe = onSnapshot(
-      notificationsQuery,
-      (snapshot) => {
-        const notificationList = snapshot.docs.map((notificationDoc) => ({
-          id: notificationDoc.id,
-          ...notificationDoc.data()
-        }));
+  const notificationsQuery = query(
+    collection(db, "notifications"),
+    where("recipientUid", "==", uid)
+  );
 
-        notificationList.sort((a, b) => {
-          const dateA = a.createdAt?.toMillis?.() || 0;
-          const dateB = b.createdAt?.toMillis?.() || 0;
-          return dateB - dateA;
-        });
+  const unsubscribe = onSnapshot(
+    notificationsQuery,
+    (snapshot) => {
+      const notificationList = snapshot.docs.map((notificationDoc) => ({
+        id: notificationDoc.id,
+        ...notificationDoc.data()
+      }));
 
-        setNotifications(notificationList);
-        setNotificationLoading(false);
-      },
-      (error) => {
-        console.error("Error fetching tutor notifications:", error);
-        alert(`Unable to load notifications.\n${error.message}`);
-        setNotificationLoading(false);
-      }
-    );
+      notificationList.sort((a, b) => {
+        const dateA = a.createdAt?.toMillis?.() || 0;
+        const dateB = b.createdAt?.toMillis?.() || 0;
+        return dateB - dateA;
+      });
 
-    return () => unsubscribe();
-  }, [currentUser]);
+      setNotifications(notificationList);
+      setNotificationLoading(false);
+    },
+    (error) => {
+      console.error("NOTIFICATION ERROR CODE:", error.code);
+      console.error("NOTIFICATION ERROR MESSAGE:", error.message);
+
+      setNotifications([]);
+      setNotificationLoading(false);
+    }
+  );
+
+  return () => unsubscribe();
+}, [currentUser?.uid]);
 
   // LOAD TUTOR RATINGS
 useEffect(() => {
@@ -739,6 +829,72 @@ const handleRequestCompletion = async (session) => {
   }
 };
 
+// VERIFY OR REJECT STUDENT PAYMENT
+
+const handlePaymentVerification = async (booking, newPaymentStatus) => {
+  const authenticatedUser = auth.currentUser;
+
+  if (!authenticatedUser || authenticatedUser.uid !== currentUser?.uid) {
+    alert("Please log in again.");
+    return;
+  }
+
+  if (booking.tutorUid !== authenticatedUser.uid) {
+    alert("You are not authorized to verify this payment.");
+    return;
+  }
+
+  if (
+    booking.status !== "Completed" ||
+    booking.teachingMode !== "Online" ||
+    booking.paymentStatus !== "Pending Verification"
+  ) {
+    alert("This payment is not waiting for verification.");
+    return;
+  }
+
+  if (!["Paid", "Rejected"].includes(newPaymentStatus)) {
+    return;
+  }
+
+  const confirmed = window.confirm(
+    newPaymentStatus === "Paid"
+      ? "Confirm that you received this payment?"
+      : "Reject this payment and allow the student to resubmit?"
+  );
+
+  if (!confirmed) return;
+
+  setUpdatingBooking(booking.id);
+
+  try {
+    const updateData =
+      newPaymentStatus === "Paid"
+        ? {
+            paymentStatus: "Paid",
+            paidAt: serverTimestamp()
+          }
+        : {
+            paymentStatus: "Rejected"
+          };
+
+    await updateDoc(doc(db, "bookings", booking.id), updateData);
+
+    alert(
+      newPaymentStatus === "Paid"
+        ? "Payment marked as Paid."
+        : "Payment rejected. The student can resubmit payment details."
+    );
+  } catch (error) {
+    console.error("PAYMENT VERIFICATION ERROR:", error);
+
+    alert(
+      `Unable to update payment status.\n${error.code || "Unknown"}: ${error.message}`
+    );
+  } finally {
+    setUpdatingBooking("");
+  }
+};
 
   // MARK ONE NOTIFICATION AS READ
   const markNotificationAsRead = async (notificationId) => {
@@ -784,7 +940,8 @@ const handleRequestCompletion = async (session) => {
     { name: "Booking Requests", icon: Inbox },
     { name: "My Sessions", icon: CalendarDays },
     { name: "Messages", icon: MessagesSquare },
-    { name: "Notifications", icon: Bell }
+    { name: "Notifications", icon: Bell },
+    { name: "Payment Verification", icon: Wallet }
   ];
 
   const accountItems = [
@@ -839,13 +996,31 @@ const handleRequestCompletion = async (session) => {
 
   // ONLY ACCEPTED ONLINE BOOKINGS CAN USE MESSENGER
   const onlineMessageBookings = bookingRequests.filter(
-    (booking) =>
-      booking.status === "Accepted" &&
-      booking.teachingMode === "Online"
-  );
+  (booking) =>
+    ["Accepted", "Awaiting Confirmation", "Completed"].includes(
+      booking.status
+    ) &&
+    booking.teachingMode === "Online"
+);
+// COMPLETED ONLINE BOOKINGS WAITING FOR PAYMENT VERIFICATION
+const paymentVerificationBookings = bookingRequests.filter(
+  (booking) =>
+    booking.status === "Completed" &&
+    booking.teachingMode === "Online" &&
+    booking.paymentStatus === "Pending Verification"
+);
+console.log(
+  "PAYMENT VERIFICATION BOOKINGS:",
+  paymentVerificationBookings
+);
 
   // PAGE CONTENT
   const renderContent = () => {
+  console.log("ACTIVE PAGE:", activePage);
+  console.log(
+    "PAYMENT VERIFICATION COUNT:",
+    paymentVerificationBookings.length
+  );
     switch (activePage) {
       // MY PROFILE
       case "My Profile":
@@ -980,7 +1155,7 @@ const handleRequestCompletion = async (session) => {
                         <label>Contact Number</label>
                         <input
                           type="text"
-                          value={currentUser.contactNumber || ""}
+                          value={profileData.contactNumber || ""}
                           placeholder="Not provided"
                           disabled
                         />
@@ -1718,6 +1893,102 @@ const handleRequestCompletion = async (session) => {
             )}
           </section>
         );
+        // PAYMENT VERIFICATION
+case "Payment Verification":
+  return (
+    <section className="tutor-content-section">
+      <h2>Payment Verification</h2>
+      <p>
+        Review the payment details submitted by students and verify their payments.
+      </p>
+
+      {bookingLoading ? (
+        <div className="empty-state">
+          <p>Loading payment submissions...</p>
+        </div>
+      ) : paymentVerificationBookings.length === 0 ? (
+        <div className="empty-state">
+          <span>💳</span>
+          <h3>No Payments to Verify</h3>
+          <p>
+            Student payment submissions will appear here once they have been submitted.
+          </p>
+        </div>
+      ) : (
+        <div className="booking-request-list">
+          {paymentVerificationBookings.map((booking) => (
+            <div className="booking-request-card" key={booking.id}>
+              <div className="booking-request-header">
+                <div>
+                  <h3>{booking.studentName || "Student"}</h3>
+                  <p>{booking.studentEmail || ""}</p>
+                </div>
+
+                <span className="booking-status pending">
+                  Pending Verification
+                </span>
+              </div>
+
+              <div className="booking-request-details">
+                <p>
+                  <strong>Subject:</strong>{" "}
+                  {booking.subject || "Not specified"}
+                </p>
+
+                <p>
+                  <strong>Session Rate:</strong>{" "}
+                  ₱{Number(booking.sessionRate || 0).toLocaleString("en-PH")}
+                </p>
+
+                <p>
+                  <strong>Payment Method:</strong>{" "}
+                  {booking.paymentMethod || "Not specified"}
+                </p>
+
+                <p>
+                  <strong>Reference Number:</strong>{" "}
+                  {booking.paymentReference || "Not provided"}
+                </p>
+
+                <p>
+                  <strong>Payment Submitted:</strong>{" "}
+                  {booking.paymentSubmittedAt?.toDate
+                    ? booking.paymentSubmittedAt.toDate().toLocaleString()
+                    : "Date unavailable"}
+                </p>
+              </div>
+
+              <div className="booking-request-actions">
+                <button
+                  type="button"
+                  disabled={updatingBooking === booking.id}
+                  onClick={() =>
+                    handlePaymentVerification(booking, "Paid")
+                  }
+                >
+                  {updatingBooking === booking.id
+                    ? "Updating..."
+                    : "Confirm Payment"}
+                </button>
+
+                <button
+                  type="button"
+                  disabled={updatingBooking === booking.id}
+                  onClick={() =>
+                    handlePaymentVerification(booking, "Rejected")
+                  }
+                >
+                  {updatingBooking === booking.id
+                    ? "Updating..."
+                    : "Reject Payment"}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
 
       // DASHBOARD
       default:
