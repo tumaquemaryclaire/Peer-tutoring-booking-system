@@ -2,19 +2,25 @@
 import { useEffect, useState } from "react";
 import {
   collection,
-  addDoc,
+  doc,
   onSnapshot,
-  serverTimestamp
+  serverTimestamp,
+  writeBatch
 } from "firebase/firestore";
 
 import { db } from "../services/firebase";
+import {
+  getConversationId,
+  createOrUpdateConversation
+} from "../services/conversations";
 import VideoCall from "./VideoCall";
 import "./Messenger.css";
 
-function Messenger({ currentUser, bookings = [] }) {
-  console.log("MESSENGER CURRENT USER:", currentUser?.uid);
-console.log("MESSENGER ROLE:", currentUser?.role);
-console.log("MESSENGER BOOKINGS:", bookings.length);
+function Messenger({
+  currentUser,
+  bookings = [],
+  initialConversationId = ""
+}) {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [messages, setMessages] = useState([]);
   const [messageText, setMessageText] = useState("");
@@ -24,91 +30,37 @@ console.log("MESSENGER BOOKINGS:", bookings.length);
   const [activeVideoBooking, setActiveVideoBooking] = useState(null);
 
   // Accepted, awaiting confirmation, and completed online bookings
-const eligibleBookings = bookings.filter(
-  (booking) =>
-    ["Accepted", "Awaiting Confirmation", "Completed"].includes(
-      booking.status
-    ) &&
-    booking.teachingMode === "Online"
-);
+  const eligibleBookings = bookings.filter(
+    (booking) =>
+      ["Accepted", "Awaiting Confirmation", "Completed"].includes(
+        booking.status
+      ) &&
+      booking.teachingMode === "Online" &&
+      booking.studentUid &&
+      booking.tutorUid
+  );
 
-console.log("CURRENT USER:", currentUser?.uid);
-console.log("TOTAL BOOKINGS:", bookings.length);
-console.log("BOOKING DATA:", bookings);
-console.log("ELIGIBLE BOOKINGS:", eligibleBookings);
+  // One conversation per student-tutor pair
+  const uniqueBookings = Object.values(
+    eligibleBookings.reduce((result, booking) => {
+      const conversationId = getConversationId(
+        booking.studentUid,
+        booking.tutorUid
+      );
 
-  // Get the other participant's UID
-  const getConversationKey = (booking) => {
-    return currentUser?.role === "tutor"
-      ? booking.studentUid
-      : booking.tutorUid;
-  };
+      const existingBooking = result[conversationId];
 
-  // Keep every booking conversation separate.
-// Each booking has its own messages subcollection.
-const uniqueBookings = eligibleBookings;
+      const newTime = booking.createdAt?.toMillis?.() || 0;
+      const existingTime = existingBooking?.createdAt?.toMillis?.() || 0;
 
-  // Automatically select the first conversation
-  useEffect(() => {
-    if (uniqueBookings.length === 0) {
-      setSelectedBooking(null);
-      return;
-    }
-
-    const selectedStillExists = uniqueBookings.some(
-      (booking) => booking.id === selectedBooking?.id
-    );
-
-    if (!selectedStillExists) {
-      setSelectedBooking(uniqueBookings[0]);
-    }
-  }, [bookings, selectedBooking?.id]);
-
-  // Load messages in real time
-  useEffect(() => {
-    if (!selectedBooking?.id || !currentUser?.uid) {
-      setMessages([]);
-      return;
-    }
-
-    setLoadingMessages(true);
-    setError("");
-
-    const messagesRef = collection(
-      db,
-      "bookings",
-      selectedBooking.id,
-      "messages"
-    );
-
-    const unsubscribe = onSnapshot(
-      messagesRef,
-      (snapshot) => {
-        const loadedMessages = snapshot.docs.map((messageDoc) => ({
-          id: messageDoc.id,
-          ...messageDoc.data()
-        }));
-
-        loadedMessages.sort((a, b) => {
-          const timeA = a.createdAt?.toMillis?.() || 0;
-          const timeB = b.createdAt?.toMillis?.() || 0;
-          return timeA - timeB;
-        });
-
-        setMessages(loadedMessages);
-        setLoadingMessages(false);
-      },
-      (err) => {
-        console.error("Message loading error:", err);
-        setError("Unable to load messages. Please check your connection.");
-        setLoadingMessages(false);
+      if (!existingBooking || newTime >= existingTime) {
+        result[conversationId] = booking;
       }
-    );
 
-    return () => unsubscribe();
-  }, [selectedBooking?.id, currentUser?.uid]);
+      return result;
+    }, {})
+  );
 
-  // Get the other person's name
   const getOtherPersonName = (booking) => {
     if (!booking) return "Conversation";
 
@@ -118,6 +70,128 @@ const uniqueBookings = eligibleBookings;
 
     return booking.studentName || "Student";
   };
+
+  const getSelectedConversationId = () => {
+    if (!selectedBooking) return null;
+
+    return getConversationId(
+      selectedBooking.studentUid,
+      selectedBooking.tutorUid
+    );
+  };
+
+  // Automatically select the first conversation if none is selected
+  useEffect(() => {
+    if (uniqueBookings.length === 0) {
+      setSelectedBooking(null);
+      setMessages([]);
+      return;
+    }
+
+    const selectedStillExists = uniqueBookings.some(
+      (booking) =>
+        getConversationId(booking.studentUid, booking.tutorUid) ===
+        (selectedBooking
+          ? getConversationId(
+              selectedBooking.studentUid,
+              selectedBooking.tutorUid
+            )
+          : null)
+    );
+
+    if (!selectedStillExists && !initialConversationId) {
+      setSelectedBooking(uniqueBookings[0]);
+    }
+  }, [bookings, selectedBooking?.id, initialConversationId]);
+
+  // Open the requested conversation from a notification or booking
+  useEffect(() => {
+    if (!initialConversationId || uniqueBookings.length === 0) {
+      return;
+    }
+
+    const matchingBooking = uniqueBookings.find(
+      (booking) =>
+        getConversationId(
+          booking.studentUid,
+          booking.tutorUid
+        ) === initialConversationId
+    );
+
+    if (matchingBooking) {
+      setSelectedBooking(matchingBooking);
+      setError("");
+    }
+  }, [initialConversationId, bookings]);
+
+  // Create/load shared conversation and listen for messages
+  useEffect(() => {
+    if (!selectedBooking || !currentUser?.uid) {
+      setMessages([]);
+      setLoadingMessages(false);
+      return;
+    }
+
+    let unsubscribe = null;
+    let cancelled = false;
+
+    setLoadingMessages(true);
+    setError("");
+
+    const loadConversation = async () => {
+      try {
+        const conversationId = await createOrUpdateConversation(
+          selectedBooking
+        );
+
+        if (cancelled) return;
+
+        const messagesRef = collection(
+          db,
+          "conversations",
+          conversationId,
+          "messages"
+        );
+
+        unsubscribe = onSnapshot(
+          messagesRef,
+          (snapshot) => {
+            const loadedMessages = snapshot.docs.map((messageDoc) => ({
+              id: messageDoc.id,
+              ...messageDoc.data()
+            }));
+
+            loadedMessages.sort((a, b) => {
+              const timeA = a.createdAt?.toMillis?.() || 0;
+              const timeB = b.createdAt?.toMillis?.() || 0;
+              return timeA - timeB;
+            });
+
+            setMessages(loadedMessages);
+            setLoadingMessages(false);
+          },
+          (err) => {
+            console.error("Message loading error:", err);
+            setError(
+              "Unable to load messages. Please check your connection."
+            );
+            setLoadingMessages(false);
+          }
+        );
+      } catch (err) {
+        console.error("Conversation loading error:", err);
+        setError("Unable to open this conversation. Please try again.");
+        setLoadingMessages(false);
+      }
+    };
+
+    loadConversation();
+
+    return () => {
+      cancelled = true;
+      if (unsubscribe) unsubscribe();
+    };
+  }, [selectedBooking?.id, currentUser?.uid]);
 
   // Format message time
   const formatTime = (timestamp) => {
@@ -129,7 +203,7 @@ const uniqueBookings = eligibleBookings;
     });
   };
 
-  // Send message
+  // Send message and notify the receiver
   const handleSendMessage = async (e) => {
     e.preventDefault();
 
@@ -142,23 +216,84 @@ const uniqueBookings = eligibleBookings;
       return;
     }
 
+    const isStudent =
+      currentUser.uid === selectedBooking.studentUid;
+
+    const isTutor =
+      currentUser.uid === selectedBooking.tutorUid;
+
+    if (!isStudent && !isTutor) {
+      setError(
+        "You are not allowed to send messages in this conversation."
+      );
+      return;
+    }
+
     setSending(true);
     setError("");
 
     try {
-      await addDoc(
+      const conversationId = getSelectedConversationId();
+
+      const conversationRef = doc(
+        db,
+        "conversations",
+        conversationId
+      );
+
+      const newMessageRef = doc(
         collection(
           db,
-          "bookings",
-          selectedBooking.id,
+          "conversations",
+          conversationId,
           "messages"
-        ),
-        {
-          senderUid: currentUser.uid,
-          text,
-          createdAt: serverTimestamp()
-        }
+        )
       );
+
+      const recipientUid = isStudent
+        ? selectedBooking.tutorUid
+        : selectedBooking.studentUid;
+
+      const senderName = isStudent
+        ? selectedBooking.studentName || "Student"
+        : selectedBooking.tutorName || "Tutor";
+
+      const notificationRef = doc(
+        collection(db, "notifications")
+      );
+
+      const batch = writeBatch(db);
+
+      // Save message
+      batch.set(newMessageRef, {
+        senderUid: currentUser.uid,
+        text,
+        createdAt: serverTimestamp()
+      });
+
+      // Update conversation preview
+      batch.update(conversationRef, {
+        lastMessage: text,
+        lastMessageAt: serverTimestamp(),
+        lastSenderUid: currentUser.uid,
+        latestBookingId: selectedBooking.id,
+        updatedAt: serverTimestamp()
+      });
+
+      // Create notification for the other participant
+      batch.set(notificationRef, {
+        recipientUid,
+        senderUid: currentUser.uid,
+        title: "New Message",
+        message: `You have a new message from ${senderName}.`,
+        type: "Message",
+        bookingId: selectedBooking.id,
+        conversationId,
+        read: false,
+        createdAt: serverTimestamp()
+      });
+
+      await batch.commit();
 
       setMessageText("");
     } catch (err) {
@@ -196,36 +331,54 @@ const uniqueBookings = eligibleBookings;
             </div>
 
             <div className="conversation-list">
-              {uniqueBookings.map((booking) => (
-                <button
-                  key={booking.id}
-                  className={`conversation-item ${
-                    selectedBooking?.id === booking.id ? "selected" : ""
-                  }`}
-                  onClick={() => {
-                    setSelectedBooking(booking);
-                    setError("");
-                    setActiveVideoBooking(null);
-                  }}
-                  type="button"
-                >
-                  <div className="conversation-avatar">
-                    {getOtherPersonName(booking)
-                      .charAt(0)
-                      .toUpperCase()}
-                  </div>
+              {uniqueBookings.map((booking) => {
+                const conversationId = getConversationId(
+                  booking.studentUid,
+                  booking.tutorUid
+                );
 
-                  <div className="conversation-info">
-                    <strong>{getOtherPersonName(booking)}</strong>
-                    <span>{booking.subject || "Tutoring session"}</span>
-                    <small>
-                      {booking.preferredDate || "Online tutoring"}
-                    </small>
-                  </div>
+                const selectedConversationId = selectedBooking
+                  ? getConversationId(
+                      selectedBooking.studentUid,
+                      selectedBooking.tutorUid
+                    )
+                  : null;
 
-                  <span className="online-booking-dot"></span>
-                </button>
-              ))}
+                return (
+                  <button
+                    key={conversationId}
+                    className={`conversation-item ${
+                      selectedConversationId === conversationId
+                        ? "selected"
+                        : ""
+                    }`}
+                    onClick={() => {
+                      setSelectedBooking(booking);
+                      setError("");
+                      setActiveVideoBooking(null);
+                    }}
+                    type="button"
+                  >
+                    <div className="conversation-avatar">
+                      {getOtherPersonName(booking)
+                        .charAt(0)
+                        .toUpperCase()}
+                    </div>
+
+                    <div className="conversation-info">
+                      <strong>{getOtherPersonName(booking)}</strong>
+                      <span>
+                        {booking.subject || "Tutoring session"}
+                      </span>
+                      <small>
+                        {booking.preferredDate || "Online tutoring"}
+                      </small>
+                    </div>
+
+                    <span className="online-booking-dot"></span>
+                  </button>
+                );
+              })}
             </div>
           </aside>
 
@@ -252,7 +405,9 @@ const uniqueBookings = eligibleBookings;
                   <button
                     className="video-chat-button"
                     type="button"
-                    onClick={() => setActiveVideoBooking(selectedBooking)}
+                    onClick={() =>
+                      setActiveVideoBooking(selectedBooking)
+                    }
                   >
                     <span>📹</span>
                     Video Call

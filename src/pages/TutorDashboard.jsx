@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { logoutUser } from "../services/auth";
 
@@ -35,6 +35,7 @@ import { auth, db } from "../services/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import Messenger from "../components/Messenger";
 import VideoCall from "../components/VideoCall";
+import { migrateOldMessages } from "../services/conversations";
 import "./TutorDashboard.css";
 
 // CONVERT SESSION DATE AND TIME
@@ -166,7 +167,10 @@ function TutorDashboard() {
   const navigate = useNavigate();
 
   const [currentUser, setCurrentUser] = useState(null);
-  const [activePage, setActivePage] = useState("Dashboard");
+const [activePage, setActivePage] = useState("Dashboard");
+
+// MESSAGE MIGRATION TRACKER
+const migrationSignature = useRef("");
 
   // TUTOR RATINGS
 const [averageRating, setAverageRating] = useState(null);
@@ -209,6 +213,7 @@ const [originalProfileData, setOriginalProfileData] = useState(initialProfileDat
   // NOTIFICATION STATES
   const [notifications, setNotifications] = useState([]);
   const [notificationLoading, setNotificationLoading] = useState(false);
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
 
   const tutorName =
     currentUser?.fullName ||
@@ -451,6 +456,98 @@ useEffect(() => {
 
   return () => unsubscribe();
 }, [currentUser?.uid]);
+
+// REAL-TIME UNREAD MESSAGE COUNT
+useEffect(() => {
+  const uid = currentUser?.uid;
+
+  if (!uid || auth.currentUser?.uid !== uid) {
+    setUnreadMessageCount(0);
+    return;
+  }
+
+  const conversationsQuery = query(
+    collection(db, "conversations"),
+    where("tutorUid", "==", uid)
+  );
+
+  const unsubscribe = onSnapshot(
+    conversationsQuery,
+    (snapshot) => {
+      let unreadCount = 0;
+
+      snapshot.docs.forEach((conversationDoc) => {
+        const conversation = conversationDoc.data();
+
+        const lastMessageTime =
+          conversation.lastMessageAt?.toMillis?.() || 0;
+
+        const lastReadTime =
+          conversation.tutorLastReadAt?.toMillis?.() || 0;
+
+        const hasUnreadMessage =
+          conversation.lastSenderUid &&
+          conversation.lastSenderUid !== uid &&
+          lastMessageTime > lastReadTime;
+
+        if (hasUnreadMessage) {
+          unreadCount++;
+        }
+      });
+
+      setUnreadMessageCount(unreadCount);
+    },
+    (error) => {
+      console.error("UNREAD MESSAGE COUNT ERROR:", error);
+      setUnreadMessageCount(0);
+    }
+  );
+
+  return () => unsubscribe();
+}, [currentUser?.uid]);
+
+// MIGRATE OLD BOOKING MESSAGES TO SHARED CONVERSATIONS
+useEffect(() => {
+  if (!currentUser?.uid || bookingRequests.length === 0) {
+    return;
+  }
+
+  const onlineMessageBookings = bookingRequests.filter(
+    (booking) =>
+      ["Accepted", "Awaiting Confirmation", "Completed"].includes(
+        booking.status
+      ) &&
+      booking.teachingMode === "Online" &&
+      booking.studentUid &&
+      booking.tutorUid
+  );
+
+  if (onlineMessageBookings.length === 0) {
+    return;
+  }
+
+  const bookingIds = onlineMessageBookings
+    .map((booking) => booking.id)
+    .sort()
+    .join(",");
+
+  const signature = `${currentUser.uid}_${bookingIds}`;
+
+  if (migrationSignature.current === signature) {
+    return;
+  }
+
+  migrationSignature.current = signature;
+
+  migrateOldMessages(onlineMessageBookings)
+    .then(() => {
+      console.log("Tutor old messages migration completed.");
+    })
+    .catch((error) => {
+      console.error("Tutor message migration error:", error);
+      migrationSignature.current = "";
+    });
+}, [currentUser?.uid, bookingRequests]);
 
   // LOAD TUTOR RATINGS
 useEffect(() => {
@@ -1002,6 +1099,7 @@ const handlePaymentVerification = async (booking, newPaymentStatus) => {
     ) &&
     booking.teachingMode === "Online"
 );
+
 // COMPLETED ONLINE BOOKINGS WAITING FOR PAYMENT VERIFICATION
 const paymentVerificationBookings = bookingRequests.filter(
   (booking) =>
@@ -2155,6 +2253,12 @@ case "Payment Verification":
                       {unreadNotificationCount}
                     </span>
                   )}
+                  {item.name === "Messages" &&
+  unreadMessageCount > 0 && (
+    <span className="notification-count">
+      {unreadMessageCount}
+    </span>
+  )}
               </button>
             ))}
           </div>

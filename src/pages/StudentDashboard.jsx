@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   collection,
@@ -35,6 +35,7 @@ import { logoutUser } from "../services/auth";
 import { db } from "../services/firebase";
 import Messenger from "../components/Messenger";
 import VideoCall from "../components/VideoCall";
+import { migrateOldMessages } from "../services/conversations";
 
 import "./StudentDashboard.css";
 
@@ -126,8 +127,9 @@ function calculateAge(birthday) {
 function StudentDashboard() {
   const navigate = useNavigate();
 
-  const [currentUser, setCurrentUser] = useState(null);
-  const [activePage, setActivePage] = useState("Dashboard");
+const [currentUser, setCurrentUser] = useState(null);
+const [activePage, setActivePage] = useState("Dashboard");
+const [selectedConversationId, setSelectedConversationId] = useState("");
 
   const [tutors, setTutors] = useState([]);
   const [loadingTutors, setLoadingTutors] = useState(true);
@@ -135,7 +137,22 @@ function StudentDashboard() {
 
   const [myBookings, setMyBookings] = useState([]);
   const [loadingBookings, setLoadingBookings] = useState(true);
+  // ONLINE BOOKINGS AVAILABLE IN MESSENGER
+const onlineAcceptedBookings = myBookings.filter(
+  (booking) =>
+    ["Accepted", "Awaiting Confirmation", "Completed"].includes(
+      booking.status
+    ) &&
+    booking.teachingMode === "Online"
+);
 
+// OLD MESSAGE MIGRATION
+const migrationSignature = useRef("");
+
+const migrationBookingIds = onlineAcceptedBookings
+  .map((booking) => booking.id)
+  .sort()
+  .join(",");
   const [notifications, setNotifications] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(true);
 
@@ -328,6 +345,30 @@ const [submittingPayment, setSubmittingPayment] = useState(false);
 
     return () => unsubscribe();
   }, [currentUser?.uid]);
+
+  // MIGRATE OLD BOOKING MESSAGES WITHOUT DELETING ORIGINALS
+useEffect(() => {
+  if (!currentUser?.uid || !migrationBookingIds) {
+    return;
+  }
+
+  const signature = `${currentUser.uid}_${migrationBookingIds}`;
+
+  if (migrationSignature.current === signature) {
+    return;
+  }
+
+  migrationSignature.current = signature;
+
+  migrateOldMessages(onlineAcceptedBookings)
+    .then(() => {
+      console.log("Student old messages migration completed.");
+    })
+    .catch((error) => {
+      console.error("Student message migration error:", error);
+      migrationSignature.current = "";
+    });
+}, [currentUser?.uid, migrationBookingIds]);
 
   // LOAD RATINGS ALREADY SUBMITTED BY THE STUDENT
 useEffect(() => {
@@ -1037,6 +1078,25 @@ paidAt: null,
       alert("Unable to update notification.");
     }
   }
+  // OPEN MESSAGE NOTIFICATION
+async function handleOpenNotification(notification) {
+  if (notification.read !== true) {
+    await markNotificationAsRead(notification.id);
+  }
+
+  if (
+    notification.type === "Message" &&
+    notification.conversationId
+  ) {
+    setSelectedConversationId(notification.conversationId);
+    setActivePage("Messages");
+    return;
+  }
+
+  if (notification.bookingId) {
+    setActivePage("My Bookings");
+  }
+}
 
   // MARK ALL NOTIFICATIONS AS READ
   async function markAllAsRead() {
@@ -1081,17 +1141,6 @@ paidAt: null,
   const unreadCount = notifications.filter(
     (notification) => notification.read !== true
   ).length;
-
-  
-// ONLINE BOOKINGS AVAILABLE IN MESSENGER
-const onlineAcceptedBookings = myBookings.filter(
-  (booking) =>
-    ["Accepted", "Awaiting Confirmation", "Completed"].includes(
-      booking.status
-    ) &&
-    booking.teachingMode === "Online"
-);
-
 
   // FILTER TUTORS BY NAME OR SUBJECT
 const filteredTutors = tutors.filter((tutor) => {
@@ -1615,13 +1664,18 @@ const filteredTutors = tutors.filter((tutor) => {
                         booking.teachingMode === "Online" && (
                           <div className="student-online-booking-actions">
                             <button
-                              type="button"
-                              className="primary-small-button"
-                              onClick={() => setActivePage("Messages")}
-                            >
-                              <MessagesSquare size={16} />
-                              Open Messages
-                            </button>
+  type="button"
+  className="primary-small-button"
+  onClick={() => {
+    setSelectedConversationId(
+      `${booking.studentUid}_${booking.tutorUid}`
+    );
+    setActivePage("Messages");
+  }}
+>
+  <MessagesSquare size={16} />
+  Open Messages
+</button>
 
                             <button
                               type="button"
@@ -1740,14 +1794,15 @@ const filteredTutors = tutors.filter((tutor) => {
 
       // MESSAGES
       case "Messages":
-        return (
-          <section className="student-content">
-            <Messenger
-              currentUser={currentUser}
-              bookings={onlineAcceptedBookings}
-            />
-          </section>
-        );
+  return (
+    <section className="student-content">
+      <Messenger
+        currentUser={currentUser}
+        bookings={onlineAcceptedBookings}
+        initialConversationId={selectedConversationId}
+      />
+    </section>
+  );
 
       // NOTIFICATIONS
       case "Notifications":
@@ -1819,16 +1874,28 @@ const filteredTutors = tutors.filter((tutor) => {
                         </small>
                       )}
 
-                      {notification.read !== true && (
-                        <button
-                          className="mark-read-button"
-                          onClick={() =>
-                            markNotificationAsRead(notification.id)
-                          }
-                        >
-                          Mark as Read
-                        </button>
-                      )}
+                      {notification.type === "Message" &&
+  notification.conversationId && (
+    <button
+      type="button"
+      className="mark-read-button"
+      onClick={() => handleOpenNotification(notification)}
+    >
+      Open Conversation
+    </button>
+  )}
+
+{notification.read !== true && (
+  <button
+    type="button"
+    className="mark-read-button"
+    onClick={() =>
+      markNotificationAsRead(notification.id)
+    }
+  >
+    Mark as Read
+  </button>
+)}
                     </div>
                   </div>
                 ))}
