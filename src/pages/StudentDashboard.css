@@ -569,15 +569,19 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .tutor-rating button {
   border: none;
   background: transparent;
   color: #4169e1;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
 }
 
 .tutor-rating button:hover {
@@ -2211,4 +2215,138 @@
 .student-pay-tutor-button svg {
   width: 17px;
   height: 17px;
+}
+/* VIEW TUTOR PROFILE MODAL */
+
+.tutor-profile-view-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  z-index: 9999;
+}
+
+.tutor-profile-view-modal {
+  position: relative;
+  background: #fff;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 18px;
+  padding: 30px;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.2);
+}
+
+.tutor-profile-view-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #555;
+}
+
+.tutor-profile-view-header {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.tutor-profile-view-avatar {
+  width: 95px;
+  height: 95px;
+  border-radius: 50%;
+  margin: 0 auto 12px;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #e8eaff;
+  color: #4f46e5;
+  font-size: 35px;
+  font-weight: 700;
+}
+
+.tutor-profile-view-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tutor-profile-view-header h2 {
+  margin: 8px 0 5px;
+  color: #222;
+}
+
+.tutor-profile-view-header span {
+  color: #777;
+  font-size: 14px;
+}
+
+.tutor-profile-view-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.tutor-profile-view-item {
+  background: #f7f8fc;
+  padding: 15px;
+  border-radius: 10px;
+}
+
+.tutor-profile-view-item strong {
+  display: block;
+  color: #444;
+  font-size: 13px;
+  margin-bottom: 7px;
+}
+
+.tutor-profile-view-item p {
+  color: #222;
+  font-size: 14px;
+  margin: 0;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.tutor-profile-view-bio {
+  grid-column: 1 / -1;
+}
+
+.tutor-profile-view-actions {
+  margin-top: 22px;
+}
+
+.tutor-profile-view-book-button {
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: 9px;
+  background: #4f46e5;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tutor-profile-view-book-button:hover {
+  background: #4338ca;
+}
+
+@media (max-width: 480px) {
+  .tutor-profile-view-modal {
+    padding: 22px;
+  }
+
+  .tutor-profile-view-details {
+    grid-template-columns: 1fr;
+  }
+
+  .tutor-profile-view-bio {
+    grid-column: auto;
+  }
 }

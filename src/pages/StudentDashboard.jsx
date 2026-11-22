@@ -123,6 +123,19 @@ function calculateAge(birthday) {
 
   return age;
 }
+function getTutorDisplayName(tutor) {
+  return (
+    tutor.fullName ||
+    [
+      tutor.firstName || "",
+      tutor.middleName || "",
+      tutor.lastName || ""
+    ]
+      .filter(Boolean)
+      .join(" ") +
+      (tutor.suffix ? `, ${tutor.suffix}` : "")
+  ) || "Tutor";
+}
 
 function StudentDashboard() {
   const navigate = useNavigate();
@@ -157,6 +170,7 @@ const migrationBookingIds = onlineAcceptedBookings
   const [loadingNotifications, setLoadingNotifications] = useState(true);
 
   const [selectedTutor, setSelectedTutor] = useState(null);
+  const [viewingTutor, setViewingTutor] = useState(null);
 
   // VIDEO CALL STATE
   const [activeVideoCall, setActiveVideoCall] = useState(null);
@@ -1239,10 +1253,21 @@ const filteredTutors = tutors.filter((tutor) => {
       </div>
 
       <div className="tutor-rating">
-        <button onClick={() => openBookingForm(tutor)}>
-          Book Tutor
-        </button>
-      </div>
+  <button
+    type="button"
+    className="view-tutor-profile-button"
+    onClick={() => setViewingTutor(tutor)}
+  >
+    View Profile
+  </button>
+
+  <button
+    type="button"
+    onClick={() => openBookingForm(tutor)}
+  >
+    Book Tutor
+  </button>
+</div>
     </div>
   ));
 };
@@ -2706,6 +2731,100 @@ const filteredTutors = tutors.filter((tutor) => {
           </div>
         </div>
       )}
+      {/* VIEW TUTOR PROFILE MODAL */}
+{viewingTutor && (
+  <div
+    className="tutor-profile-view-overlay"
+    onClick={() => setViewingTutor(null)}
+  >
+    <div
+      className="tutor-profile-view-modal"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button
+        type="button"
+        className="tutor-profile-view-close"
+        onClick={() => setViewingTutor(null)}
+      >
+        <X size={22} />
+      </button>
+
+      <div className="tutor-profile-view-header">
+        <div className="tutor-profile-view-avatar">
+          {viewingTutor.profilePicture ? (
+            <img
+              src={viewingTutor.profilePicture}
+              alt="Tutor profile"
+            />
+          ) : (
+            getTutorDisplayName(viewingTutor)
+              .charAt(0)
+              .toUpperCase()
+          )}
+        </div>
+
+        <h2>{getTutorDisplayName(viewingTutor)}</h2>
+        <span>Peer Tutor</span>
+      </div>
+
+      <div className="tutor-profile-view-details">
+
+        <div className="tutor-profile-view-item">
+          <strong>Age</strong>
+          <p>
+            {viewingTutor.age !== undefined &&
+            viewingTutor.age !== null &&
+            viewingTutor.age !== ""
+              ? `${viewingTutor.age} years old`
+              : "Not provided"}
+          </p>
+        </div>
+
+        <div className="tutor-profile-view-item">
+          <strong>Gender</strong>
+          <p>{viewingTutor.gender || "Not provided"}</p>
+        </div>
+
+        <div className="tutor-profile-view-item">
+          <strong>Subjects Taught</strong>
+          <p>
+            {Array.isArray(viewingTutor.subjects) &&
+            viewingTutor.subjects.length > 0
+              ? viewingTutor.subjects.join(", ")
+              : "Not provided"}
+          </p>
+        </div>
+
+        <div className="tutor-profile-view-item">
+          <strong>Teaching Mode</strong>
+          <p>{viewingTutor.teachingMode || "Not provided"}</p>
+        </div>
+
+        <div className="tutor-profile-view-item tutor-profile-view-bio">
+          <strong>About Me</strong>
+          <p>
+            {viewingTutor.bio || "This tutor has not added an introduction yet."}
+          </p>
+        </div>
+
+      </div>
+
+      <div className="tutor-profile-view-actions">
+        <button
+          type="button"
+          className="tutor-profile-view-book-button"
+          onClick={() => {
+            const tutor = viewingTutor;
+            setViewingTutor(null);
+            openBookingForm(tutor);
+          }}
+        >
+          Book Tutor
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* LOGOUT CONFIRMATION MODAL */}
       {showLogoutConfirm && (

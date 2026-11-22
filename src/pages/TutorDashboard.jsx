@@ -750,6 +750,7 @@ if (
   bio: profileData.bio.trim(),
   teachingMode: profileData.teachingMode,
   gender: profileData.gender,
+   age: calculateAge(profileData.birthday),
   sessionRate,
 
   paymentDetails: {
