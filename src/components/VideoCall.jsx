@@ -645,165 +645,190 @@ setupPresentationChannel(presentationChannel);
   // START VIDEO CALL
   // =====================================
 
-  const startCall = async () => {
-    if (startingRef.current || endingRef.current) return;
+  
+const startCall = async () => {
+  if (startingRef.current || endingRef.current) return;
 
-    startingRef.current = true;
-    setIsStarting(true);
+  startingRef.current = true;
+  setIsStarting(true);
 
-    try {
-      setError("");
-      setCallStatus("Checking video call...");
+  try {
+    setError("");
+    setCallStatus("Checking video call...");
 
-      const otherUid = getOtherParticipantUid();
+    if (!bookingId || !currentUser?.uid) {
+      throw new Error("Missing booking or user information.");
+    }
 
-      if (!otherUid) {
+    const otherUid = getOtherParticipantUid();
+
+    if (!otherUid) {
+      throw new Error("The other participant could not be found.");
+    }
+
+    console.log("START CALL:", {
+      bookingId,
+      callerUid: currentUser.uid,
+      calleeUid: otherUid
+    });
+
+    const existingSnapshot = await getDoc(sessionRef);
+
+    if (existingSnapshot.exists()) {
+      const existingData = existingSnapshot.data();
+
+      console.log("EXISTING CALL SESSION:", existingData);
+
+      if (!["ended", "declined"].includes(existingData.status)) {
         throw new Error(
-          "The other participant could not be found."
+          "A call is already active for this booking. Please end the previous call first."
         );
       }
 
-      const existingSnapshot = await getDoc(sessionRef);
-
-      if (existingSnapshot.exists()) {
-        const existingData = existingSnapshot.data();
-
-        if (existingData.status !== "ended") {
-          throw new Error(
-            "A call is already active for this booking. Ask the other participant to join that call."
-          );
-        }
-
-        await deleteDoc(sessionRef);
-      }
-
-      cleanupMedia();
-
-      const newCallId =
-        `${Date.now()}_${Math.random()
-          .toString(36)
-          .slice(2)}`;
-
-      callIdRef.current = newCallId;
-      activeCallIdRef.current = newCallId;
-      pendingCandidatesRef.current = [];
-
-      setCallStatus(
-        "Starting camera and microphone..."
-      );
-
-      const peerConnection =
-        createPeerConnection(true);
-
-      await addLocalTracks(peerConnection);
-
-      const offer =
-        await peerConnection.createOffer();
-
-      await peerConnection.setLocalDescription(offer);
-
-      await setDoc(sessionRef, {
-        callId: newCallId,
-        callerUid: currentUser.uid,
-        calleeUid: otherUid,
-        offer: {
-          type: offer.type,
-          sdp: offer.sdp,
-        },
-        answer: null,
-        status: "calling",
-        updatedAt: serverTimestamp(),
-      });
-
-      await addCallMessage("📹 Video call started");
-
-      setIsCalling(true);
-      setCallStatus(
-        "Calling the other participant..."
-      );
-
-    } catch (err) {
-      console.error("Start call error:", err);
-
-      setError(
-        err.message || "Unable to start the video call."
-      );
-
-      setCallStatus("Call could not start.");
-
-      cleanupMedia();
-
-      callIdRef.current = null;
-      activeCallIdRef.current = null;
-
-      setIsCalling(false);
-
-    } finally {
-      startingRef.current = false;
-      setIsStarting(false);
+      await deleteDoc(sessionRef);
+      console.log("Previous call session deleted.");
     }
-  };
+
+    cleanupMedia();
+
+    const newCallId =
+      `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
+    callIdRef.current = newCallId;
+    activeCallIdRef.current = newCallId;
+    pendingCandidatesRef.current = [];
+
+    setCallStatus("Starting camera and microphone...");
+
+    const peerConnection = createPeerConnection(true);
+
+    await addLocalTracks(peerConnection);
+
+    const offer = await peerConnection.createOffer();
+
+    await peerConnection.setLocalDescription(offer);
+
+    console.log("Saving call session to Firestore...");
+
+    await setDoc(sessionRef, {
+      callId: newCallId,
+      callerUid: currentUser.uid,
+      calleeUid: otherUid,
+      offer: {
+        type: offer.type,
+        sdp: offer.sdp
+      },
+      answer: null,
+      status: "calling",
+      updatedAt: serverTimestamp()
+    });
+
+    console.log("CALL SESSION SUCCESSFULLY SAVED.");
+
+    await addCallMessage("📹 Video call started");
+
+    setIsCalling(true);
+    setCallStatus("Calling the other participant...");
+
+  } catch (err) {
+    console.error("START CALL FAILED:", err);
+    console.error("ERROR CODE:", err.code);
+    console.error("ERROR MESSAGE:", err.message);
+
+    setError(
+      err.message || "Unable to start the video call."
+    );
+
+    setCallStatus("Call could not start.");
+
+    cleanupMedia();
+
+    callIdRef.current = null;
+    activeCallIdRef.current = null;
+
+    setIsCalling(false);
+
+  } finally {
+    startingRef.current = false;
+    setIsStarting(false);
+  }
+};
+
 
   // =====================================
   // ANSWER INCOMING CALL
   // =====================================
 
-  const answerCall = async (sessionData) => {
-    if (answeringRef.current || endingRef.current) return;
+  
+const answerCall = async (sessionData) => {
+  if (answeringRef.current || endingRef.current) return;
 
-    answeringRef.current = true;
+  answeringRef.current = true;
 
-    try {
-      setError("");
-      setCallStatus("Joining video call...");
+  try {
+    setError("");
+    setCallStatus("Joining video call...");
 
-      callIdRef.current = sessionData.callId;
-      activeCallIdRef.current = sessionData.callId;
-
-      const peerConnection =
-        createPeerConnection(false);
-
-      await addLocalTracks(peerConnection);
-
-      await peerConnection.setRemoteDescription(
-        new RTCSessionDescription(sessionData.offer)
-      );
-
-      await processRemoteCandidates();
-
-      const answer =
-        await peerConnection.createAnswer();
-
-      await peerConnection.setLocalDescription(answer);
-
-      await updateDoc(sessionRef, {
-        answer: {
-          type: answer.type,
-          sdp: answer.sdp,
-        },
-        status: "connected",
-        updatedAt: serverTimestamp(),
-      });
-
-      setIsCalling(true);
-      setCallStatus("Connected");
-
-    } catch (err) {
-      console.error("Answer call error:", err);
-
-      setError(
-        err.message || "Unable to join the video call."
-      );
-
-      setCallStatus("Could not join call.");
-
-      cleanupMedia();
-      setIsCalling(false);
-
-    } finally {
-      answeringRef.current = false;
+    if (!sessionData?.offer || !sessionData?.callId) {
+      throw new Error("Invalid incoming call information.");
     }
-  };
+
+    if (sessionData.calleeUid !== currentUser.uid) {
+      throw new Error("This call is not intended for your account.");
+    }
+
+    callIdRef.current = sessionData.callId;
+    activeCallIdRef.current = sessionData.callId;
+
+    const peerConnection = createPeerConnection(false);
+
+    await addLocalTracks(peerConnection);
+
+    await peerConnection.setRemoteDescription(
+      new RTCSessionDescription(sessionData.offer)
+    );
+
+    await processRemoteCandidates();
+
+    const answer = await peerConnection.createAnswer();
+
+    await peerConnection.setLocalDescription(answer);
+
+    await updateDoc(sessionRef, {
+      answer: {
+        type: answer.type,
+        sdp: answer.sdp
+      },
+      status: "connected",
+      updatedAt: serverTimestamp()
+    });
+
+    await addCallMessage("📹 Joined the video call");
+
+    setIsCalling(true);
+    setCallStatus("Connected");
+
+    console.log("CALL ANSWER SUCCESSFULLY SAVED.");
+
+  } catch (err) {
+    console.error("ANSWER CALL FAILED:", err);
+    console.error("ERROR CODE:", err.code);
+    console.error("ERROR MESSAGE:", err.message);
+
+    setError(
+      err.message || "Unable to join the video call."
+    );
+
+    setCallStatus("Could not join call.");
+
+    cleanupMedia();
+    setIsCalling(false);
+
+  } finally {
+    answeringRef.current = false;
+  }
+};
+
 
   // =====================================
   // LISTEN FOR CALL AND ICE CANDIDATES
@@ -948,11 +973,28 @@ setupPresentationChannel(presentationChannel);
           setIsCalling(true);
         }
 
-        if (data.status === "ended") {
-          setCallStatus("Call ended.");
-          setIsCalling(false);
-          cleanupMedia();
-        }
+        
+if (data.status === "declined") {
+  setCallStatus("Call was declined.");
+  setIsCalling(false);
+
+  if (data.callerUid === currentUser.uid) {
+    cleanupMedia();
+    callIdRef.current = null;
+    activeCallIdRef.current = null;
+  }
+}
+
+if (data.status === "ended") {
+  setCallStatus("Call ended.");
+  setIsCalling(false);
+
+  cleanupMedia();
+
+  callIdRef.current = null;
+  activeCallIdRef.current = null;
+}
+
       },
       (err) => {
         console.error(
@@ -1012,50 +1054,55 @@ setupPresentationChannel(presentationChannel);
   // END VIDEO CALL
   // =====================================
 
-  const endCall = async () => {
-    if (endingRef.current) return;
+  
+const endCall = async () => {
+  if (endingRef.current) return;
 
-    endingRef.current = true;
+  endingRef.current = true;
 
-    try {
-      const snapshot = await getDoc(sessionRef);
+  try {
+    const snapshot = await getDoc(sessionRef);
 
-      if (
-        snapshot.exists() &&
-        snapshot.data().status !== "ended"
-      ) {
+    if (snapshot.exists()) {
+      const sessionData = snapshot.data();
+
+      if (["calling", "connected"].includes(sessionData.status)) {
         await updateDoc(sessionRef, {
           status: "ended",
-          updatedAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
         });
 
         await addCallMessage("📞 Video call ended");
       }
-
-    } catch (err) {
-      console.error("End call error:", err);
-
-      setError(
-        err.message || "Unable to end the call properly."
-      );
     }
 
-    cleanupMedia();
+  } catch (err) {
+    console.error("END CALL FAILED:", err);
+    console.error("ERROR CODE:", err.code);
+    console.error("ERROR MESSAGE:", err.message);
 
-    callIdRef.current = null;
-    activeCallIdRef.current = null;
+    setError(
+      err.message || "Unable to end the call properly."
+    );
+  }
 
-    setCallStatus("Call ended.");
-    setIsCalling(false);
-    setIsMicOn(true);
-    setIsCameraOn(true);
+  cleanupMedia();
 
-    endingRef.current = false;
+  callIdRef.current = null;
+  activeCallIdRef.current = null;
 
-    if (onClose) {
-      onClose();
-    }
-  };
+  setCallStatus("Call ended.");
+  setIsCalling(false);
+  setIsMicOn(true);
+  setIsCameraOn(true);
+
+  endingRef.current = false;
+
+  if (onClose) {
+    onClose();
+  }
+};
+
 
   // =====================================
   // USER INTERFACE

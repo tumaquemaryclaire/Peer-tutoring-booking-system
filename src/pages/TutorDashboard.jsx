@@ -720,7 +720,23 @@ if (
   alert("Please enter a valid session rate greater than ₱0.");
   return;
 }
+    const phoneRegex = /^09\d{9}$/;
 
+if (
+  profileData.gcashNumber.trim() !== "" &&
+  !phoneRegex.test(profileData.gcashNumber)
+) {
+  alert("Invalid GCash number. Please enter exactly 11 digits starting with 09.");
+  return;
+}
+
+if (
+  profileData.mayaNumber.trim() !== "" &&
+  !phoneRegex.test(profileData.mayaNumber)
+) {
+  alert("Invalid Maya number. Please enter exactly 11 digits starting with 09.");
+  return;
+}
     setSavingProfile(true);
 
     try {
@@ -745,12 +761,14 @@ if (
         birthday: profileData.birthday
       });
 
+      console.log("TUTOR AGE TO SAVE:", age);
+console.log("TUTOR PROFILE UID:", authenticatedUser.uid);
       await updateDoc(profileRef, {
   subjects: subjectsArray,
   bio: profileData.bio.trim(),
   teachingMode: profileData.teachingMode,
   gender: profileData.gender,
-   age: calculateAge(profileData.birthday),
+   age: age,
   sessionRate,
 
   paymentDetails: {
@@ -1448,53 +1466,53 @@ console.log(
   <div className="tutor-profile-field">
     <label htmlFor="gcashNumber">GCash Number</label>
     <input
-      id="gcashNumber"
-      type="tel"
-      placeholder="09XXXXXXXXX"
-      value={profileData.gcashNumber}
-      onChange={(e) =>
-        setProfileData({
-          ...profileData,
-          gcashNumber: e.target.value
-        })
-      }
-      disabled={!isEditingProfile}
-    />
+  type="tel"
+  inputMode="numeric"
+  maxLength={11}
+  value={profileData.gcashNumber}
+  onChange={(e) =>
+    setProfileData({
+      ...profileData,
+      gcashNumber: e.target.value.replace(/\D/g, "").slice(0, 11)
+    })
+  }
+  placeholder="09XXXXXXXXX"
+  disabled={!isEditingProfile}
+/>
   </div>
 
   {/* MAYA */}
   <div className="tutor-profile-field">
     <label htmlFor="mayaName">Maya Account Name</label>
     <input
-      id="mayaName"
-      type="text"
-      placeholder="Account holder name"
-      value={profileData.mayaName}
-      onChange={(e) =>
-        setProfileData({
-          ...profileData,
-          mayaName: e.target.value
-        })
-      }
-      disabled={!isEditingProfile}
-    />
+  type="text"
+  value={profileData.mayaName}
+  onChange={(e) =>
+    setProfileData({
+      ...profileData,
+      mayaName: e.target.value
+    })
+  }
+  placeholder="Account holder name"
+  disabled={!isEditingProfile}
+/>
   </div>
 
   <div className="tutor-profile-field">
-    <label htmlFor="mayaNumber">Maya Number</label>
     <input
-      id="mayaNumber"
-      type="tel"
-      placeholder="09XXXXXXXXX"
-      value={profileData.mayaNumber}
-      onChange={(e) =>
-        setProfileData({
-          ...profileData,
-          mayaNumber: e.target.value
-        })
-      }
-      disabled={!isEditingProfile}
-    />
+  type="tel"
+  inputMode="numeric"
+  maxLength={11}
+  value={profileData.mayaNumber}
+  onChange={(e) =>
+    setProfileData({
+      ...profileData,
+      mayaNumber: e.target.value.replace(/\D/g, "").slice(0, 11)
+    })
+  }
+  placeholder="09XXXXXXXXX"
+  disabled={!isEditingProfile}
+/>
   </div>
 
   {/* BANK TRANSFER */}

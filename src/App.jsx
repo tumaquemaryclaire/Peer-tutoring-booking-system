@@ -11,6 +11,8 @@ import Login from "./pages/Login";
 import StudentDashboard from "./pages/StudentDashboard";
 import TutorDashboard from "./pages/TutorDashboard";
 
+import IncomingCallListener from "./components/IncomingCallListener";
+
 import "./App.css";
 
 // HOME PAGE
@@ -196,6 +198,9 @@ function NotFound() {
 function App() {
   return (
     <BrowserRouter>
+      {/* Listen for incoming video calls */}
+      <IncomingCallListener />
+
       <Routes>
         <Route path="/" element={<Home />} />
 
